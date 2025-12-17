@@ -40,8 +40,9 @@ function sleep(ms: number): Promise<void> {
 
 /**
  * Check if an error is retryable (5xx errors, network errors, timeouts)
+ * Exported for testing
  */
-function isRetryableError(error: unknown): boolean {
+export function isRetryableError(error: unknown): boolean {
   // Timeout errors are retryable
   if (error instanceof AIError && error.code === 'TIMEOUT') {
     return true;
@@ -76,8 +77,9 @@ function isRetryableError(error: unknown): boolean {
 /**
  * Calculate retry delays with exponential backoff
  * Returns array of delays in ms: [1000, 2000, 4000, 8000, 16000]
+ * Exported for testing
  */
-function getRetryDelays(maxRetries: number): number[] {
+export function getRetryDelays(maxRetries: number): number[] {
   const delays: number[] = [];
   for (let i = 0; i < maxRetries; i++) {
     delays.push(1000 * Math.pow(2, i)); // 1s, 2s, 4s, 8s, 16s...
