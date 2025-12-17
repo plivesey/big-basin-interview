@@ -34,6 +34,34 @@ AI-powered conversational assistant for discovering and booking local services (
 
 ---
 
+## Documentation Guidelines
+
+**Agents should proactively maintain documentation** as the codebase evolves. Don't wait to be asked - update and create docs when implementing features or making architectural changes.
+
+### Documentation Structure
+
+**High-Level Documentation** → `documentation/`
+- Architecture decisions, system design, API specs
+- Examples: PRD, ERD, brand strategy, style guides
+
+**Feature Documentation** → `documentation/features/`
+- Specific feature implementations, workflows, integration guides
+- Create one doc per major feature as you build it
+
+**Folder-Level Documentation** → `CLAUDE.md` in any folder with complex code
+- Explain the purpose, structure, and key files in that folder
+- Create/update these files freely - they help future agents navigate
+- Examples: `backend/src/CLAUDE.md`, `frontend/src/services/CLAUDE.md`
+
+### When to Document
+- ✅ After implementing a non-trivial feature
+- ✅ When making architectural decisions
+- ✅ When creating new modules or services
+- ✅ When patterns or conventions change
+- ✅ Before complexity becomes hard to understand
+
+---
+
 ## Architecture Overview
 
 **Frontend**: React 18+ with Tailwind CSS v4
