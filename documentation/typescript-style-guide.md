@@ -159,3 +159,291 @@ async function returnDirectly() {
 - No `with` keyword
 - No modification of built-in prototypes
 - No reliance on Automatic Semicolon Insertion
+
+## Tailwind CSS Best Practices
+
+> Based on official Tailwind documentation and community best practices for design systems
+
+### Core Principles
+
+**Utility-First Philosophy**
+- Tailwind is designed for utility classes in markup
+- Component abstraction should be your first approach
+- Use `@apply` as a last resort, not a default pattern
+
+**The Hierarchy of Abstraction**
+1. **Component Abstraction (Preferred)**: Create React/Vue components
+2. **Utility Composition**: Use utility classes directly in JSX/templates
+3. **@apply Directive (Sparingly)**: Only for small, highly reusable patterns
+
+### When to Use @apply
+
+Use `@apply` ONLY for:
+- Very small, highly reusable components (buttons, form controls)
+- Cases where component extraction feels too heavy
+- Third-party integration that requires CSS classes
+
+**Good use cases:**
+```css
+/* Small, reusable button that's used everywhere */
+.btn-primary {
+  @apply px-5 py-2.5 bg-indigo-600 text-white font-medium rounded-lg;
+  @apply hover:bg-indigo-700 transition-colors duration-200;
+}
+
+/* Form input with consistent styling */
+.input {
+  @apply w-full px-4 py-2.5 border border-slate-300 rounded-lg;
+  @apply focus:outline-none focus:ring-2 focus:ring-indigo-100;
+}
+```
+
+**Bad use cases:**
+```css
+/* Don't extract one-off layouts */
+.hero-section {
+  @apply flex flex-col items-center justify-center min-h-screen px-4;
+}
+
+/* Don't replace component abstraction */
+.user-card {
+  @apply bg-white rounded-lg shadow p-6 flex items-start space-x-4;
+}
+/* Instead: Create a <UserCard> component */
+```
+
+### Component Abstraction Pattern
+
+**Prefer React components over @apply:**
+
+```tsx
+// Good: Component abstraction
+interface ButtonProps {
+  variant?: 'primary' | 'secondary';
+  size?: 'small' | 'medium' | 'large';
+  children: ReactNode;
+}
+
+export function Button({ variant = 'primary', size = 'medium', children }: ButtonProps) {
+  return (
+    <button className={`
+      px-5 py-2.5 font-medium rounded-lg transition-colors
+      ${variant === 'primary' ? 'bg-indigo-600 text-white hover:bg-indigo-700' : ''}
+      ${variant === 'secondary' ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200' : ''}
+      ${size === 'small' ? 'px-4 py-2 text-sm' : ''}
+      ${size === 'large' ? 'px-6 py-3 text-lg' : ''}
+    `}>
+      {children}
+    </button>
+  );
+}
+
+// Usage
+<Button variant="primary" size="large">Click me</Button>
+```
+
+This approach provides:
+- Better TypeScript integration
+- Props for variants instead of class names
+- Easier refactoring and maintenance
+- Better IDE support
+
+### Design Tokens in Config
+
+**Centralize design decisions in `tailwind.config.js`:**
+
+```javascript
+export default {
+  theme: {
+    extend: {
+      colors: {
+        brand: {
+          indigo: {
+            pale: '#E0E7FF',
+            light: '#6366F1',
+            DEFAULT: '#4F46E5',
+            dark: '#4338CA',
+          },
+        },
+      },
+      fontFamily: {
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+      },
+      spacing: {
+        '18': '4.5rem',
+      },
+    },
+  },
+}
+```
+
+**Benefits:**
+- Single source of truth for design tokens
+- Tokens available across all utilities (`bg-brand-indigo`, `text-brand-indigo`)
+- Easy to maintain and update globally
+- Enforces design consistency
+
+### Avoiding @apply Overuse
+
+**Why @apply can be problematic:**
+- Defeats the purpose of utility-first CSS
+- Loses the benefits of seeing all styles in markup
+- Makes it harder to find where styles are defined
+- Reduces the effectiveness of PurgeCSS/tree-shaking
+- Creates implicit dependencies between CSS and markup
+
+**Signs you're overusing @apply:**
+- Every component has a corresponding CSS class
+- Your CSS file is growing significantly
+- You're extracting unique, one-off styles
+- You have deeply nested @apply directives
+
+### Dynamic Styling in Components
+
+**For dynamic styles, use inline utilities or conditional classes:**
+
+```tsx
+// Good: Dynamic utilities
+function Alert({ type }: { type: 'success' | 'error' }) {
+  return (
+    <div className={`
+      p-4 rounded-lg
+      ${type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}
+    `}>
+      Alert content
+    </div>
+  );
+}
+
+// Better: Use a library like clsx or classnames
+import clsx from 'clsx';
+
+function Alert({ type }: { type: 'success' | 'error' }) {
+  return (
+    <div className={clsx(
+      'p-4 rounded-lg',
+      type === 'success' && 'bg-green-50 text-green-800',
+      type === 'error' && 'bg-red-50 text-red-800'
+    )}>
+      Alert content
+    </div>
+  );
+}
+```
+
+### Responsive Design
+
+**Use Tailwind's responsive prefixes directly:**
+
+```tsx
+// Good: Inline responsive utilities
+<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+  {/* Content */}
+</div>
+
+// Avoid: Extracting responsive patterns with @apply
+.card-grid {
+  @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4;
+}
+```
+
+### Ordering Utilities
+
+**Recommended order for utility classes:**
+1. Layout (display, position, flex, grid)
+2. Spacing (margin, padding)
+3. Sizing (width, height)
+4. Typography (font, text)
+5. Visual (background, border, shadow)
+6. State (hover, focus, active)
+7. Responsive prefixes
+
+```tsx
+// Well-organized utilities
+<button className="
+  flex items-center justify-center
+  px-5 py-2.5
+  w-full
+  font-medium text-white
+  bg-indigo-600 rounded-lg shadow-sm
+  hover:bg-indigo-700
+  sm:w-auto
+">
+  Submit
+</button>
+```
+
+### Configuration Best Practices
+
+**Keep your config modular and maintainable:**
+
+```javascript
+// tailwind.config.js
+export default {
+  content: [
+    './index.html',
+    './src/**/*.{js,ts,jsx,tsx}',
+  ],
+  theme: {
+    extend: {
+      // Only extend, don't replace default theme
+      colors: {
+        // Add brand colors without losing default palette
+      },
+    },
+  },
+  plugins: [
+    // Add plugins sparingly
+  ],
+}
+```
+
+### Plugin Usage
+
+**Use official plugins when needed:**
+- `@tailwindcss/forms` - Better form styling
+- `@tailwindcss/typography` - Prose content styling
+- `@tailwindcss/aspect-ratio` - Aspect ratio utilities
+
+**Avoid:**
+- Installing too many third-party plugins
+- Creating complex custom plugins when utilities suffice
+
+### Performance Considerations
+
+**Optimize for production:**
+- Configure content paths correctly for PurgeCSS
+- Keep utility usage consistent to benefit from compression
+- Avoid generating unused variants
+- Use `safelist` sparingly (only when dynamic classes are unavoidable)
+
+```javascript
+// tailwind.config.js
+export default {
+  content: [
+    './index.html',
+    './src/**/*.{js,ts,jsx,tsx}',
+  ],
+  safelist: [
+    // Only when absolutely necessary
+    'bg-red-500',
+    'bg-green-500',
+  ],
+}
+```
+
+### Summary: The Golden Rule
+
+**Component Abstraction First, @apply Second**
+
+1. Create React/Vue components for reusable UI patterns
+2. Use utility classes directly in markup for most styling
+3. Only use `@apply` for small, highly reusable CSS patterns
+4. Centralize design tokens in `tailwind.config.js`
+5. Keep the utility-first philosophy - don't turn Tailwind into traditional CSS
+
+### References
+
+- [Reusing Styles - Tailwind CSS](https://tailwindcss.com/docs/reusing-styles)
+- [Tailwind CSS Best Practices & Design System Patterns](https://dev.to/frontendtoolstech/tailwind-css-best-practices-design-system-patterns-54pi)
+- [Extracting Components - Tailwind CSS](https://v1.tailwindcss.com/docs/extracting-components)

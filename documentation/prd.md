@@ -272,191 +272,44 @@ Acceptance Criteria:
 
 ---
 
-## Technical Requirements
+## Technical Overview
 
-### Tech Stack
+For detailed technical architecture, implementation patterns, and integration strategies, see the **[Engineering Requirements Document (ERD)](./erd.md)**.
 
-**Frontend**
-- React (web)
-- TypeScript
-- Tailwind CSS (styling)
-- Axios or Fetch API (HTTP client)
+### Tech Stack Summary
 
-**Backend**
-- Node.js with TypeScript
-- Express (API framework)
-- SQLite (database)
-- Google Calendar API
+**Frontend:** React, TypeScript, Tailwind CSS, Socket.io/SSE client
+**Backend:** Node.js, Express, TypeScript, SQLite, Drizzle ORM
+**AI Integration:** Claude SDK (Anthropic)
+**Calendar:** Google Calendar API
+**Real-Time:** WebSockets (Socket.io) or Server-Sent Events
 
-**LLM Integration**
-- Provider: Claude SDK (Anthropic)
-- Alternative: [ax-llm](https://github.com/ax-llm/ax) for non-conversational AI calls (such as virtual judges or other tools)
+### Key Architectural Decisions
 
-**Tooling**
-- TypeScript (strict mode)
-- ESLint + Prettier
-- Database migrations
+See [ERD Section 4-7](./erd.md#4-claude-sdk-integration-strategy) for detailed analysis and options:
 
-### System Architecture
+1. **Real-Time Communication:** WebSockets vs SSE (see ERD §5)
+2. **UI State Synchronization:** Tool-based commands vs structured responses (see ERD §6)
+3. **Progress Updates:** Extended Thinking vs manual events (see ERD §7)
+4. **Backend Architecture:** Modular service-based design (see ERD §3)
+
+### High-Level Architecture
 
 ```
-┌─────────────┐
-│   React     │
-│   Frontend  │
-└──────┬──────┘
-       │ HTTP/REST
-       ▼
-┌──────────────────┐      ┌─────────────┐
-│  Express API     │─────▶│ LLM Service │
-│  (TypeScript)    │      │ (Claude/GPT)│
-└────┬─────┬───────┘      └─────────────┘
-     │     │
-     │     └──────────────┐
-     ▼                    ▼
-┌─────────────┐    ┌──────────────┐
-│  Database   │    │  Google Cal  │
-│  (SQLite)   │    │     API      │
-└─────────────┘    └──────────────┘
+Client (React)
+    ↕ WebSocket/SSE
+Express API Server
+    ↕ Tool Execution Loop
+Claude SDK → Tools:
+  - search_providers
+  - display_provider_cards
+  - check_calendar_conflicts
+  - create_booking
+    ↕
+SQLite DB + Google Calendar API
 ```
 
-### Data Model
-
-**Providers**
-```typescript
-interface Provider {
-  id: string;
-  name: string;
-  category: 'salon' | 'mechanic' | 'dentist' | 'other';
-  location: {
-    address: string;
-    lat: number;
-    lng: number;
-  };
-  rating: number; // 1-5
-  workingHours: {
-    [day: string]: { open: string; close: string }; // e.g., "09:00", "17:00"
-  };
-  services: string[];
-}
-```
-
-**Bookings**
-```typescript
-interface Booking {
-  id: string;
-  userId: string; // Static for MVP
-  providerId: string;
-  serviceType: string;
-  scheduledAt: Date;
-  duration: number; // minutes
-  status: 'pending' | 'confirmed' | 'cancelled';
-  calendarEventId?: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-```
-
-**Workflow State**
-```typescript
-interface WorkflowState {
-  sessionId: string;
-  currentState:
-    | 'INITIAL'
-    | 'INTENT_CAPTURE'
-    | 'PROVIDER_SEARCH'
-    | 'PROVIDER_SELECTION'
-    | 'TIME_SELECTION'
-    | 'CONFIRMATION'
-    | 'BOOKING_CREATED';
-  context: {
-    serviceType?: string;
-    location?: string;
-    timePreference?: string;
-    selectedProviderId?: string;
-    selectedTimeSlot?: Date;
-  };
-  lastUpdated: Date;
-  expiresAt: Date;
-}
-```
-
-### API Design
-
-**POST `/api/chat`**
-```typescript
-Request: {
-  sessionId: string;
-  message: string;
-}
-
-Response: {
-  sessionId: string;
-  response: string; // LLM-generated
-  structuredData?: {
-    type: 'providers' | 'timeSlots' | 'confirmation';
-    data: Provider[] | TimeSlot[] | Booking;
-  };
-  workflowState: string;
-}
-```
-
-**GET `/api/providers/:id/availability`**
-```typescript
-Response: {
-  providerId: string;
-  availableSlots: {
-    start: Date;
-    end: Date;
-  }[];
-}
-```
-
-**POST `/api/bookings`**
-```typescript
-Request: {
-  sessionId: string;
-  providerId: string;
-  serviceType: string;
-  scheduledAt: Date;
-}
-
-Response: {
-  booking: Booking;
-  calendarEvent?: CalendarEvent;
-}
-```
-
-### LLM Prompt Design
-
-**Intent Extraction Prompt**
-```
-You are a booking assistant. Extract the following from the user's message:
-- serviceType: type of service needed (salon, mechanic, dentist, etc.)
-- location: preferred location or neighborhood
-- timePreference: preferred date/time (morning, afternoon, specific date)
-- budget: any mentioned budget constraints
-
-User message: "{userMessage}"
-
-Return JSON:
-{
-  "serviceType": string | null,
-  "location": string | null,
-  "timePreference": string | null,
-  "needsClarification": boolean,
-  "clarificationQuestion": string | null
-}
-```
-
-**Response Generation Prompt**
-```
-You are a friendly booking assistant. Generate a natural response based on:
-- Current state: {workflowState}
-- User message: {userMessage}
-- Available data: {providers/timeSlots}
-
-Keep responses concise (2-3 sentences). Be helpful and guide the user to the next step.
-```
+**Note:** All technical specifications, data models, API designs, integration challenges, and solutions are documented in the [ERD](./erd.md)
 
 ---
 
@@ -564,14 +417,22 @@ Keep responses concise (2-3 sentences). Be helpful and guide the user to the nex
 
 ## Appendix
 
-### Reference Documentation
-- [ax-llm Documentation](https://github.com/ax-llm/ax)
+### Internal Documentation
+- **[Engineering Requirements Document (ERD)](./erd.md)**: Comprehensive technical architecture, module design, Claude SDK integration patterns, and implementation strategies
+
+### External Reference Documentation
+- [Claude SDK Documentation](https://docs.anthropic.com/claude/reference/getting-started-with-the-api)
+- [Claude Tool Use Guide](https://docs.anthropic.com/claude/docs/tool-use)
 - [Google Calendar API Quickstart](https://developers.google.com/calendar/api/quickstart/nodejs)
-- [Claude API Documentation](https://docs.anthropic.com/claude/reference/getting-started-with-the-api)
+- [Drizzle ORM Documentation](https://orm.drizzle.team/docs/overview)
+- [Socket.io Documentation](https://socket.io/docs/v4/)
 
 ### Glossary
 - **LLM**: Large Language Model (Claude, GPT, Gemini)
-- **Intent**: Structured representation of user's goal
+- **Intent**: Structured representation of user's goal extracted from natural language
 - **Workflow State**: Current position in booking flow state machine
+- **Tool Use**: Claude SDK feature allowing AI to call functions/APIs autonomously
 - **Idempotency**: Property ensuring duplicate requests produce same result
 - **Conflict Detection**: Checking for calendar overlaps before booking
+- **Extended Thinking**: Claude SDK feature showing AI reasoning process to users
+- **State Machine**: Formal model of workflow transitions with defined states and rules
