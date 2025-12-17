@@ -17,11 +17,17 @@ export function ChatInput({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Auto-resize textarea based on content
+  // Max height accommodates ~5 lines before scrolling
+  const maxHeight = 120;
+
   useEffect(() => {
     const textarea = textareaRef.current;
     if (textarea) {
       textarea.style.height = 'auto';
-      textarea.style.height = `${Math.min(textarea.scrollHeight, 150)}px`;
+      const newHeight = Math.min(textarea.scrollHeight, maxHeight);
+      textarea.style.height = `${newHeight}px`;
+      // Only show scrollbar when content exceeds max height
+      textarea.style.overflowY = textarea.scrollHeight > maxHeight ? 'auto' : 'hidden';
     }
   }, [message]);
 
@@ -64,7 +70,7 @@ export function ChatInput({
             placeholder={placeholder}
             disabled={disabled}
             rows={1}
-            className="textarea min-h-[44px] max-h-[150px] py-2.5 pr-12"
+            className="textarea min-h-[44px] py-2.5 pr-12 overflow-hidden"
             aria-label="Message input"
           />
         </div>
