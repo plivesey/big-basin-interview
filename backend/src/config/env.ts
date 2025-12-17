@@ -13,7 +13,6 @@ const envSchema = z.object({
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   GOOGLE_REDIRECT_URI: z.string().optional(),
   GOOGLE_CALENDAR_ID: z.string().default('primary'),
-  SESSION_TIMEOUT_HOURS: z.string().default('24'),
   FRONTEND_URL: z.string().default('http://localhost:5173'),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
 });
