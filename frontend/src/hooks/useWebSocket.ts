@@ -28,6 +28,8 @@ export function useWebSocket(): UseWebSocketReturn {
   // Use a ref to track streaming message ID to avoid race conditions
   // The store update is async, but the ref update is synchronous
   const streamingIdRef = useRef<string | null>(null);
+  // Track whether the streaming message has been created (on first text_delta)
+  const streamingMessageCreatedRef = useRef<boolean>(false);
 
   const {
     setSessionId,
@@ -119,27 +121,32 @@ export function useWebSocket(): UseWebSocketReturn {
       logger.debug('Message started', { messageId: data.messageId });
       setIsLoading(true);
 
-      // Create a placeholder message for streaming
+      // Set up streaming ID but don't create message yet
+      // Message will be created on first text_delta to avoid empty bubble
       const streamingId = `streaming-${Date.now()}`;
-      const placeholderMessage: ChatMessage = {
-        id: streamingId,
-        sessionId: useChatStore.getState().sessionId || '',
-        role: 'assistant',
-        content: [{ type: 'text', text: '' }],
-        createdAt: new Date(),
-      };
-      addMessage(placeholderMessage);
-
-      // Update both ref (synchronous) and store (async)
-      // The ref ensures text_delta handlers always have the latest ID
       streamingIdRef.current = streamingId;
+      streamingMessageCreatedRef.current = false;
       setStreamingMessageId(streamingId);
     });
 
     socket.on('text_delta', (data) => {
       // Use ref instead of store to avoid race condition
       const streamingId = streamingIdRef.current;
-      if (streamingId) {
+      if (!streamingId) return;
+
+      if (!streamingMessageCreatedRef.current) {
+        // First text_delta - create the message with initial text
+        const message: ChatMessage = {
+          id: streamingId,
+          sessionId: useChatStore.getState().sessionId || '',
+          role: 'assistant',
+          content: [{ type: 'text', text: data.text }],
+          createdAt: new Date(),
+        };
+        addMessage(message);
+        streamingMessageCreatedRef.current = true;
+      } else {
+        // Subsequent text_delta - append to existing message
         appendTextToMessage(streamingId, data.text);
       }
     });
@@ -161,14 +168,15 @@ export function useWebSocket(): UseWebSocketReturn {
       logger.debug('Message completed', { messageId: data.messageId });
       // Use ref for consistency with text_delta handler
       const streamingId = streamingIdRef.current;
-      if (streamingId) {
+      if (streamingId && streamingMessageCreatedRef.current) {
         // Update the streaming message ID to the final ID from the server
         updateMessage(streamingId, { id: data.messageId });
-
-        // Clear both ref and store
-        streamingIdRef.current = null;
-        setStreamingMessageId(null);
       }
+
+      // Clear all streaming state
+      streamingIdRef.current = null;
+      streamingMessageCreatedRef.current = false;
+      setStreamingMessageId(null);
       setIsLoading(false);
     });
 
@@ -198,8 +206,9 @@ export function useWebSocket(): UseWebSocketReturn {
       socketRef.current.disconnect();
       socketRef.current = null;
     }
-    // Clear streaming ref on disconnect
+    // Clear streaming refs on disconnect
     streamingIdRef.current = null;
+    streamingMessageCreatedRef.current = false;
   }, []);
 
   // Reconnect to WebSocket server

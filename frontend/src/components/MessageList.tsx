@@ -57,7 +57,10 @@ export function MessageList({ messages, isLoading }: MessageListProps) {
         </ChatMessageComponent>
       ))}
 
-      {isLoading && <ChatLoading text="Let me check..." />}
+      {/* Only show loading if waiting for response AND no assistant message has started */}
+      {isLoading && (!messages.length || messages[messages.length - 1].role === 'user') && (
+        <ChatLoading text="Let me check..." />
+      )}
 
       <div ref={messagesEndRef} />
     </div>
