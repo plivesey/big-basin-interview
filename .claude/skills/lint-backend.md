@@ -2,54 +2,43 @@
 
 Run the backend linter to check for code quality and style issues.
 
-## Current Status
+## Steps
 
-⚠️ **The backend does not currently have a linter configured.**
-
-To add ESLint to the backend:
-
-1. Install ESLint and TypeScript ESLint:
+1. Navigate to the backend directory and run the linter:
    ```bash
-   cd backend
-   npm install --save-dev eslint @eslint/js typescript-eslint
+   cd backend && npm run lint
    ```
 
-2. Create an `eslint.config.js` file in the backend directory
+2. Review the output for any errors or warnings
 
-3. Add a lint script to `backend/package.json`:
-   ```json
-   "scripts": {
-     "lint": "eslint ."
-   }
-   ```
+3. If there are linting errors, refer to the TypeScript Style Guide for fixing common issues:
+   - **Style Guide**: `documentation/typescript-style-guide.md`
+   - The style guide is aligned with the ESLint configuration and includes:
+     - Naming conventions
+     - Type system best practices
+     - Async/await patterns
+     - Formatting rules
+     - Common patterns and anti-patterns
 
-## Once Configured
+## Configuration
 
-After setting up ESLint, run the linter with:
-```bash
-cd backend && npm run lint
-```
-
-## Style Guide Reference
-
-When fixing linting errors, refer to the TypeScript Style Guide:
-- **Style Guide**: `documentation/typescript-style-guide.md`
-- The style guide includes:
-  - Naming conventions
-  - Type system best practices
-  - Async/await patterns
-  - Formatting rules (2 spaces, single quotes, semicolons)
-  - Common patterns and anti-patterns
-
-## TypeScript Configuration
-
-The backend currently has TypeScript configured at:
-- `backend/tsconfig.json` - TypeScript compiler options
-- Type checking can be run with: `cd backend && npx tsc --noEmit`
+The backend linter uses:
+- **ESLint** with `typescript-eslint`
+- Configuration file: `backend/eslint.config.mjs`
+- TypeScript config: `backend/tsconfig.json`
 
 ## Auto-fixing
 
-Once ESLint is configured, many issues can be auto-fixed:
+ESLint can automatically fix many issues. To auto-fix:
 ```bash
 cd backend && npm run lint -- --fix
+```
+
+Note: Not all issues can be auto-fixed; some require manual intervention.
+
+## TypeScript Type Checking
+
+You can also run TypeScript type checking separately:
+```bash
+cd backend && npx tsc --noEmit
 ```
