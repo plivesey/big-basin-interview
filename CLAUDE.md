@@ -22,6 +22,11 @@ AI-powered conversational assistant for discovering and booking local services (
 
 ## Key Documentation
 
+### Implementation Plan (ALWAYS UPDATE THIS!)
+- **[PLAN](documentation/plan.md)** - **MAIN IMPLEMENTATION PLAN** - 9 milestones with checkboxes, testing requirements, and progress tracking
+  - **IMPORTANT:** Update this file as you work! Check off completed tasks, update progress, add notes.
+  - This is the source of truth for what's done and what's next.
+
 ### Technical Specs
 - **[PRD](documentation/prd.md)** - Product requirements, user stories, acceptance criteria
 - **[ERD](documentation/erd.md)** - System architecture, data models, API design, Claude SDK integration
