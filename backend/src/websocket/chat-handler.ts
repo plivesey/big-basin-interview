@@ -2,7 +2,7 @@ import { Server, Socket } from 'socket.io';
 import { v4 as uuidv4 } from 'uuid';
 import { saveMessage, getMessageHistory, ChatMessage } from '../services/message-service';
 import { getOrCreateSession } from '../services/session-service';
-import { sendMessage as sendAIMessage } from '../services/ai-conversation-service';
+import { sendMessage as sendAIMessage, AIError } from '../services/ai-conversation-service';
 import { logger } from '../utils/logger';
 
 // Types for WebSocket events
@@ -131,10 +131,28 @@ export function initializeChatHandler(io: ChatServer): void {
 
         logger.info('AI response sent', { messageId: assistantMessage.id, sessionId });
       } catch (error) {
-        logger.error('Error handling user message', { error: String(error), sessionId });
+        // Differentiate error types for better user feedback
+        let errorMessage = 'Failed to get AI response. Please try again.';
+        let errorCode = 'AI_ERROR';
+
+        if (error instanceof AIError) {
+          if (error.code === 'TIMEOUT') {
+            errorMessage = 'The AI is taking too long to respond. Please try again.';
+            errorCode = 'AI_TIMEOUT';
+          } else if (error.code === 'MAX_RETRIES_EXCEEDED') {
+            errorMessage = 'The AI service is temporarily unavailable. Please try again later.';
+            errorCode = 'AI_UNAVAILABLE';
+          }
+        }
+
+        logger.error('Error handling user message', {
+          error: String(error),
+          errorCode,
+          sessionId,
+        });
         socket.emit('error', {
-          error: 'Failed to get AI response. Please try again.',
-          code: 'AI_ERROR',
+          error: errorMessage,
+          code: errorCode,
         });
       }
     });
