@@ -3,3 +3,10 @@ dist/
 .env
 *.log
 .DS_Store
+
+# Database
+data/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm

@@ -95,7 +95,9 @@ AI-powered conversational assistant for discovering and booking local services (
 
 **Component Classes**: See `frontend/src/index.css` for pre-built Tailwind classes (`.btn-primary`, `.card-hover`, `.message-user`, etc.)
 
----
+## Other Instructions
+
+**NEVER SWITCH BRANCHES** - Always ask the user to do this for you
 
 ## For Full Details
 
