@@ -1,8 +1,9 @@
 import { v4 as uuidv4 } from 'uuid';
-import { eq, asc } from 'drizzle-orm';
+import { eq, asc, and, gt } from 'drizzle-orm';
 import { db, messages, MessageContent, Message, NewMessage } from '../db';
 
 export interface SaveMessageParams {
+  id?: string;
   sessionId: string;
   role: 'user' | 'assistant';
   content: string | MessageContent[];
@@ -31,7 +32,7 @@ function normalizeContent(content: string | MessageContent[]): MessageContent[] 
  * Save a message to the database
  */
 export async function saveMessage(params: SaveMessageParams): Promise<ChatMessage> {
-  const { sessionId, role, content } = params;
+  const { id, sessionId, role, content } = params;
 
   if (!sessionId || !sessionId.trim()) {
     throw new Error('Session ID is required');
@@ -49,7 +50,7 @@ export async function saveMessage(params: SaveMessageParams): Promise<ChatMessag
   const now = new Date();
 
   const newMessage: NewMessage = {
-    id: uuidv4(),
+    id: id || uuidv4(),
     sessionId,
     role,
     content: normalizedContent,
@@ -148,21 +149,23 @@ export async function getMessagesSince(sessionId: string, afterMessageId: string
     return getMessageHistory(sessionId);
   }
 
+  // Use SQL query to filter messages after the reference timestamp
   const result = await db
     .select()
     .from(messages)
-    .where(eq(messages.sessionId, sessionId))
+    .where(
+      and(
+        eq(messages.sessionId, sessionId),
+        gt(messages.createdAt, referenceMsg.createdAt)
+      )
+    )
     .orderBy(asc(messages.createdAt));
 
-  // Filter messages after the reference message
-  const referenceTime = referenceMsg.createdAt.getTime();
-  return result
-    .filter((msg: Message) => msg.createdAt.getTime() > referenceTime)
-    .map((msg: Message) => ({
-      id: msg.id,
-      sessionId: msg.sessionId,
-      role: msg.role as 'user' | 'assistant',
-      content: msg.content,
-      createdAt: msg.createdAt,
-    }));
+  return result.map((msg: Message) => ({
+    id: msg.id,
+    sessionId: msg.sessionId,
+    role: msg.role as 'user' | 'assistant',
+    content: msg.content,
+    createdAt: msg.createdAt,
+  }));
 }

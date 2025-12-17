@@ -9,6 +9,8 @@ const envSchema = z.object({
   PORT: z.string().default('3001'),
   DATABASE_PATH: z.string().default('./data/app.db'),
   ANTHROPIC_API_KEY: z.string().optional(),
+  CLAUDE_MODEL: z.string().default('claude-sonnet-4-5'),
+  CLAUDE_MAX_TOKENS: z.coerce.number().default(2048),
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   GOOGLE_REDIRECT_URI: z.string().optional(),
