@@ -46,19 +46,19 @@
   }
 
   .btn-primary {
-    @apply btn bg-indigo-600 text-white hover:bg-indigo-700 active:bg-indigo-800 shadow-sm hover:shadow-md;
+    @apply px-5 py-2.5 font-medium rounded-lg transition-colors duration-200 inline-flex items-center justify-center bg-indigo-600 text-white hover:bg-indigo-700 active:bg-indigo-800 shadow-sm hover:shadow-md;
   }
 
   .btn-primary-large {
-    @apply btn-primary px-6 py-3 text-lg;
+    @apply px-6 py-3 text-lg font-medium rounded-lg transition-colors duration-200 inline-flex items-center justify-center bg-indigo-600 text-white hover:bg-indigo-700 active:bg-indigo-800 shadow-sm hover:shadow-md;
   }
 
   .btn-primary-small {
-    @apply btn-primary px-4 py-2 text-sm;
+    @apply px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200 inline-flex items-center justify-center bg-indigo-600 text-white hover:bg-indigo-700 active:bg-indigo-800 shadow-sm hover:shadow-md;
   }
 
   .btn-secondary {
-    @apply btn bg-indigo-100 text-indigo-700 hover:bg-indigo-200 active:bg-indigo-300;
+    @apply px-5 py-2.5 font-medium rounded-lg transition-colors duration-200 inline-flex items-center justify-center bg-indigo-100 text-indigo-700 hover:bg-indigo-200 active:bg-indigo-300;
   }
 
   .btn-text {
@@ -92,11 +92,11 @@
   }
 
   .card-hover {
-    @apply card hover:border-indigo-200 hover:shadow-md transition-all duration-200 cursor-pointer;
+    @apply bg-white border border-slate-200 rounded-xl p-5 hover:border-indigo-200 hover:shadow-md transition-all duration-200 cursor-pointer;
   }
 
   .card-selected {
-    @apply card border-2 border-indigo-600 shadow-md;
+    @apply bg-white border-2 border-indigo-600 rounded-xl p-5 shadow-md;
   }
 
   .card-info {
@@ -110,19 +110,19 @@
   }
 
   .input-error {
-    @apply input border-2 border-red-500 focus:ring-red-100 focus:border-red-600;
+    @apply w-full px-4 py-2.5 text-base text-gray-800 placeholder-slate-400 bg-white rounded-lg transition-colors border-2 border-red-500 focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-600;
   }
 
   .input-success {
-    @apply input border-2 border-green-500;
+    @apply w-full px-4 py-2.5 text-base text-gray-800 placeholder-slate-400 bg-white rounded-lg transition-colors border-2 border-green-500 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-600;
   }
 
   .textarea {
-    @apply input resize-none;
+    @apply w-full px-4 py-2.5 text-base text-gray-800 placeholder-slate-400 bg-white border border-slate-300 rounded-lg transition-colors resize-none focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-600;
   }
 
   .input-search {
-    @apply input pl-11;
+    @apply w-full px-4 py-2.5 text-base text-gray-800 placeholder-slate-400 bg-white border border-slate-300 rounded-lg transition-colors pl-11 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-600;
   }
 
   /* Badge Components */
@@ -131,23 +131,23 @@
   }
 
   .badge-primary {
-    @apply badge bg-indigo-100 text-indigo-700;
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700;
   }
 
   .badge-success {
-    @apply badge bg-green-100 text-green-700;
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700;
   }
 
   .badge-warning {
-    @apply badge bg-amber-100 text-amber-700;
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700;
   }
 
   .badge-error {
-    @apply badge bg-red-100 text-red-700;
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700;
   }
 
   .badge-neutral {
-    @apply badge bg-slate-100 text-slate-700;
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700;
   }
 
   /* Status Message Components */
@@ -156,19 +156,19 @@
   }
 
   .status-success {
-    @apply status-message bg-green-50 border-green-200;
+    @apply flex items-start space-x-3 p-4 border rounded-lg bg-green-50 border-green-200;
   }
 
   .status-error {
-    @apply status-message bg-red-50 border-red-200;
+    @apply flex items-start space-x-3 p-4 border rounded-lg bg-red-50 border-red-200;
   }
 
   .status-warning {
-    @apply status-message bg-amber-50 border-amber-200;
+    @apply flex items-start space-x-3 p-4 border rounded-lg bg-amber-50 border-amber-200;
   }
 
   .status-info {
-    @apply status-message bg-blue-50 border-blue-200;
+    @apply flex items-start space-x-3 p-4 border rounded-lg bg-blue-50 border-blue-200;
   }
 
   /* Time Slot Components */
@@ -177,15 +177,15 @@
   }
 
   .time-slot-available {
-    @apply time-slot text-gray-800 bg-white border border-slate-300 hover:border-indigo-600 hover:bg-indigo-50;
+    @apply px-4 py-3 text-base font-medium rounded-lg transition-colors text-gray-800 bg-white border border-slate-300 hover:border-indigo-600 hover:bg-indigo-50;
   }
 
   .time-slot-selected {
-    @apply time-slot text-white bg-indigo-600 border-2 border-indigo-600 shadow-sm;
+    @apply px-4 py-3 text-base font-medium rounded-lg transition-colors text-white bg-indigo-600 border-2 border-indigo-600 shadow-sm;
   }
 
   .time-slot-disabled {
-    @apply time-slot text-slate-400 bg-slate-100 border border-slate-200 cursor-not-allowed;
+    @apply px-4 py-3 text-base font-medium rounded-lg transition-colors text-slate-400 bg-slate-100 border border-slate-200 cursor-not-allowed;
   }
 
   /* Loading Components */
