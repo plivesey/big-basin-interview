@@ -1,0 +1,13 @@
+{
+  "name": "@asba/shared-types",
+  "version": "1.0.0",
+  "description": "Shared TypeScript types for Service Booking Assistant",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

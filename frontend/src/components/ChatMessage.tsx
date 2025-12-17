@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import type { ReactNode } from 'react';
 
 type MessageRole = 'user' | 'assistant';
@@ -8,7 +9,15 @@ interface ChatMessageProps {
   timestamp?: string;
 }
 
-export function ChatMessage({ role, children, timestamp }: ChatMessageProps) {
+/**
+ * Individual chat message bubble.
+ * Memoized to prevent unnecessary re-renders when parent updates.
+ */
+export const ChatMessage = memo(function ChatMessage({
+  role,
+  children,
+  timestamp,
+}: ChatMessageProps) {
   const containerClass = role === 'user' ? 'flex justify-end mb-4' : 'flex justify-start mb-4';
   const messageClass = role === 'user' ? 'message-user' : 'message-assistant';
 
@@ -22,21 +31,35 @@ export function ChatMessage({ role, children, timestamp }: ChatMessageProps) {
       </div>
     </div>
   );
-}
+});
 
 interface ChatTimestampProps {
   children: ReactNode;
 }
 
-export function ChatTimestamp({ children }: ChatTimestampProps) {
+/**
+ * Timestamp separator between message groups.
+ * Memoized to prevent unnecessary re-renders.
+ */
+export const ChatTimestamp = memo(function ChatTimestamp({ children }: ChatTimestampProps) {
   return (
     <div className="flex justify-center mb-6">
       <span className="message-timestamp">{children}</span>
     </div>
   );
+});
+
+interface ChatLoadingProps {
+  text?: string;
 }
 
-export function ChatLoading({ text = 'Let me check...' }: { text?: string }) {
+/**
+ * Loading indicator while waiting for assistant response.
+ * Memoized to prevent unnecessary re-renders.
+ */
+export const ChatLoading = memo(function ChatLoading({
+  text = 'Let me check...',
+}: ChatLoadingProps) {
   return (
     <div className="flex justify-start mb-4">
       <div className="px-4 py-3 bg-slate-50 rounded-2xl rounded-tl-sm border border-slate-200">
@@ -51,4 +74,4 @@ export function ChatLoading({ text = 'Let me check...' }: { text?: string }) {
       </div>
     </div>
   );
-}
+});

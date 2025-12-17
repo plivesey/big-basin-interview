@@ -1,22 +1,14 @@
 import { create } from 'zustand';
+import type {
+  ChatMessage,
+  MessageContent,
+  ConnectionStatus,
+} from '@asba/shared-types';
+import { getMessageText, parseMessage } from '@asba/shared-types';
 
-// Message content types (matching backend)
-export type MessageContent =
-  | { type: 'text'; text: string }
-  | { type: 'tool_use'; id: string; name: string; input: Record<string, unknown> }
-  | { type: 'tool_result'; tool_use_id: string; content: string };
-
-// Chat message type
-export interface ChatMessage {
-  id: string;
-  sessionId: string;
-  role: 'user' | 'assistant';
-  content: MessageContent[];
-  createdAt: Date;
-}
-
-// Connection status
-export type ConnectionStatus = 'connecting' | 'connected' | 'disconnected' | 'error';
+// Re-export types from shared package for backward compatibility
+export type { ChatMessage, MessageContent, ConnectionStatus } from '@asba/shared-types';
+export { getMessageText, parseMessage } from '@asba/shared-types';
 
 // Chat store state
 export interface ChatState {
@@ -104,27 +96,10 @@ export const useChatStore = create<ChatState>((set) => ({
   reset: () => set(initialState),
 }));
 
-// Helper function to get text content from a message
-export function getMessageText(message: ChatMessage): string {
-  return message.content
-    .filter((block): block is { type: 'text'; text: string } => block.type === 'text')
-    .map((block) => block.text)
-    .join('\n');
-}
-
-// Helper to convert raw message data to ChatMessage
-export function parseMessage(data: {
-  id: string;
-  sessionId: string;
-  role: 'user' | 'assistant';
-  content: MessageContent[];
-  createdAt: string | Date;
-}): ChatMessage {
-  return {
-    id: data.id,
-    sessionId: data.sessionId,
-    role: data.role,
-    content: data.content,
-    createdAt: data.createdAt instanceof Date ? data.createdAt : new Date(data.createdAt),
-  };
-}
+// Selectors - use these to subscribe to specific pieces of state
+// This prevents unnecessary re-renders when unrelated state changes
+export const selectMessages = (state: ChatState) => state.messages;
+export const selectIsLoading = (state: ChatState) => state.isLoading;
+export const selectConnectionStatus = (state: ChatState) => state.connectionStatus;
+export const selectSessionId = (state: ChatState) => state.sessionId;
+export const selectStreamingMessageId = (state: ChatState) => state.streamingMessageId;

@@ -7,3 +7,5 @@ export { Textarea } from './Textarea';
 export { StatusMessage } from './StatusMessage';
 export { ChatMessage, ChatTimestamp, ChatLoading } from './ChatMessage';
 export { Spinner } from './Spinner';
+export { ConnectionStatus } from './ConnectionStatus';
+export { ErrorBoundary } from './ErrorBoundary';

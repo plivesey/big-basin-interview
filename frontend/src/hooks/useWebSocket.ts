@@ -2,37 +2,15 @@ import { useEffect, useRef, useCallback } from 'react';
 import { io } from 'socket.io-client';
 import type { Socket } from 'socket.io-client';
 import { useChatStore, parseMessage } from '../store/chat-store';
-import type { ChatMessage, MessageContent } from '../store/chat-store';
+import type {
+  ChatMessage,
+  ServerToClientEvents,
+  ClientToServerEvents,
+} from '@asba/shared-types';
 import { logger } from '../utils/logger';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
 const SESSION_STORAGE_KEY = 'chat_session_id';
-
-// Server to client events
-interface ServerToClientEvents {
-  session_created: (data: { sessionId: string }) => void;
-  message_history: (data: { messages: RawChatMessage[] }) => void;
-  message_start: (data: { messageId: string }) => void;
-  assistant_message: (data: { id: string; content: string; timestamp: string }) => void;
-  text_delta: (data: { text: string }) => void;
-  message_complete: (data: { messageId: string }) => void;
-  error: (data: { error: string; code?: string }) => void;
-}
-
-// Client to server events
-interface ClientToServerEvents {
-  user_message: (data: { message: string }) => void;
-  sync: (data: { lastMessageId?: string }) => void;
-}
-
-// Raw message from server
-interface RawChatMessage {
-  id: string;
-  sessionId: string;
-  role: 'user' | 'assistant';
-  content: MessageContent[];
-  createdAt: string;
-}
 
 type ChatSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
@@ -46,6 +24,10 @@ export function useWebSocket(): UseWebSocketReturn {
   const socketRef = useRef<ChatSocket | null>(null);
   const reconnectAttempts = useRef(0);
   const maxReconnectAttempts = 5;
+
+  // Use a ref to track streaming message ID to avoid race conditions
+  // The store update is async, but the ref update is synchronous
+  const streamingIdRef = useRef<string | null>(null);
 
   const {
     setSessionId,
@@ -147,11 +129,16 @@ export function useWebSocket(): UseWebSocketReturn {
         createdAt: new Date(),
       };
       addMessage(placeholderMessage);
+
+      // Update both ref (synchronous) and store (async)
+      // The ref ensures text_delta handlers always have the latest ID
+      streamingIdRef.current = streamingId;
       setStreamingMessageId(streamingId);
     });
 
     socket.on('text_delta', (data) => {
-      const streamingId = useChatStore.getState().streamingMessageId;
+      // Use ref instead of store to avoid race condition
+      const streamingId = streamingIdRef.current;
       if (streamingId) {
         appendTextToMessage(streamingId, data.text);
       }
@@ -172,10 +159,14 @@ export function useWebSocket(): UseWebSocketReturn {
 
     socket.on('message_complete', (data) => {
       logger.debug('Message completed', { messageId: data.messageId });
-      const streamingId = useChatStore.getState().streamingMessageId;
+      // Use ref for consistency with text_delta handler
+      const streamingId = streamingIdRef.current;
       if (streamingId) {
         // Update the streaming message ID to the final ID from the server
         updateMessage(streamingId, { id: data.messageId });
+
+        // Clear both ref and store
+        streamingIdRef.current = null;
         setStreamingMessageId(null);
       }
       setIsLoading(false);
@@ -202,9 +193,13 @@ export function useWebSocket(): UseWebSocketReturn {
   // Disconnect from WebSocket server
   const disconnect = useCallback(() => {
     if (socketRef.current) {
+      // Remove all listeners to prevent memory leaks
+      socketRef.current.removeAllListeners();
       socketRef.current.disconnect();
       socketRef.current = null;
     }
+    // Clear streaming ref on disconnect
+    streamingIdRef.current = null;
   }, []);
 
   // Reconnect to WebSocket server

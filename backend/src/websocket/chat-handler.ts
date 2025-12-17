@@ -1,33 +1,22 @@
 import { Server, Socket } from 'socket.io';
 import { v4 as uuidv4 } from 'uuid';
-import { saveMessage, getMessageHistory, ChatMessage } from '../services/message-service';
+import { saveMessage, getMessageHistory } from '../services/message-service';
 import { getOrCreateSession } from '../services/session-service';
 import { sendMessage as sendAIMessage, AIError } from '../services/ai-conversation-service';
 import { logger } from '../utils/logger';
+import type { ServerToClientEvents, ClientToServerEvents, ChatMessage, RawChatMessage } from '@asba/shared-types';
 
-// Types for WebSocket events
-export interface ServerToClientEvents {
-  // Connection events
-  session_created: (data: { sessionId: string }) => void;
-  message_history: (data: { messages: ChatMessage[] }) => void;
+// Re-export WebSocket event types for consumers
+export type { ServerToClientEvents, ClientToServerEvents } from '@asba/shared-types';
 
-  // Message events
-  message_start: (data: { messageId: string }) => void;
-  assistant_message: (data: { id: string; content: string; timestamp: string }) => void;
-  text_delta: (data: { text: string }) => void;
-  message_complete: (data: { messageId: string }) => void;
-
-  // Tool events
-  tool_start: (data: { toolName: string; toolUseId: string }) => void;
-  tool_complete: (data: { toolName: string; toolUseId: string; success: boolean }) => void;
-
-  // Status events
-  error: (data: { error: string; code?: string }) => void;
-}
-
-export interface ClientToServerEvents {
-  user_message: (data: { message: string }) => void;
-  sync: (data: { lastMessageId?: string }) => void;
+/**
+ * Convert ChatMessage to RawChatMessage for WebSocket serialization
+ */
+function toRawMessage(message: ChatMessage): RawChatMessage {
+  return {
+    ...message,
+    createdAt: message.createdAt.toISOString(),
+  };
 }
 
 export interface InterServerEvents {
@@ -64,7 +53,7 @@ export function initializeChatHandler(io: ChatServer): void {
 
       // Load and send message history
       const messageHistory = await getMessageHistory(session.id);
-      socket.emit('message_history', { messages: messageHistory });
+      socket.emit('message_history', { messages: messageHistory.map(toRawMessage) });
 
       logger.info('Session established', { sessionId: session.id, socketId: socket.id });
     } catch (error) {
@@ -185,7 +174,7 @@ export function initializeChatHandler(io: ChatServer): void {
 
       try {
         const messageHistory = await getMessageHistory(sessionId);
-        socket.emit('message_history', { messages: messageHistory });
+        socket.emit('message_history', { messages: messageHistory.map(toRawMessage) });
       } catch (error) {
         logger.error('Error during sync', { error: String(error), sessionId });
         socket.emit('error', {
