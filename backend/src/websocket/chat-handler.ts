@@ -1,4 +1,5 @@
 import { Server, Socket } from 'socket.io';
+import { v4 as uuidv4 } from 'uuid';
 import { saveMessage, getMessageHistory, ChatMessage } from '../services/message-service';
 import { getOrCreateSession } from '../services/session-service';
 import { sendMessage as sendAIMessage } from '../services/ai-conversation-service';
@@ -104,14 +105,18 @@ export function initializeChatHandler(io: ChatServer): void {
 
         logger.info('User message saved', { messageId: userMessage.id, sessionId });
 
+        // Generate assistant message ID upfront for consistent tracking
+        const assistantMessageId = uuidv4();
+
         // Emit message start to indicate processing
-        socket.emit('message_start', { messageId: 'pending' });
+        socket.emit('message_start', { messageId: assistantMessageId });
 
         // Call AI service to get response
         const aiResponse = await sendAIMessage(sessionId, messageText);
 
-        // Save assistant message to database
+        // Save assistant message to database with pre-generated ID
         const assistantMessage = await saveMessage({
+          id: assistantMessageId,
           sessionId,
           role: 'assistant',
           content: aiResponse,

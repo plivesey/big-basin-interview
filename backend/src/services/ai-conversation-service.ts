@@ -1,7 +1,8 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { requireAnthropicKey } from '../config/env';
+import { env, requireAnthropicKey } from '../config/env';
 import { getMessageHistory, ChatMessage } from './message-service';
 import { logger } from '../utils/logger';
+import { TextContent } from '../db/schema';
 
 // Initialize client lazily to allow app to start without API key
 let client: Anthropic | null = null;
@@ -27,20 +28,21 @@ Your role is to:
 Be friendly, concise, and helpful. Ask clarifying questions when needed to better understand the user's needs.`;
 
 /**
+ * Type guard to check if a content block is a text block
+ */
+function isTextContent(block: { type: string }): block is TextContent {
+  return block.type === 'text';
+}
+
+/**
  * Convert database message history to Claude API message format
  */
-function buildMessagesArray(history: ChatMessage[]): Anthropic.MessageParam[] {
+export function buildMessagesArray(history: ChatMessage[]): Anthropic.MessageParam[] {
   return history.map((msg) => ({
     role: msg.role as 'user' | 'assistant',
     content: msg.content
-      .filter((block) => block.type === 'text')
-      .map((block) => {
-        if (block.type === 'text') {
-          return { type: 'text' as const, text: block.text };
-        }
-        // This shouldn't happen due to filter, but TypeScript needs it
-        return { type: 'text' as const, text: '' };
-      })
+      .filter(isTextContent)
+      .map((block) => ({ type: 'text' as const, text: block.text }))
       .filter((b) => b.text.length > 0),
   }));
 }
@@ -67,8 +69,8 @@ export async function sendMessage(sessionId: string, userMessage: string): Promi
 
   // Call Claude API
   const response = await getClient().messages.create({
-    model: 'claude-sonnet-4-20250514',
-    max_tokens: 1024,
+    model: env.CLAUDE_MODEL,
+    max_tokens: env.CLAUDE_MAX_TOKENS,
     system: SYSTEM_PROMPT,
     messages,
   });
