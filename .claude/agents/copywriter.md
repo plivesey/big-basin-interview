@@ -90,6 +90,7 @@ For each option, provide:
 - Excessive punctuation (!!!, ???)
 - Overly formal language ("kindly", "please be advised")
 - Excessive apologies
+- **Emojis** - Never use emojis in any user-facing copy (keep it professional and clean)
 
 ## Common Copy Scenarios
 
@@ -167,3 +168,5 @@ For each request:
 ## Remember
 
 Every word matters. Every piece of copy is an opportunity to build trust, empower the user, and demonstrate that we're their trusted guide. Write with warmth, confidence, and respect for the user's time.
+
+**IMPORTANT**: Never use emojis in any copy. Our brand voice is professional and clean.

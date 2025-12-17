@@ -99,6 +99,10 @@ AI-powered conversational assistant for discovering and booking local services (
 
 **NEVER SWITCH BRANCHES** - Always ask the user to do this for you
 
+**ALWAYS USE COPYWRITER AGENT FOR USER-FACING COPY** - When writing any user-facing text (error messages, success messages, button labels, placeholders, headings, descriptions, or any UI text users will see), use the copywriter agent (`.claude/agents/copywriter.md`). This ensures all copy follows our brand voice and tone guidelines. Never write user-facing copy directly without using the copywriter agent.
+
+**NO EMOJIS** - Never use emojis in any user-facing copy. Our brand voice is professional and clean.
+
 ## For Full Details
 
 All comprehensive documentation, including detailed architecture diagrams, data schemas, API specifications, and implementation patterns, is in the `documentation/` folder.

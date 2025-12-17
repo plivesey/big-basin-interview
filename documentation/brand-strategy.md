@@ -252,6 +252,7 @@ While voice is constant, tone adapts to context:
 - Use all caps (except acronyms)
 - Apologize excessively ("Sorry, sorry, sorry")
 - Use overly formal language ("kindly," "please be advised")
+- Use emojis in any user-facing copy (keep it professional and clean)
 
 ### Example Conversations
 
@@ -638,6 +639,7 @@ When generating assistant responses, the LLM should embody these guidelines:
 - Use technical jargon
 - Write long paragraphs
 - Leave users uncertain about next steps
+- Use emojis (keep copy clean and professional)
 
 ### User Experience
 
