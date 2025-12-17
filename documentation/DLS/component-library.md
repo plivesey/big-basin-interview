@@ -442,6 +442,15 @@ This component library defines all UI components for the Service Booking Assista
 
 **Usage**: Display service provider information in search results
 
+**"View Availability" Button Interaction**:
+1. User clicks the "View Availability" button
+2. Frontend calls: `GET /api/providers/:id/availability?date=YYYY-MM-DD`
+3. Backend returns mock availability using hash-based deterministic patterns
+4. TimeSlotGrid modal opens with available slots
+5. User selects a time slot → booking confirmation flow begins
+
+**Note**: This is user-initiated only. The AI can discuss availability conversationally (via `get_availability` tool) but cannot trigger this UI component.
+
 ```tsx
 <div className="bg-white border border-slate-200 rounded-xl p-5 hover:border-indigo-200 hover:shadow-md transition-all duration-200 cursor-pointer">
   {/* Header */}
@@ -472,7 +481,7 @@ This component library defines all UI components for the Service Booking Assista
     <span className="text-sm text-slate-600">0.8 miles away • San Francisco</span>
   </div>
 
-  {/* Action */}
+  {/* Action - Opens TimeSlotGrid modal */}
   <button className="w-full px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors">
     View Availability
   </button>
@@ -975,7 +984,16 @@ This component library defines all UI components for the Service Booking Assista
 
 ### Time Slot Grid
 
-**Usage**: Select appointment times
+**Usage**: Select appointment times. Displayed when user clicks "View Availability" button on a Provider Card.
+
+**Interaction Pattern**:
+1. User clicks "View Availability" on Provider Card
+2. Frontend calls: `GET /api/providers/:id/availability?date=YYYY-MM-DD`
+3. Backend returns mock availability (hash-based deterministic patterns)
+4. TimeSlotGrid component renders (modal or inline)
+5. User selects a slot → booking flow continues
+
+**Note**: The AI does NOT trigger this UI. AI can query availability via `get_availability` tool to discuss conversationally, but the visual slot picker is only shown when user clicks the button.
 
 ```tsx
 <div className="mb-6">
@@ -1012,6 +1030,52 @@ This component library defines all UI components for the Service Booking Assista
 // Responsive grid
 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
   {/* Time slots */}
+</div>
+```
+
+**Modal Variant** (for "View Availability" button):
+```tsx
+{/* TimeSlotGrid Modal - Triggered by Provider Card button */}
+<div className="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center p-4 z-50">
+  <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
+    {/* Header */}
+    <div className="flex items-start justify-between mb-4">
+      <div>
+        <h2 className="text-xl font-semibold text-gray-800">
+          Select a Time
+        </h2>
+        <p className="text-sm text-slate-600 mt-1">
+          Bella's Salon • Tuesday, Jan 15
+        </p>
+      </div>
+      <button className="p-1 text-slate-600 hover:bg-slate-100 rounded transition-colors">
+        <svg className="w-5 h-5">{/* X icon */}</svg>
+      </button>
+    </div>
+
+    {/* Date selector (horizontal scroll) */}
+    <div className="flex space-x-2 overflow-x-auto pb-2 mb-4">
+      <button className="flex-shrink-0 px-3 py-2 bg-indigo-600 text-white text-sm rounded-lg">Today</button>
+      <button className="flex-shrink-0 px-3 py-2 bg-white border border-slate-300 text-slate-700 text-sm rounded-lg hover:border-indigo-600">Tomorrow</button>
+      <button className="flex-shrink-0 px-3 py-2 bg-white border border-slate-300 text-slate-700 text-sm rounded-lg hover:border-indigo-600">Thu</button>
+    </div>
+
+    {/* Time slots grid */}
+    <div className="grid grid-cols-3 gap-2 mb-6">
+      <button className="px-4 py-3 text-base font-medium text-gray-800 bg-white border border-slate-300 rounded-lg hover:border-indigo-600 hover:bg-indigo-50 transition-colors">
+        9:00 AM
+      </button>
+      <button className="px-4 py-3 text-base font-medium text-slate-400 bg-slate-100 border border-slate-200 rounded-lg cursor-not-allowed" disabled>
+        10:00 AM
+      </button>
+      {/* More slots... */}
+    </div>
+
+    {/* Action */}
+    <button className="w-full px-5 py-2.5 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors disabled:bg-slate-300 disabled:cursor-not-allowed" disabled>
+      Select a time to continue
+    </button>
+  </div>
 </div>
 ```
 

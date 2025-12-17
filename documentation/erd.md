@@ -1313,6 +1313,86 @@ Response: {
 
 ---
 
+## 9.3 Mock Availability Strategy
+
+### Overview
+
+Provider availability is calculated as: `working_hours - existing_bookings - past_times`
+
+For the MVP, we use **hash-based deterministic mocking** to simulate realistic availability patterns without pre-seeding fake bookings in the database.
+
+### Approach: Hash-Based Deterministic Mocking
+
+Instead of storing fake bookings, the backend API:
+1. Takes `providerId` and `date` as inputs
+2. Computes a hash of `providerId + date`
+3. Uses the hash to select one of 4 mock availability patterns
+4. Returns deterministic results (same inputs = same output)
+
+**Benefits:**
+- No fake bookings in database
+- Only real user bookings are stored
+- Predictable for testing (same provider + date = same pattern)
+- Variety without complexity
+
+### The 4 Mock Patterns
+
+| Pattern | Name | Description |
+|---------|------|-------------|
+| 0 | Fully Available | All slots within working hours are free |
+| 1 | Light | 2-3 slots marked as unavailable |
+| 2 | Moderate | ~50% of slots unavailable |
+| 3 | Heavy | Only 2-3 slots available |
+
+### Algorithm
+
+```typescript
+function getAvailability(providerId: string, date: string): TimeSlot[] {
+  // 1. Get provider's working hours for that day of week
+  const workingHours = getWorkingHours(providerId, dayOfWeek(date));
+
+  // 2. Generate all possible 30-min slots within working hours
+  let slots = generateSlots(workingHours);
+
+  // 3. Filter out past times (if date is today)
+  slots = filterPastSlots(slots, date);
+
+  // 4. Get REAL bookings from database for this provider+date
+  const realBookings = await getBookings(providerId, date);
+  slots = filterBookedSlots(slots, realBookings);
+
+  // 5. Apply mock unavailability pattern (hash-based)
+  const patternIndex = hash(providerId + date) % 4;
+  slots = applyMockPattern(slots, patternIndex);
+
+  return slots;
+}
+
+function applyMockPattern(slots: TimeSlot[], pattern: number): TimeSlot[] {
+  // Use seeded random (based on hash) for deterministic "random" selection
+  switch (pattern) {
+    case 0: return slots; // Fully available
+    case 1: return markSlotsAsBusy(slots, 2-3);      // Light
+    case 2: return markSlotsAsBusy(slots, slots.length / 2);  // Moderate
+    case 3: return keepOnlyNSlotsFree(slots, 2-3);   // Heavy
+  }
+}
+```
+
+### AI Tool vs UI Button
+
+**AI queries availability** (read-only, for conversational use):
+- Tool: `get_availability` returns slot data
+- AI can discuss availability: "I see they have openings at 10am and 2pm"
+- AI does NOT trigger UI components
+
+**UI displays slots** (user-initiated):
+- "View Availability" button on provider cards
+- User clicks → TimeSlotGrid component appears
+- This is a direct user action, not AI-triggered
+
+---
+
 ## 10. Integration Challenges & Solutions
 
 ### Challenge 1: Calendar API Rate Limits

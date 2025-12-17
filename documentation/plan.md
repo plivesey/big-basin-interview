@@ -575,32 +575,43 @@ This document outlines the implementation plan for the Service Booking Assistant
 
 ### Features
 - [ ] Time slot generation based on provider working hours
-- [ ] Time slot filtering (remove past times, existing bookings)
-- [ ] `display_time_slots` tool implementation
+- [ ] **Mock availability using hash-based deterministic patterns** (no fake bookings in DB)
+- [ ] Time slot filtering (remove past times, real user bookings)
+- [ ] `get_availability` tool (AI query, read-only - for conversational use)
 - [ ] `confirm_booking` tool implementation
 - [ ] `create_booking` tool implementation
+- [ ] **"View Availability" button on ProviderCard** (user-initiated slot display)
 - [ ] Booking confirmation UI
 - [ ] Workflow completion on successful booking
 
 ### Implementation Tasks
+- [ ] Create mock availability utility: `backend/src/utils/mock-availability.ts`
+  - [ ] `hashProviderDate(providerId, date)` - Deterministic hash function
+  - [ ] `applyMockPattern(slots, patternIndex)` - Apply one of 4 busy-level patterns
+  - [ ] Pattern 0: Fully available (no changes)
+  - [ ] Pattern 1: Light busy (2-3 slots unavailable)
+  - [ ] Pattern 2: Moderate busy (~50% unavailable)
+  - [ ] Pattern 3: Heavy busy (only 2-3 slots available)
 - [ ] Create availability service: `backend/src/services/availability-service.ts`
   - [ ] `generateTimeSlots(providerId, date)` - Based on working hours
   - [ ] `filterPastSlots(slots)` - Remove past times
-  - [ ] `filterBookedSlots(slots, existingBookings)` - Remove conflicts
-  - [ ] `getAvailableSlots(providerId, date)` - Combined logic
+  - [ ] `filterBookedSlots(slots, existingBookings)` - Remove real user bookings only
+  - [ ] `getAvailableSlots(providerId, date)` - Combined logic + mock patterns
   - [ ] Return slots in 30-minute increments
 - [ ] Create tools: `backend/src/tools/`
-  - [ ] `display_time_slots.ts` - Emit UI event with available slots
+  - [ ] `get_availability.ts` - Query availability for AI conversation (returns data, no UI)
   - [ ] `confirm_booking.ts` - Show confirmation dialog, wait for user approval
   - [ ] `create_booking.ts` - Create booking in database via booking service
+- [ ] Add REST endpoint: `GET /api/providers/:id/availability` (for UI button)
 - [ ] Update booking service to integrate with workflow
 - [ ] Update workflow manager:
   - [ ] Store selected time slot in context
   - [ ] Transition to CONFIRMATION state
   - [ ] Transition to BOOKING_CREATED on success
   - [ ] Complete workflow after booking created
+- [ ] Frontend: Add "View Availability" button to `ProviderCard.tsx`
 - [ ] Frontend: Create time slot components:
-  - [ ] `TimeSlotGrid.tsx` - Display available slots
+  - [ ] `TimeSlotGrid.tsx` - Display available slots (modal or inline)
   - [ ] `TimeSlotButton.tsx` - Clickable time slot
   - [ ] `BookingConfirmation.tsx` - Confirmation dialog
 - [ ] Frontend: Handle time slot selection and confirmation events
@@ -608,15 +619,21 @@ This document outlines the implementation plan for the Service Booking Assistant
 
 ### Testing
 - [ ] **Unit Tests:**
+  - [ ] Mock availability: hash produces consistent output for same inputs
+  - [ ] Mock availability: hash distributes evenly across 4 patterns
+  - [ ] Mock availability: Pattern 0 returns all slots available
+  - [ ] Mock availability: Pattern 1 marks 2-3 slots as busy
+  - [ ] Mock availability: Pattern 2 marks ~50% of slots as busy
+  - [ ] Mock availability: Pattern 3 leaves only 2-3 slots available
   - [ ] Availability service generates correct slots for working hours
   - [ ] Availability service filters out past times
-  - [ ] Availability service filters out existing bookings
+  - [ ] Availability service filters out real user bookings (not mock data)
   - [ ] Availability service handles no available slots
   - [ ] Availability service generates 30-minute increments
   - [ ] Availability service handles edge cases (midnight, start of day)
+  - [ ] `get_availability` tool returns data without triggering UI events
   - [ ] Booking service creates booking with all required fields
   - [ ] Idempotency check prevents duplicate bookings
-  - [ ] `display_time_slots` formats slots correctly
   - [ ] `confirm_booking` validates booking data
   - [ ] `create_booking` integrates with booking service
   - [ ] Workflow transitions to CONFIRMATION correctly
@@ -628,20 +645,26 @@ This document outlines the implementation plan for the Service Booking Assistant
   - [ ] Verify booking in database after creation
   - [ ] Verify workflow status updated to "completed"
   - [ ] Attempt duplicate booking with same idempotency key (should return existing)
-  - [ ] Time slots reflect existing bookings (conflicts removed)
+  - [ ] Time slots reflect real user bookings (conflicts removed)
+  - [ ] Mock availability patterns vary by provider+date hash
+  - [ ] Same provider+date returns consistent availability
   - [ ] User can cancel confirmation and select different time
+  - [ ] REST endpoint `/api/providers/:id/availability` returns correct data
 - [ ] **Manual QA (Browser):**
   - [ ] Complete full booking flow
+  - [ ] Click "View Availability" button on provider card
   - [ ] Verify time slots only show future times
-  - [ ] Verify time slots exclude lunch breaks (if in working hours)
+  - [ ] Verify time slots show mock busy patterns (not all available)
   - [ ] Confirm booking and verify confirmation message
-  - [ ] Check database for created booking
+  - [ ] Check database for created booking (no fake bookings stored)
   - [ ] Verify booking ID displayed
   - [ ] Verify all booking details correct
+  - [ ] Book same slot and verify it's now unavailable (real booking)
 - [ ] **Manual QA (Playwright MCP):**
   - [ ] Send: "Book a salon appointment"
   - [ ] Select provider
-  - [ ] Assert time slots appear
+  - [ ] Click "View Availability" button on provider card
+  - [ ] Assert time slots appear (TimeSlotGrid component)
   - [ ] Click time slot
   - [ ] Assert confirmation dialog appears
   - [ ] Confirm booking
