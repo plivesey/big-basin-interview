@@ -412,6 +412,36 @@ SQLite DB + Google Calendar API
 8. **Real-time availability**: Live updates from provider calendars
 9. **Smart recommendations**: ML-based provider suggestions
 10. **Multi-language support**: Localized conversations
+11. **Categories endpoint**: `GET /api/categories` for dynamic category discovery (agent can query available service categories instead of relying on text search alone)
+
+### Experimental: Web Search Integration
+
+**Overview**: Claude API provides a built-in web search tool that can be enabled via beta headers. This could enhance the assistant's ability to provide real-time information about providers.
+
+**Potential Use Cases**:
+- Fetch real-time business hours or holiday closures from provider websites
+- Look up provider reviews from external sources (Yelp, Google Reviews)
+- Verify provider addresses and contact information
+- Find provider social media or recent announcements
+- Answer user questions about services the assistant doesn't have data for
+
+**Implementation Approach**:
+- Enable web search via `anthropic-beta: web-search-2025-03-05` header
+- Add web search as an optional tool alongside custom booking tools
+- Use sparingly to avoid latency impact on conversational flow
+- Cache results to reduce redundant searches
+
+**Considerations**:
+- Web search adds latency (external API calls)
+- Results may be inconsistent or outdated
+- Should complement, not replace, structured provider data
+- Monitor usage and costs
+
+**Success Criteria**:
+- Web search provides useful supplementary information
+- Does not significantly impact conversation response time (<2s additional)
+- Gracefully degrades if web search fails
+- User experience is enhanced, not disrupted
 
 ---
 
