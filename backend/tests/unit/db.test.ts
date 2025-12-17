@@ -39,7 +39,6 @@ describe('Database Schema', () => {
       CREATE TABLE IF NOT EXISTS sessions (
         id TEXT PRIMARY KEY,
         user_id TEXT NOT NULL DEFAULT 'default_user',
-        status TEXT NOT NULL DEFAULT 'active',
         created_at INTEGER NOT NULL,
         last_activity_at INTEGER NOT NULL
       );
@@ -187,7 +186,6 @@ describe('Database Schema', () => {
       const session: schema.NewSession = {
         id: sessionId,
         userId: 'test_user',
-        status: 'active',
         createdAt: now,
         lastActivityAt: now,
       };
@@ -199,10 +197,9 @@ describe('Database Schema', () => {
 
       expect(retrieved).toBeDefined();
       expect(retrieved?.userId).toBe('test_user');
-      expect(retrieved?.status).toBe('active');
     });
 
-    it('should use default values for userId and status', () => {
+    it('should use default value for userId', () => {
       const now = new Date();
       const sessionId = uuidv4();
 
@@ -215,7 +212,6 @@ describe('Database Schema', () => {
       const retrieved = results[0];
 
       expect(retrieved?.userId).toBe('default_user');
-      expect(retrieved?.status).toBe('active');
     });
   });
 
@@ -246,7 +242,6 @@ describe('Database Schema', () => {
       db.insert(schema.sessions).values({
         id: testSessionId,
         userId: 'test_user',
-        status: 'active',
         createdAt: now,
         lastActivityAt: now,
       }).run();
@@ -348,7 +343,6 @@ describe('Database Schema', () => {
       db.insert(schema.sessions).values({
         id: testSessionId,
         userId: 'test_user',
-        status: 'active',
         createdAt: now,
         lastActivityAt: now,
       }).run();
@@ -453,7 +447,6 @@ describe('Database Schema', () => {
       db.insert(schema.sessions).values({
         id: testSessionId,
         userId: 'test_user',
-        status: 'active',
         createdAt: now,
         lastActivityAt: now,
       }).run();

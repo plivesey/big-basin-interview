@@ -44,7 +44,6 @@ export const bookings = sqliteTable('bookings', {
 export const sessions = sqliteTable('sessions', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().default('default_user'), // Static for MVP
-  status: text('status').notNull().default('active'), // 'active', 'inactive'
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   lastActivityAt: integer('last_activity_at', { mode: 'timestamp' }).notNull(),
 });

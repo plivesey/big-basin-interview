@@ -43,7 +43,6 @@ describe('Database Integration Tests', () => {
       CREATE TABLE IF NOT EXISTS sessions (
         id TEXT PRIMARY KEY,
         user_id TEXT NOT NULL DEFAULT 'default_user',
-        status TEXT NOT NULL DEFAULT 'active',
         created_at INTEGER NOT NULL,
         last_activity_at INTEGER NOT NULL
       );
@@ -300,7 +299,6 @@ describe('Database Integration Tests', () => {
       db.insert(schema.sessions).values({
         id: sessionId,
         userId: 'test_user',
-        status: 'active',
         createdAt: now,
         lastActivityAt: now,
       }).run();
@@ -346,7 +344,6 @@ describe('Database Integration Tests', () => {
       db.insert(schema.sessions).values({
         id: testSessionId,
         userId: 'workflow_test_user',
-        status: 'active',
         createdAt: now,
         lastActivityAt: now,
       }).run();

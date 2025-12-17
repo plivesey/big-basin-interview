@@ -88,64 +88,64 @@ This document outlines the implementation plan for the Service Booking Assistant
 
 ---
 
-## Milestone 2: WebSocket Chat Foundation
+## Milestone 2: WebSocket Chat Foundation ✅
 
 **Goal:** Establish real-time chat infrastructure without AI integration (echo bot for testing)
 
 ### Features
-- [ ] WebSocket server setup (Socket.io)
-- [ ] WebSocket client in React
-- [ ] Message persistence to database
-- [ ] Session management
-- [ ] Basic chat UI with message history
-- [ ] Simple echo bot for testing (repeats user messages)
+- [x] WebSocket server setup (Socket.io)
+- [x] WebSocket client in React
+- [x] Message persistence to database
+- [x] Session management
+- [x] Basic chat UI with message history
+- [x] Simple echo bot for testing (repeats user messages)
 
 ### Implementation Tasks
-- [ ] Install dependencies: `socket.io`, `socket.io-client`
-- [ ] Create WebSocket server: `backend/src/websocket/chat-handler.ts`
-  - [ ] `connection` event - create or resume session
-  - [ ] `user_message` event - save message to DB, emit echo response
-  - [ ] `disconnect` event - update session status
-- [ ] Create message service: `backend/src/services/message-service.ts`
-  - [ ] `saveMessage(sessionId, role, content)`
-  - [ ] `getMessageHistory(sessionId)`
-  - [ ] `deleteMessageHistory(sessionId)` (for testing)
-- [ ] Wire up WebSocket server in `backend/src/index.ts`
-- [ ] Frontend: Create WebSocket hook: `frontend/src/hooks/useWebSocket.ts`
-  - [ ] Connection management
-  - [ ] Event listeners
-  - [ ] Reconnection logic
-- [ ] Frontend: Create chat components:
-  - [ ] `ChatContainer.tsx` - Main chat layout
-  - [ ] `MessageList.tsx` - Display message history with auto-scroll
-  - [ ] `MessageBubble.tsx` - Individual message (user vs assistant styling)
-  - [ ] `ChatInput.tsx` - Text input with send button and keyboard shortcuts
-- [ ] Frontend: Implement message state with Zustand: `frontend/src/store/chat-store.ts`
-  - [ ] Messages array
-  - [ ] Add message action
-  - [ ] Clear messages action
-- [ ] Frontend: Connect WebSocket to UI in `App.tsx`
+- [x] Install dependencies: `socket.io`, `socket.io-client`
+- [x] Create WebSocket server: `backend/src/websocket/chat-handler.ts`
+  - [x] `connection` event - create or resume session
+  - [x] `user_message` event - save message to DB, emit echo response
+  - [x] `disconnect` event - update session status
+- [x] Create message service: `backend/src/services/message-service.ts`
+  - [x] `saveMessage(sessionId, role, content)`
+  - [x] `getMessageHistory(sessionId)`
+  - [x] `deleteMessageHistory(sessionId)` (for testing)
+- [x] Wire up WebSocket server in `backend/src/index.ts`
+- [x] Frontend: Create WebSocket hook: `frontend/src/hooks/useWebSocket.ts`
+  - [x] Connection management
+  - [x] Event listeners
+  - [x] Reconnection logic
+- [x] Frontend: Create chat components:
+  - [x] `ChatContainer.tsx` - Main chat layout
+  - [x] `MessageList.tsx` - Display message history with auto-scroll
+  - [x] `MessageBubble.tsx` - Uses existing ChatMessage component
+  - [x] `ChatInput.tsx` - Text input with send button and keyboard shortcuts
+- [x] Frontend: Implement message state with Zustand: `frontend/src/store/chat-store.ts`
+  - [x] Messages array
+  - [x] Add message action
+  - [x] Clear messages action
+- [x] Frontend: Connect WebSocket to UI in `App.tsx`
 
 ### Testing
-- [ ] **Unit Tests:**
-  - [ ] Message service saves message with correct timestamp
-  - [ ] Message service retrieves messages in chronological order
-  - [ ] Message service handles empty session (returns empty array)
-  - [ ] Message service validates input parameters
-  - [ ] Zustand store updates messages correctly
-  - [ ] Zustand store clears messages
-  - [ ] Zustand store adds messages in correct order
-  - [ ] WebSocket hook initializes connection
-  - [ ] WebSocket hook handles connection errors
-  - [ ] WebSocket hook handles disconnection
-  - [ ] **Additional unit tests to ensure full coverage of all WebSocket and message functions**
-- [ ] **Integration Tests:**
-  - [ ] WebSocket connection established on client connect
-  - [ ] `user_message` event saves to database
-  - [ ] Server emits `assistant_message` event (echo test)
-  - [ ] Message history loaded on session resume
-  - [ ] Multiple messages persist correctly
-  - [ ] Disconnection updates session status in database
+- [x] **Unit Tests:**
+  - [x] Message service saves message with correct timestamp
+  - [x] Message service retrieves messages in chronological order
+  - [x] Message service handles empty session (returns empty array)
+  - [x] Message service validates input parameters
+  - [x] Zustand store updates messages correctly
+  - [x] Zustand store clears messages
+  - [x] Zustand store adds messages in correct order
+  - [x] WebSocket hook initializes connection
+  - [x] WebSocket hook handles connection errors
+  - [x] WebSocket hook handles disconnection
+  - [x] **Additional unit tests to ensure full coverage of all WebSocket and message functions**
+- [x] **Integration Tests:**
+  - [x] WebSocket connection established on client connect
+  - [x] `user_message` event saves to database
+  - [x] Server emits `assistant_message` event (echo test)
+  - [x] Message history loaded on session resume
+  - [x] Multiple messages persist correctly
+  - [x] Disconnection updates session status in database
 - [ ] **Manual QA (Browser):**
   - [ ] Open chat UI and send message
   - [ ] Verify message appears in UI immediately
