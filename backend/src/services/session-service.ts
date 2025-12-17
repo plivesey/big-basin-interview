@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { eq } from 'drizzle-orm';
-import { db, sessions, Session, NewSession } from '../db';
+import { db, sessions, NewSession } from '../db';
 
 export interface ChatSession {
   id: string;

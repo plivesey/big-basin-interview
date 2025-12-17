@@ -27,6 +27,7 @@ export interface ChatState {
   // Messages state
   messages: ChatMessage[];
   isLoading: boolean;
+  streamingMessageId: string | null;
 
   // Actions
   setSessionId: (sessionId: string) => void;
@@ -34,6 +35,8 @@ export interface ChatState {
   setMessages: (messages: ChatMessage[]) => void;
   addMessage: (message: ChatMessage) => void;
   updateMessage: (messageId: string, updates: Partial<ChatMessage>) => void;
+  appendTextToMessage: (messageId: string, text: string) => void;
+  setStreamingMessageId: (messageId: string | null) => void;
   clearMessages: () => void;
   setIsLoading: (isLoading: boolean) => void;
   reset: () => void;
@@ -45,6 +48,7 @@ const initialState = {
   connectionStatus: 'disconnected' as ConnectionStatus,
   messages: [],
   isLoading: false,
+  streamingMessageId: null,
 };
 
 // Create the store
@@ -68,6 +72,30 @@ export const useChatStore = create<ChatState>((set) => ({
         msg.id === messageId ? { ...msg, ...updates } : msg
       ),
     })),
+
+  appendTextToMessage: (messageId: string, text: string) =>
+    set((state) => ({
+      messages: state.messages.map((msg) => {
+        if (msg.id !== messageId) return msg;
+        // Find or create text content block
+        const textBlock = msg.content.find((block) => block.type === 'text');
+        if (textBlock && textBlock.type === 'text') {
+          return {
+            ...msg,
+            content: msg.content.map((block) =>
+              block.type === 'text' ? { ...block, text: block.text + text } : block
+            ),
+          };
+        }
+        // No text block exists, add one
+        return {
+          ...msg,
+          content: [...msg.content, { type: 'text' as const, text }],
+        };
+      }),
+    })),
+
+  setStreamingMessageId: (messageId: string | null) => set({ streamingMessageId: messageId }),
 
   clearMessages: () => set({ messages: [] }),
 
