@@ -52,6 +52,9 @@ export function useWebSocket(): UseWebSocketReturn {
     setConnectionStatus,
     setMessages,
     addMessage,
+    updateMessage,
+    appendTextToMessage,
+    setStreamingMessageId,
     setIsLoading,
   } = useChatStore();
 
@@ -129,10 +132,29 @@ export function useWebSocket(): UseWebSocketReturn {
       setMessages(parsedMessages);
     });
 
-    // Incoming messages
+    // Incoming messages - streaming support
     socket.on('message_start', (data) => {
       logger.debug('Message started', { messageId: data.messageId });
       setIsLoading(true);
+
+      // Create a placeholder message for streaming
+      const streamingId = `streaming-${Date.now()}`;
+      const placeholderMessage: ChatMessage = {
+        id: streamingId,
+        sessionId: useChatStore.getState().sessionId || '',
+        role: 'assistant',
+        content: [{ type: 'text', text: '' }],
+        createdAt: new Date(),
+      };
+      addMessage(placeholderMessage);
+      setStreamingMessageId(streamingId);
+    });
+
+    socket.on('text_delta', (data) => {
+      const streamingId = useChatStore.getState().streamingMessageId;
+      if (streamingId) {
+        appendTextToMessage(streamingId, data.text);
+      }
     });
 
     socket.on('assistant_message', (data) => {
@@ -150,6 +172,12 @@ export function useWebSocket(): UseWebSocketReturn {
 
     socket.on('message_complete', (data) => {
       logger.debug('Message completed', { messageId: data.messageId });
+      const streamingId = useChatStore.getState().streamingMessageId;
+      if (streamingId) {
+        // Update the streaming message ID to the final ID from the server
+        updateMessage(streamingId, { id: data.messageId });
+        setStreamingMessageId(null);
+      }
       setIsLoading(false);
     });
 
@@ -163,6 +191,9 @@ export function useWebSocket(): UseWebSocketReturn {
     setConnectionStatus,
     setMessages,
     addMessage,
+    updateMessage,
+    appendTextToMessage,
+    setStreamingMessageId,
     setIsLoading,
     getStoredSessionId,
     storeSessionId,

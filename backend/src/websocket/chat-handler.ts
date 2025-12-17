@@ -111,8 +111,12 @@ export function initializeChatHandler(io: ChatServer): void {
         // Emit message start to indicate processing
         socket.emit('message_start', { messageId: assistantMessageId });
 
-        // Call AI service to get response
-        const aiResponse = await sendAIMessage(sessionId, messageText);
+        // Call AI service with streaming - emit text deltas as they arrive
+        const aiResponse = await sendAIMessage(sessionId, messageText, {
+          onTextDelta: (text) => {
+            socket.emit('text_delta', { text });
+          },
+        });
 
         // Save assistant message to database with pre-generated ID
         const assistantMessage = await saveMessage({
@@ -122,14 +126,7 @@ export function initializeChatHandler(io: ChatServer): void {
           content: aiResponse,
         });
 
-        // Emit the AI response
-        socket.emit('assistant_message', {
-          id: assistantMessage.id,
-          content: aiResponse,
-          timestamp: assistantMessage.createdAt.toISOString(),
-        });
-
-        // Emit message complete
+        // Emit message complete with final message ID
         socket.emit('message_complete', { messageId: assistantMessage.id });
 
         logger.info('AI response sent', { messageId: assistantMessage.id, sessionId });
@@ -143,6 +140,7 @@ export function initializeChatHandler(io: ChatServer): void {
     });
 
     // Handle sync request (for reconnection)
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     socket.on('sync', async (data) => {
       const sessionId = socket.data.sessionId;
 

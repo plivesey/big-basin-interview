@@ -48,10 +48,21 @@ export function buildMessagesArray(history: ChatMessage[]): Anthropic.MessagePar
 }
 
 /**
- * Send a message to Claude and get a response
- * Non-streaming implementation for simplicity
+ * Callbacks for streaming events
  */
-export async function sendMessage(sessionId: string, userMessage: string): Promise<string> {
+export interface StreamCallbacks {
+  onTextDelta?: (text: string) => void;
+}
+
+/**
+ * Send a message to Claude with streaming support
+ * Calls onTextDelta callback as text arrives, returns full response when complete
+ */
+export async function sendMessage(
+  sessionId: string,
+  userMessage: string,
+  callbacks?: StreamCallbacks
+): Promise<string> {
   logger.info('Sending message to AI', { sessionId, messageLength: userMessage.length });
 
   // Load conversation history from database
@@ -59,36 +70,45 @@ export async function sendMessage(sessionId: string, userMessage: string): Promi
   logger.debug('Loaded message history', { sessionId, messageCount: history.length });
 
   // Build messages array for Claude API
-  // Note: We don't include the current user message since it's not in DB yet
   const messages = buildMessagesArray(history);
 
   // Add the new user message
   messages.push({ role: 'user', content: userMessage });
 
-  logger.debug('Calling Claude API', { totalMessages: messages.length });
+  logger.debug('Calling Claude API with streaming', { totalMessages: messages.length });
 
-  // Call Claude API
-  const response = await getClient().messages.create({
+  // Accumulate full response
+  let fullResponse = '';
+
+  // Call Claude API with streaming
+  const stream = getClient().messages.stream({
     model: env.CLAUDE_MODEL,
     max_tokens: env.CLAUDE_MAX_TOKENS,
     system: SYSTEM_PROMPT,
     messages,
   });
 
-  logger.info('Received AI response', {
-    sessionId,
-    stopReason: response.stop_reason,
-    inputTokens: response.usage.input_tokens,
-    outputTokens: response.usage.output_tokens,
+  // Handle streaming events
+  stream.on('text', (text) => {
+    fullResponse += text;
+    if (callbacks?.onTextDelta) {
+      callbacks.onTextDelta(text);
+    }
   });
 
-  // Extract text from response
-  const textBlock = response.content.find((block) => block.type === 'text');
-  const responseText = textBlock?.type === 'text' ? textBlock.text : '';
+  // Wait for stream to complete
+  const finalMessage = await stream.finalMessage();
 
-  if (!responseText) {
-    logger.warn('AI response contained no text', { sessionId, content: response.content });
+  logger.info('Received AI response', {
+    sessionId,
+    stopReason: finalMessage.stop_reason,
+    inputTokens: finalMessage.usage.input_tokens,
+    outputTokens: finalMessage.usage.output_tokens,
+  });
+
+  if (!fullResponse) {
+    logger.warn('AI response contained no text', { sessionId });
   }
 
-  return responseText;
+  return fullResponse;
 }
