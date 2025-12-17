@@ -1,8 +1,10 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { env, requireAnthropicKey } from '../config/env';
 import { getMessageHistory, ChatMessage } from './message-service';
+import { executeTools, ToolExecutionCallbacks } from './tool-executor';
 import { logger } from '../utils/logger';
-import { TextContent } from '../db/schema';
+import { TextContent, ToolUseContent, ToolResultContent, MessageContent } from '../db/schema';
+import { toolRegistry } from '../tools';
 
 // Initialize client lazily to allow app to start without API key
 let client: Anthropic | null = null;
@@ -111,91 +113,201 @@ Communication guidelines:
 - End with a clear next step or question when appropriate
 - Show empathy if errors occur, and provide solutions
 - Never use emojis
-- Never refer to yourself in third person - use "I" not "Scout"`;
+- Never refer to yourself in third person - use "I" not "Scout"
 
-/**
- * Type guard to check if a content block is a text block
- */
-function isTextContent(block: { type: string }): block is TextContent {
-  return block.type === 'text';
-}
+Tool usage guidelines:
+- When a user asks about finding services or providers, use the search_providers tool
+- IMPORTANT: Use short, simple search terms (1-2 words) for best results. The search uses partial text matching.
+  - Good: "salon", "haircut", "mechanic", "dentist", "oil change"
+  - Bad: "I need a haircut appointment", "best salon in the area"
+- Extract the core service type or category from the user's request
+- After getting search results, summarize them conversationally for the user
+- Include key details like provider names, ratings, and services offered
+- If no results are found, try a broader search term (e.g., if "haircut" returns nothing, try "salon")`;
 
 /**
  * Convert database message history to Claude API message format
+ * Handles all content types: text, tool_use, and tool_result
  */
 export function buildMessagesArray(history: ChatMessage[]): Anthropic.MessageParam[] {
   return history.map((msg) => ({
     role: msg.role as 'user' | 'assistant',
     content: msg.content
-      .filter(isTextContent)
-      .map((block) => ({ type: 'text' as const, text: block.text }))
-      .filter((b) => b.text.length > 0),
+      .map((block) => {
+        if (block.type === 'text') {
+          return { type: 'text' as const, text: block.text };
+        }
+        if (block.type === 'tool_use') {
+          return {
+            type: 'tool_use' as const,
+            id: block.id,
+            name: block.name,
+            input: block.input,
+          };
+        }
+        if (block.type === 'tool_result') {
+          return {
+            type: 'tool_result' as const,
+            tool_use_id: block.tool_use_id,
+            content: block.content,
+          };
+        }
+        // Unknown type - should not happen
+        return null;
+      })
+      .filter((b): b is NonNullable<typeof b> => {
+        // Filter out nulls and empty text blocks
+        if (b === null) return false;
+        if (b.type === 'text' && !b.text) return false;
+        return true;
+      }),
   }));
 }
 
 /**
- * Callbacks for streaming events
+ * Callbacks for streaming and tool execution events
  */
-export interface StreamCallbacks {
+export interface StreamCallbacks extends ToolExecutionCallbacks {
   onTextDelta?: (text: string) => void;
 }
 
 /**
- * Internal function to send a message with timeout protection
- * Does NOT include retry logic - that's handled by the wrapper
+ * Maximum number of tool execution loop iterations
+ * Prevents infinite loops if the AI keeps calling tools
  */
-async function sendMessageInternal(
+const MAX_TOOL_LOOP_ITERATIONS = 10;
+
+/**
+ * Send a message with tool support and handle the tool execution loop
+ * Continues calling Claude until it returns stop_reason === 'end_turn'
+ */
+async function sendMessageWithToolLoop(
   sessionId: string,
   messages: Anthropic.MessageParam[],
-  callbacks?: StreamCallbacks
+  callbacks?: StreamCallbacks,
+  maxIterations: number = MAX_TOOL_LOOP_ITERATIONS
 ): Promise<string> {
-  // Accumulate full response
-  let fullResponse = '';
+  const tools = toolRegistry.getToolDefinitions();
+  let fullTextResponse = '';
+  let iteration = 0;
 
-  // Call Claude API with streaming
-  const stream = getClient().messages.stream({
-    model: env.CLAUDE_MODEL,
-    max_tokens: env.CLAUDE_MAX_TOKENS,
-    system: SYSTEM_PROMPT,
-    messages,
-  });
+  while (iteration < maxIterations) {
+    iteration++;
+    logger.debug('Tool loop iteration', { iteration, sessionId, totalTools: tools.length });
 
-  // Handle streaming events
-  stream.on('text', (text) => {
-    fullResponse += text;
-    if (callbacks?.onTextDelta) {
-      callbacks.onTextDelta(text);
+    // Call Claude API with streaming and tools
+    const stream = getClient().messages.stream({
+      model: env.CLAUDE_MODEL,
+      max_tokens: env.CLAUDE_MAX_TOKENS,
+      system: SYSTEM_PROMPT,
+      messages,
+      tools: tools.length > 0 ? tools : undefined,
+    });
+
+    // Accumulate text during streaming
+    stream.on('text', (text) => {
+      fullTextResponse += text;
+      callbacks?.onTextDelta?.(text);
+    });
+
+    // Create timeout promise
+    const timeoutMs = env.AI_TIMEOUT_MS;
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => {
+        stream.abort();
+        reject(new AIError('AI response timed out', 'TIMEOUT', true));
+      }, timeoutMs);
+    });
+
+    // Wait for completion with timeout
+    const finalMessage = await Promise.race([stream.finalMessage(), timeoutPromise]);
+
+    logger.info('Claude response received', {
+      sessionId,
+      iteration,
+      stopReason: finalMessage.stop_reason,
+      contentBlocks: finalMessage.content.length,
+      inputTokens: finalMessage.usage.input_tokens,
+      outputTokens: finalMessage.usage.output_tokens,
+    });
+
+    // Check stop reason
+    if (finalMessage.stop_reason === 'end_turn') {
+      logger.debug('Tool loop complete - end_turn', { sessionId, iterations: iteration });
+      break;
     }
-  });
 
-  // Create timeout promise
-  const timeoutMs = env.AI_TIMEOUT_MS;
-  const timeoutPromise = new Promise<never>((_, reject) => {
-    setTimeout(() => {
-      stream.abort();
-      reject(new AIError('AI response timed out', 'TIMEOUT', true));
-    }, timeoutMs);
-  });
+    if (finalMessage.stop_reason === 'tool_use') {
+      // Extract tool_use blocks from the response
+      const toolUseBlocks: ToolUseContent[] = finalMessage.content
+        .filter((b): b is Anthropic.ToolUseBlock => b.type === 'tool_use')
+        .map((b) => ({
+          type: 'tool_use' as const,
+          id: b.id,
+          name: b.name,
+          input: b.input as Record<string, unknown>,
+        }));
 
-  // Race between stream completion and timeout
-  const finalMessage = await Promise.race([stream.finalMessage(), timeoutPromise]);
+      logger.debug('Tool use blocks found', {
+        sessionId,
+        toolCount: toolUseBlocks.length,
+        tools: toolUseBlocks.map((t) => t.name),
+      });
 
-  logger.info('Received AI response', {
-    sessionId,
-    stopReason: finalMessage.stop_reason,
-    inputTokens: finalMessage.usage.input_tokens,
-    outputTokens: finalMessage.usage.output_tokens,
-  });
+      // Add assistant message to conversation (with all content blocks)
+      const assistantContent: MessageContent[] = finalMessage.content
+        .filter((b): b is Anthropic.TextBlock | Anthropic.ToolUseBlock =>
+          b.type === 'text' || b.type === 'tool_use'
+        )
+        .map((b) => {
+          if (b.type === 'text') {
+            return { type: 'text' as const, text: b.text };
+          }
+          return {
+            type: 'tool_use' as const,
+            id: b.id,
+            name: b.name,
+            input: b.input as Record<string, unknown>,
+          };
+        });
+      messages.push({ role: 'assistant', content: assistantContent });
 
-  if (!fullResponse) {
-    logger.warn('AI response contained no text', { sessionId });
+      // Execute tools
+      const context = { sessionId, userId: 'default_user' };
+      const { toolResults } = await executeTools(toolUseBlocks, context, callbacks);
+
+      // Add tool results as user message (this is how Claude expects them)
+      messages.push({
+        role: 'user',
+        content: toolResults.map((r) => ({
+          type: 'tool_result' as const,
+          tool_use_id: r.tool_use_id,
+          content: r.content,
+        })),
+      });
+
+      // Continue loop to get Claude's response to tool results
+      continue;
+    }
+
+    // Other stop reasons (max_tokens, etc.) - break loop with warning
+    logger.warn('Unexpected stop reason, ending tool loop', {
+      sessionId,
+      stopReason: finalMessage.stop_reason,
+      iteration,
+    });
+    break;
   }
 
-  return fullResponse;
+  if (iteration >= maxIterations) {
+    logger.warn('Tool loop reached max iterations', { sessionId, maxIterations });
+  }
+
+  return fullTextResponse;
 }
 
 /**
- * Send a message to Claude with streaming support, timeout protection, and retry logic
+ * Send a message to Claude with streaming support, tool execution, timeout protection, and retry logic
  * Calls onTextDelta callback as text arrives, returns full response when complete
  */
 export async function sendMessage(
@@ -215,7 +327,7 @@ export async function sendMessage(
   // Add the new user message
   messages.push({ role: 'user', content: userMessage });
 
-  logger.debug('Calling Claude API with streaming', { totalMessages: messages.length });
+  logger.debug('Calling Claude API with tool support', { totalMessages: messages.length });
 
   // Retry logic with exponential backoff
   const retryDelays = getRetryDelays(env.AI_MAX_RETRIES);
@@ -223,7 +335,7 @@ export async function sendMessage(
 
   for (let attempt = 0; attempt <= retryDelays.length; attempt++) {
     try {
-      return await sendMessageInternal(sessionId, messages, callbacks);
+      return await sendMessageWithToolLoop(sessionId, messages, callbacks);
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
 
