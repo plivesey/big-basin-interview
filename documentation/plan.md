@@ -773,6 +773,7 @@ This document outlines the implementation plan for the Service Booking Assistant
 - [ ] Graceful degradation for service failures
 - [ ] Comprehensive README with setup instructions
 - [ ] Environment variable validation on startup
+- [ ] Markdown rendering in assistant messages (bold, italics, lists, line breaks)
 
 ### Implementation Tasks
 - [ ] Install logging library: `pino` (fast, structured JSON logs)
@@ -818,6 +819,11 @@ This document outlines the implementation plan for the Service Booking Assistant
   - [ ] Fail fast with clear error message
   - [ ] List missing variables
 - [ ] Create `.env.example` files for backend and frontend
+- [ ] Frontend: Configure react-markdown for assistant message rendering
+  - [ ] Integrate react-markdown component in MessageBubble
+  - [ ] Add Tailwind styles for markdown elements (lists, bold, italic, code)
+  - [ ] Handle line breaks and whitespace correctly
+  - [ ] Sanitize HTML output to prevent XSS
 
 ### Testing
 - [ ] **Unit Tests:**
@@ -831,6 +837,12 @@ This document outlines the implementation plan for the Service Booking Assistant
   - [ ] Error logging includes stack trace
   - [ ] Environment validation detects missing vars
   - [ ] Environment validation lists all missing vars
+  - [ ] Markdown component renders bold text correctly
+  - [ ] Markdown component renders italics correctly
+  - [ ] Markdown component renders ordered lists correctly
+  - [ ] Markdown component renders unordered lists correctly
+  - [ ] Markdown component handles line breaks correctly
+  - [ ] Markdown component sanitizes potentially unsafe HTML
   - [ ] **Additional unit tests to ensure full coverage of all logging and validation functions**
 - [ ] **Integration Tests:**
   - [ ] Request ID propagates through full request lifecycle
@@ -850,6 +862,11 @@ This document outlines the implementation plan for the Service Booking Assistant
   - [ ] Verify retry button works on transient errors
   - [ ] Verify error messages are user-friendly
   - [ ] Test graceful degradation (disable calendar API temporarily)
+  - [ ] Verify bold text renders in assistant messages
+  - [ ] Verify italics render in assistant messages
+  - [ ] Verify ordered and unordered lists render correctly
+  - [ ] Verify line breaks display properly
+  - [ ] Test with complex markdown (nested lists, mixed formatting)
 - [ ] **Manual QA (Playwright MCP):**
   - [ ] Complete full booking flow
   - [ ] Assert no console errors
