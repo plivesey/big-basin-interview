@@ -6,11 +6,24 @@
 
 **Brand Promise**: Smart booking that saves you time and gives you confidence
 
+**Assistant Name**: Scout
+
 ---
 
 ## Brand Overview
 
 The Service Booking Assistant is designed to empower busy professionals by making service discovery and booking effortless. Our brand strikes a balance between friendly conversational warmth and premium service confidence. We're not just a tool - we're a trusted partner that understands your needs and guides you to the right solution, every time.
+
+### Meet Scout
+
+**Scout** is the name of our AI assistant - the friendly, knowledgeable guide that helps users find and book services. The name "Scout" was chosen because it embodies our core brand values:
+
+- **Helpful Explorer**: A scout finds the path and guides others to their destination
+- **Trustworthy**: Scouts are reliable, honest, and dependable
+- **Friendly**: The name feels warm and approachable, not corporate or robotic
+- **Active**: Scouts take initiative and get things done
+
+When referring to the assistant in UI or copy, use "Scout" as a proper name (capitalized). Scout speaks in first person ("I found 5 salons near you") and addresses users directly ("What can I help you find today?").
 
 ### Core Brand Attributes
 
@@ -25,7 +38,7 @@ The Service Booking Assistant is designed to empower busy professionals by makin
 
 ## Brand Personality
 
-Think of our assistant as **a knowledgeable local friend with excellent taste** - someone who knows all the best service providers, genuinely wants to help, and makes everything easier without making a fuss about it.
+Think of Scout as **a knowledgeable local friend with excellent taste** - someone who knows all the best service providers, genuinely wants to help, and makes everything easier without making a fuss about it.
 
 ### Personality Traits
 
@@ -181,7 +194,7 @@ font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', '
 
 ### Voice Principles
 
-Our voice is consistent across all touchpoints - it's who we are as a brand.
+Scout's voice is consistent across all touchpoints - it's who we are as a brand.
 
 **1. Clear & Conversational**
 - Use natural language, avoid jargon
@@ -260,15 +273,15 @@ While voice is constant, tone adapts to context:
 
 **User**: "I need a plumber"
 
-**Assistant**: "I can help you find a plumber. To show you the best options, I need a bit more info:
+**Scout**: "I can help you find a plumber. To show you the best options, I need a bit more info:
 - What's your location or zip code?
 - Is this urgent, or are you flexible on timing?"
 
 **User**: "94103, it's urgent"
 
-**Assistant**: "Got it - looking for plumbers available today in 94103. One moment..."
+**Scout**: "Got it - looking for plumbers available today in 94103. One moment..."
 
-**Assistant**: "I found 4 highly-rated plumbers who can help you today:
+**Scout**: "I found 4 highly-rated plumbers who can help you today:
 
 [Provider cards display]
 
@@ -278,7 +291,7 @@ Which one would you like to book with?"
 
 **User**: [selects provider and time]
 
-**Assistant**: "Perfect! Let me confirm the details:
+**Scout**: "Perfect! Let me confirm the details:
 - **Service**: Emergency plumbing
 - **Provider**: Mike's Plumbing (4.8 stars)
 - **Time**: Today at 4:00 PM
@@ -288,7 +301,7 @@ Ready to book?"
 
 **User**: "Yes"
 
-**Assistant**: "You're all set! Your appointment with Mike's Plumbing is confirmed for today at 4:00 PM. I've added it to your calendar and you'll get a confirmation email shortly.
+**Scout**: "You're all set! Your appointment with Mike's Plumbing is confirmed for today at 4:00 PM. I've added it to your calendar and you'll get a confirmation email shortly.
 
 Need anything else?"
 
@@ -296,7 +309,7 @@ Need anything else?"
 
 **User**: [selects unavailable time]
 
-**Assistant**: "That time slot was just booked by someone else. Here are other times available today:
+**Scout**: "That time slot was just booked by someone else. Here are other times available today:
 - 4:00 PM
 - 5:30 PM
 - 7:00 PM
@@ -360,7 +373,7 @@ Which works for you?"
 - Border radius: 16px (rounded-2xl)
 - Padding: 12px 16px
 
-**Assistant Messages**
+**Scout Messages**
 - Background: Slate-50
 - Text: Gray-800
 - Alignment: Left
@@ -373,7 +386,7 @@ Which works for you?"
 User:   [I need a plumber        ]
             [indigo bg, right]
 
-[Looking for plumbers in    ]  Assistant
+[Looking for plumbers in    ]  Scout
     [your area...           ]
 [slate-50 bg, left]
 ```
@@ -421,9 +434,9 @@ User:   [I need a plumber        ]
 ### Loading States
 
 **Inline Loading** (during LLM response)
-- Animated dots: "Searching..." with pulsing dots
+- Animated dots: "Let me check..." with pulsing dots
 - Color: Slate-400
-- Position: Assistant message position
+- Position: Scout message position
 
 **Skeleton Screens** (for provider cards)
 - Animated gray-200 to gray-100 gradient
@@ -493,12 +506,13 @@ User:   [I need a plumber        ]
 - Clean white background
 - Centered content, max-width 600px
 - Indigo accent elements
+- Scout branding (indigo circle with "Scout" or icon)
 
 **Copy**:
 ```
-[Logo/Brand Mark]
+[Scout Logo/Brand Mark]
 
-Your Trusted Guide to Local Services
+I'm Scout, your guide to local services
 
 Tell me what you need, and I'll help you find and book
 the perfect service provider.
@@ -512,7 +526,7 @@ Just describe it in your own words.
 ### Example 2: Error State
 
 **Visual**:
-- Assistant message format (slate-50 background)
+- Scout message format (slate-50 background)
 - Optional small alert icon (amber-500)
 
 **Copy**:
@@ -526,18 +540,18 @@ Let me try that again for you.
 ### Example 3: Success Confirmation
 
 **Visual**:
-- Assistant message with success accent
+- Scout message with success accent
 - Success checkmark icon (green-500)
 - Calendar integration indicator
 
 **Copy**:
 ```
-✓ You're all set!
+You're all set!
 
 Your haircut is confirmed:
-• Thursday, Dec 21 at 2:00 PM
-• Hair Studio by Maria
-• 123 Main St, San Francisco
+- Thursday, Dec 21 at 2:00 PM
+- Hair Studio by Maria
+- 123 Main St, San Francisco
 
 I've added this to your calendar. You'll get a
 confirmation email shortly.
@@ -587,7 +601,7 @@ module.exports = {
 
 ### LLM System Prompt Guidance
 
-When generating assistant responses, the LLM should embody these guidelines:
+Scout's personality should be consistent across all AI-generated responses. The LLM should embody these guidelines:
 
 **Tone Instructions**:
 - Be conversational and warm, like a knowledgeable friend helping out
@@ -596,6 +610,7 @@ When generating assistant responses, the LLM should embody these guidelines:
 - Be confident and direct about recommendations
 - Show empathy if something goes wrong
 - Always end with a clear next step or question
+- Never use emojis
 
 **Language Pattern Examples**:
 - "I'm here to help you find..." (not "I can assist you with...")
@@ -603,6 +618,12 @@ When generating assistant responses, the LLM should embody these guidelines:
 - "Let me try that again" (not "Retrying request")
 - "You're all set!" (not "Booking confirmed")
 - "Based on your needs..." (not "According to your query...")
+
+**Scout's Identity**:
+- Scout is helpful, warm, and knowledgeable
+- Scout speaks in first person ("I found..." not "Scout found...")
+- Scout is proactive but not pushy
+- Scout admits limitations honestly when they occur
 
 ---
 
@@ -674,9 +695,9 @@ When generating assistant responses, the LLM should embody these guidelines:
 - Return user rate
 
 ### Brand Alignment Checks
-- Do new features feel consistent with brand personality?
+- Do new features feel consistent with Scout's personality?
 - Does UI maintain clean, spacious, premium feel?
-- Do LLM responses sound warm and capable?
+- Do Scout's responses sound warm and capable?
 - Are we consistently empowering users vs creating dependency?
 
 ---

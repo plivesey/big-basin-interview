@@ -11,7 +11,7 @@ interface ChatInputProps {
 export function ChatInput({
   onSendMessage,
   disabled = false,
-  placeholder = 'Type your message...',
+  placeholder = 'What can I help you find today?',
 }: ChatInputProps) {
   const [message, setMessage] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -78,7 +78,7 @@ export function ChatInput({
         </Button>
       </div>
       <p className="mt-2 text-xs text-slate-400 text-center">
-        Press Enter to send, Shift+Enter for new line
+        Hit Enter to send, or Shift+Enter for more lines
       </p>
     </form>
   );

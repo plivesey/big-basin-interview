@@ -28,12 +28,14 @@ export function MessageList({ messages, isLoading }: MessageListProps) {
     return (
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="text-center">
-          <div className="text-4xl mb-4">👋</div>
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-indigo-100 flex items-center justify-center">
+            <span className="text-2xl font-semibold text-indigo-600">S</span>
+          </div>
           <h3 className="text-lg font-medium text-gray-700 mb-2">
-            Welcome to Service Booking Assistant
+            I'm Scout, your guide to local services
           </h3>
           <p className="text-slate-500 max-w-sm">
-            Start a conversation to find and book local services like salons, mechanics, and dentists.
+            Tell me what you need, and I'll help you find and book the perfect service provider. Need a haircut? A plumber? House cleaning? Just describe it in your own words.
           </p>
         </div>
       </div>
@@ -55,7 +57,7 @@ export function MessageList({ messages, isLoading }: MessageListProps) {
         </ChatMessageComponent>
       ))}
 
-      {isLoading && <ChatLoading text="Thinking..." />}
+      {isLoading && <ChatLoading text="Let me check..." />}
 
       <div ref={messagesEndRef} />
     </div>

@@ -66,7 +66,7 @@ export function initializeChatHandler(io: ChatServer): void {
     } catch (error) {
       logger.error('Error during connection setup', { error: String(error), socketId: socket.id });
       socket.emit('error', {
-        error: 'Failed to initialize session',
+        error: "I'm having trouble getting started. Please refresh the page to try again.",
         code: 'SESSION_INIT_ERROR',
       });
     }
@@ -78,7 +78,7 @@ export function initializeChatHandler(io: ChatServer): void {
       if (!sessionId) {
         logger.warn('User message received without active session', { socketId: socket.id });
         socket.emit('error', {
-          error: 'No active session',
+          error: "Looks like your session timed out. Please refresh the page to reconnect.",
           code: 'NO_SESSION',
         });
         return;
@@ -87,7 +87,7 @@ export function initializeChatHandler(io: ChatServer): void {
       if (!data.message || typeof data.message !== 'string' || !data.message.trim()) {
         logger.warn('Invalid message received', { socketId: socket.id, sessionId });
         socket.emit('error', {
-          error: 'Message is required',
+          error: "I didn't catch that. Try typing your message again.",
           code: 'INVALID_MESSAGE',
         });
         return;
@@ -132,15 +132,15 @@ export function initializeChatHandler(io: ChatServer): void {
         logger.info('AI response sent', { messageId: assistantMessage.id, sessionId });
       } catch (error) {
         // Differentiate error types for better user feedback
-        let errorMessage = 'Failed to get AI response. Please try again.';
+        let errorMessage = "Something went wrong on my end. Please try sending that again.";
         let errorCode = 'AI_ERROR';
 
         if (error instanceof AIError) {
           if (error.code === 'TIMEOUT') {
-            errorMessage = 'The AI is taking too long to respond. Please try again.';
+            errorMessage = "I'm taking longer than expected to think. Please try again.";
             errorCode = 'AI_TIMEOUT';
           } else if (error.code === 'MAX_RETRIES_EXCEEDED') {
-            errorMessage = 'The AI service is temporarily unavailable. Please try again later.';
+            errorMessage = "I'm having trouble connecting right now. Please try again in a moment.";
             errorCode = 'AI_UNAVAILABLE';
           }
         }
@@ -165,7 +165,7 @@ export function initializeChatHandler(io: ChatServer): void {
       if (!sessionId) {
         logger.warn('Sync requested without active session', { socketId: socket.id });
         socket.emit('error', {
-          error: 'No active session',
+          error: "Looks like your session timed out. Please refresh the page to reconnect.",
           code: 'NO_SESSION',
         });
         return;
@@ -177,7 +177,7 @@ export function initializeChatHandler(io: ChatServer): void {
       } catch (error) {
         logger.error('Error during sync', { error: String(error), sessionId });
         socket.emit('error', {
-          error: 'Failed to sync messages',
+          error: "I'm having trouble updating our conversation. Please refresh the page if messages look incomplete.",
           code: 'SYNC_ERROR',
         });
       }

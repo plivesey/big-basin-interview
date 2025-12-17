@@ -16,12 +16,12 @@ export function ChatContainer() {
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-slate-50">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
-            <span className="text-xl">🤖</span>
+          <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center">
+            <span className="text-sm font-semibold text-white">S</span>
           </div>
           <div>
-            <h2 className="font-semibold text-gray-800">Booking Assistant</h2>
-            <p className="text-xs text-slate-500">Here to help you book services</p>
+            <h2 className="font-semibold text-gray-800">Scout</h2>
+            <p className="text-xs text-slate-500">Your guide to local services</p>
           </div>
         </div>
         <ConnectionStatus
@@ -39,10 +39,10 @@ export function ChatContainer() {
         disabled={!isConnected || isLoading}
         placeholder={
           isConnecting
-            ? 'Connecting...'
+            ? 'Getting ready...'
             : !isConnected
-              ? 'Connection lost. Please reconnect.'
-              : 'Type your message...'
+              ? 'Connection lost. Click above to reconnect.'
+              : 'What can I help you find today?'
         }
       />
     </div>
@@ -59,7 +59,7 @@ function ConnectionStatus({ status, onReconnect }: ConnectionStatusProps) {
     return (
       <Badge variant="success">
         <span className="w-2 h-2 rounded-full bg-green-500 mr-1.5 animate-pulse" />
-        Connected
+        Ready
       </Badge>
     );
   }
@@ -68,7 +68,7 @@ function ConnectionStatus({ status, onReconnect }: ConnectionStatusProps) {
     return (
       <Badge variant="warning">
         <span className="w-2 h-2 rounded-full bg-amber-500 mr-1.5 animate-pulse" />
-        Connecting...
+        Getting ready...
       </Badge>
     );
   }
@@ -80,7 +80,7 @@ function ConnectionStatus({ status, onReconnect }: ConnectionStatusProps) {
         className="badge-error flex items-center gap-1.5 cursor-pointer hover:bg-red-200 transition-colors"
       >
         <span className="w-2 h-2 rounded-full bg-red-500" />
-        Error - Click to retry
+        Having trouble - Click to retry
       </button>
     );
   }
@@ -92,7 +92,7 @@ function ConnectionStatus({ status, onReconnect }: ConnectionStatusProps) {
       className="badge-warning flex items-center gap-1.5 cursor-pointer hover:bg-amber-200 transition-colors"
     >
       <span className="w-2 h-2 rounded-full bg-amber-500" />
-      Disconnected - Click to reconnect
+      Connection lost - Click to reconnect
     </button>
   );
 }

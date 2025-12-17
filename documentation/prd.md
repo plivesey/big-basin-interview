@@ -148,6 +148,17 @@ Acceptance Criteria:
 - Display full conversation history within session
 - Visual distinction between user and assistant messages
 
+**FR-1.5: Markdown Message Rendering**
+- Assistant messages should render markdown formatting correctly
+- Supported formatting:
+  - Bold text (**text** or __text__)
+  - Italic text (*text* or _text_)
+  - Ordered lists (1. 2. 3.)
+  - Unordered lists (- or *)
+  - Line breaks and paragraphs
+- Code blocks preserved for technical responses (if present)
+- HTML sanitization to prevent XSS attacks
+
 ### 2. Provider Search
 
 **FR-2.1: Mock Database**
@@ -391,6 +402,7 @@ SQLite DB + Google Calendar API
 - Database migrations for schema versioning
 - Provider rating/review display
 - Multi-provider comparison view
+- Markdown rendering in assistant messages
 
 ---
 

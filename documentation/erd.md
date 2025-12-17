@@ -37,7 +37,7 @@
 - **React Query / SWR**: Server state management and caching (for REST API data)
 - **Zustand**: Local UI state management (lightweight, ~1KB) - for chat UI state, message buffers, typing indicators
 - **date-fns**: Date manipulation
-- **React Markdown**: Message rendering with rich formatting
+- **React Markdown**: Message rendering with rich formatting (bold, italics, lists, line breaks)
 
 ### Backend Dependencies
 - **Node.js 20+**: Runtime
@@ -1390,6 +1390,51 @@ function applyMockPattern(slots: TimeSlot[], pattern: number): TimeSlot[] {
 - "View Availability" button on provider cards
 - User clicks → TimeSlotGrid component appears
 - This is a direct user action, not AI-triggered
+
+---
+
+## 9.4 Markdown Rendering in Chat Messages
+
+Claude SDK responses may contain markdown formatting. The frontend must render these correctly.
+
+### Supported Markdown
+- **Bold**: `**text**` or `__text__`
+- **Italic**: `*text*` or `_text_`
+- **Ordered lists**: `1. item`
+- **Unordered lists**: `- item` or `* item`
+- **Line breaks**: Double newline for paragraphs
+- **Code**: Inline `` `code` `` and fenced code blocks
+
+### Implementation
+
+```tsx
+// MessageBubble.tsx
+import ReactMarkdown from 'react-markdown';
+
+function AssistantMessage({ content }: { content: string }) {
+  return (
+    <div className="message-assistant prose prose-sm">
+      <ReactMarkdown>{content}</ReactMarkdown>
+    </div>
+  );
+}
+```
+
+### Tailwind Typography Styles
+
+Use Tailwind's `@tailwindcss/typography` plugin for consistent markdown styling:
+
+```tsx
+// Wrap markdown content with prose classes
+<div className="prose prose-sm prose-indigo max-w-none">
+  <ReactMarkdown>{content}</ReactMarkdown>
+</div>
+```
+
+### Security Considerations
+- Use react-markdown's built-in sanitization (no `dangerouslySetInnerHTML`)
+- Do not allow raw HTML rendering (`allowedElements` prop to restrict)
+- Strip potentially dangerous elements like `<script>`, `<iframe>`
 
 ---
 

@@ -36,7 +36,7 @@ export function ChatTimestamp({ children }: ChatTimestampProps) {
   );
 }
 
-export function ChatLoading({ text = 'Thinking...' }: { text?: string }) {
+export function ChatLoading({ text = 'Let me check...' }: { text?: string }) {
   return (
     <div className="flex justify-start mb-4">
       <div className="px-4 py-3 bg-slate-50 rounded-2xl rounded-tl-sm border border-slate-200">
