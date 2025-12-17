@@ -3,6 +3,7 @@ import { io } from 'socket.io-client';
 import type { Socket } from 'socket.io-client';
 import { useChatStore, parseMessage } from '../store/chat-store';
 import type { ChatMessage, MessageContent } from '../store/chat-store';
+import { logger } from '../utils/logger';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
 const SESSION_STORAGE_KEY = 'chat_session_id';
@@ -95,18 +96,18 @@ export function useWebSocket(): UseWebSocketReturn {
 
     // Connection events
     socket.on('connect', () => {
-      console.log('WebSocket connected');
+      logger.info('WebSocket connected');
       setConnectionStatus('connected');
       reconnectAttempts.current = 0;
     });
 
     socket.on('disconnect', (reason) => {
-      console.log('WebSocket disconnected:', reason);
+      logger.info('WebSocket disconnected', { reason });
       setConnectionStatus('disconnected');
     });
 
     socket.on('connect_error', (error) => {
-      console.error('WebSocket connection error:', error);
+      logger.error('WebSocket connection error', { error: String(error) });
       reconnectAttempts.current++;
 
       if (reconnectAttempts.current >= maxReconnectAttempts) {
@@ -116,26 +117,26 @@ export function useWebSocket(): UseWebSocketReturn {
 
     // Session events
     socket.on('session_created', (data) => {
-      console.log('Session created:', data.sessionId);
+      logger.info('Session created', { sessionId: data.sessionId });
       setSessionId(data.sessionId);
       storeSessionId(data.sessionId);
     });
 
     // Message history
     socket.on('message_history', (data) => {
-      console.log('Received message history:', data.messages.length, 'messages');
+      logger.debug('Received message history', { count: data.messages.length });
       const parsedMessages = data.messages.map((msg) => parseMessage(msg));
       setMessages(parsedMessages);
     });
 
     // Incoming messages
     socket.on('message_start', (data) => {
-      console.log('Message started:', data.messageId);
+      logger.debug('Message started', { messageId: data.messageId });
       setIsLoading(true);
     });
 
     socket.on('assistant_message', (data) => {
-      console.log('Assistant message received:', data.id);
+      logger.debug('Assistant message received', { messageId: data.id });
       const message: ChatMessage = {
         id: data.id,
         sessionId: useChatStore.getState().sessionId || '',
@@ -148,13 +149,13 @@ export function useWebSocket(): UseWebSocketReturn {
     });
 
     socket.on('message_complete', (data) => {
-      console.log('Message completed:', data.messageId);
+      logger.debug('Message completed', { messageId: data.messageId });
       setIsLoading(false);
     });
 
     // Error handling
     socket.on('error', (data) => {
-      console.error('WebSocket error:', data.error, data.code);
+      logger.error('WebSocket error', { error: data.error, code: data.code });
       setIsLoading(false);
     });
   }, [
@@ -188,7 +189,7 @@ export function useWebSocket(): UseWebSocketReturn {
     const sessionId = useChatStore.getState().sessionId;
 
     if (!socket?.connected) {
-      console.error('Cannot send message: not connected');
+      logger.warn('Cannot send message: not connected');
       return;
     }
 
