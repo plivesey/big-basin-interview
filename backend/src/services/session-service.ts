@@ -5,7 +5,6 @@ import { db, sessions, Session, NewSession } from '../db';
 export interface ChatSession {
   id: string;
   userId: string;
-  status: 'active' | 'inactive';
   createdAt: Date;
   lastActivityAt: Date;
 }
@@ -19,7 +18,6 @@ export async function createSession(userId: string = 'default_user'): Promise<Ch
   const newSession: NewSession = {
     id: uuidv4(),
     userId,
-    status: 'active',
     createdAt: now,
     lastActivityAt: now,
   };
@@ -29,7 +27,6 @@ export async function createSession(userId: string = 'default_user'): Promise<Ch
   return {
     id: newSession.id,
     userId,
-    status: 'active' as const,
     createdAt: now,
     lastActivityAt: now,
   };
@@ -57,7 +54,6 @@ export async function getSession(sessionId: string): Promise<ChatSession | null>
   return {
     id: session.id,
     userId: session.userId,
-    status: session.status as 'active' | 'inactive',
     createdAt: session.createdAt,
     lastActivityAt: session.lastActivityAt,
   };
@@ -76,25 +72,6 @@ export async function updateSessionActivity(sessionId: string): Promise<ChatSess
   await db
     .update(sessions)
     .set({ lastActivityAt: now })
-    .where(eq(sessions.id, sessionId));
-
-  return getSession(sessionId);
-}
-
-/**
- * Update session status
- */
-export async function updateSessionStatus(
-  sessionId: string,
-  status: 'active' | 'inactive'
-): Promise<ChatSession | null> {
-  if (!sessionId || !sessionId.trim()) {
-    return null;
-  }
-
-  await db
-    .update(sessions)
-    .set({ status, lastActivityAt: new Date() })
     .where(eq(sessions.id, sessionId));
 
   return getSession(sessionId);

@@ -1,6 +1,7 @@
 import { Server, Socket } from 'socket.io';
 import { saveMessage, getMessageHistory, ChatMessage } from '../services/message-service';
-import { getOrCreateSession, updateSessionStatus } from '../services/session-service';
+import { getOrCreateSession } from '../services/session-service';
+import { logger } from '../utils/logger';
 
 // Types for WebSocket events
 export interface ServerToClientEvents {
@@ -39,7 +40,7 @@ export type ChatServer = Server<ClientToServerEvents, ServerToClientEvents, Inte
  */
 export function initializeChatHandler(io: ChatServer): void {
   io.on('connection', async (socket: ChatSocket) => {
-    console.log(`Client connected: ${socket.id}`);
+    logger.info('Client connected', { socketId: socket.id });
 
     try {
       // Get or create session from query param
@@ -59,9 +60,9 @@ export function initializeChatHandler(io: ChatServer): void {
       const messageHistory = await getMessageHistory(session.id);
       socket.emit('message_history', { messages: messageHistory });
 
-      console.log(`Session ${session.id} established for socket ${socket.id}`);
+      logger.info('Session established', { sessionId: session.id, socketId: socket.id });
     } catch (error) {
-      console.error('Error during connection setup:', error);
+      logger.error('Error during connection setup', { error: String(error) });
       socket.emit('error', {
         error: 'Failed to initialize session',
         code: 'SESSION_INIT_ERROR',
@@ -73,6 +74,7 @@ export function initializeChatHandler(io: ChatServer): void {
       const sessionId = socket.data.sessionId;
 
       if (!sessionId) {
+        logger.warn('User message received without active session', { socketId: socket.id });
         socket.emit('error', {
           error: 'No active session',
           code: 'NO_SESSION',
@@ -81,6 +83,7 @@ export function initializeChatHandler(io: ChatServer): void {
       }
 
       if (!data.message || typeof data.message !== 'string' || !data.message.trim()) {
+        logger.warn('Invalid message received', { socketId: socket.id, sessionId });
         socket.emit('error', {
           error: 'Message is required',
           code: 'INVALID_MESSAGE',
@@ -98,7 +101,7 @@ export function initializeChatHandler(io: ChatServer): void {
           content: messageText,
         });
 
-        console.log(`User message saved: ${userMessage.id}`);
+        logger.debug('User message saved', { messageId: userMessage.id });
 
         // Generate echo response (will be replaced with AI in Milestone 3)
         const echoContent = `Echo: ${messageText}`;
@@ -123,9 +126,9 @@ export function initializeChatHandler(io: ChatServer): void {
         // Emit message complete
         socket.emit('message_complete', { messageId: assistantMessage.id });
 
-        console.log(`Echo response sent: ${assistantMessage.id}`);
+        logger.debug('Echo response sent', { messageId: assistantMessage.id });
       } catch (error) {
-        console.error('Error handling user message:', error);
+        logger.error('Error handling user message', { error: String(error) });
         socket.emit('error', {
           error: 'Failed to process message',
           code: 'MESSAGE_ERROR',
@@ -138,6 +141,7 @@ export function initializeChatHandler(io: ChatServer): void {
       const sessionId = socket.data.sessionId;
 
       if (!sessionId) {
+        logger.warn('Sync requested without active session', { socketId: socket.id });
         socket.emit('error', {
           error: 'No active session',
           code: 'NO_SESSION',
@@ -149,7 +153,7 @@ export function initializeChatHandler(io: ChatServer): void {
         const messageHistory = await getMessageHistory(sessionId);
         socket.emit('message_history', { messages: messageHistory });
       } catch (error) {
-        console.error('Error during sync:', error);
+        logger.error('Error during sync', { error: String(error) });
         socket.emit('error', {
           error: 'Failed to sync messages',
           code: 'SYNC_ERROR',
@@ -158,19 +162,8 @@ export function initializeChatHandler(io: ChatServer): void {
     });
 
     // Handle disconnection
-    socket.on('disconnect', async (reason) => {
-      const sessionId = socket.data.sessionId;
-      console.log(`Client disconnected: ${socket.id}, reason: ${reason}`);
-
-      if (sessionId) {
-        try {
-          // Update session status to inactive
-          await updateSessionStatus(sessionId, 'inactive');
-          console.log(`Session ${sessionId} marked as inactive`);
-        } catch (error) {
-          console.error('Error updating session status on disconnect:', error);
-        }
-      }
+    socket.on('disconnect', (reason) => {
+      logger.info('Client disconnected', { socketId: socket.id, reason });
     });
   });
 }

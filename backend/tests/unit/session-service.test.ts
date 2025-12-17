@@ -3,7 +3,6 @@ import {
   createSession,
   getSession,
   updateSessionActivity,
-  updateSessionStatus,
   getOrCreateSession,
   deleteSession,
 } from '../../src/services/session-service';
@@ -16,7 +15,6 @@ describe('session-service', () => {
       expect(session).toBeDefined();
       expect(session.id).toBeDefined();
       expect(session.userId).toBe('default_user');
-      expect(session.status).toBe('active');
       expect(session.createdAt).toBeInstanceOf(Date);
       expect(session.lastActivityAt).toBeInstanceOf(Date);
     });
@@ -43,7 +41,6 @@ describe('session-service', () => {
       expect(retrieved).toBeDefined();
       expect(retrieved?.id).toBe(created.id);
       expect(retrieved?.userId).toBe(created.userId);
-      expect(retrieved?.status).toBe(created.status);
     });
 
     it('should return null for non-existent session', async () => {
@@ -85,29 +82,6 @@ describe('session-service', () => {
     });
   });
 
-  describe('updateSessionStatus', () => {
-    it('should update session status to inactive', async () => {
-      const created = await createSession();
-      const updated = await updateSessionStatus(created.id, 'inactive');
-
-      expect(updated).toBeDefined();
-      expect(updated?.status).toBe('inactive');
-    });
-
-    it('should update session status to active', async () => {
-      const created = await createSession();
-      await updateSessionStatus(created.id, 'inactive');
-      const updated = await updateSessionStatus(created.id, 'active');
-
-      expect(updated?.status).toBe('active');
-    });
-
-    it('should return null for non-existent session', async () => {
-      const result = await updateSessionStatus('non-existent-id', 'inactive');
-      expect(result).toBeNull();
-    });
-  });
-
   describe('getOrCreateSession', () => {
     it('should return existing session if valid ID provided', async () => {
       const created = await createSession();
@@ -121,7 +95,6 @@ describe('session-service', () => {
 
       expect(session).toBeDefined();
       expect(session.id).toBeDefined();
-      expect(session.status).toBe('active');
     });
 
     it('should create new session if invalid ID provided', async () => {
