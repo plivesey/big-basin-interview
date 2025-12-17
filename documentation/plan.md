@@ -290,7 +290,7 @@ This document outlines the implementation plan for the Service Booking Assistant
 
 ---
 
-## Milestone 5: REST API - Booking Endpoints
+## Milestone 6: REST API - Booking Endpoints
 
 **Goal:** Implement booking creation and retrieval endpoints
 
@@ -362,7 +362,7 @@ This document outlines the implementation plan for the Service Booking Assistant
 
 ---
 
-## Milestone 6: Tool Execution - Provider Search & Display
+## Milestone 5: Tool Execution - Provider Search & Display
 
 **Goal:** Implement tool-based provider search with UI card display
 
@@ -986,7 +986,7 @@ A milestone is complete when:
 
 ## Progress Tracking
 
-**Current Milestone:** Milestone 5 (Booking Endpoints)
+**Current Milestone:** Milestone 5 (Tool Execution) ← **REORDERED: Tool execution moved before Booking Endpoints**
 **Overall Progress:** 4/11 milestones complete (36%)
 
 ### Milestone Completion Status
@@ -994,8 +994,8 @@ A milestone is complete when:
 - [x] Milestone 2: WebSocket Chat Foundation
 - [x] Milestone 3: AI Integration - Basic Conversation
 - [x] Milestone 4: REST API - Provider Endpoints
-- [ ] Milestone 5: REST API - Booking Endpoints
-- [ ] Milestone 6: Tool Execution - Provider Search & Display
+- [ ] **Milestone 5: Tool Execution - Provider Search & Display** ← Do this next (was M6)
+- [ ] Milestone 6: REST API - Booking Endpoints (was M5)
 - [ ] Milestone 7: Workflow State Engine
 - [ ] Milestone 8: Booking Flow - Time Slots & Confirmation
 - [ ] Milestone 9: Calendar Integration
@@ -1008,8 +1008,10 @@ A milestone is complete when:
 
 ### Milestone Order Rationale
 - **Milestones 2-3 (WebSocket + AI) before REST APIs:** Validates riskier real-time infrastructure and AI integration early, before building CRUD operations
-- **Milestones 4-5 (REST APIs split):** Smaller, more reviewable PRs; providers don't depend on bookings
-- **Milestones 6-8 (Tools + Workflows + Booking):** Build tool system first, then state management, then complete flow
+- **Milestone 4 (Provider Endpoints):** REST API foundation for provider data
+- **Milestone 5 (Tool Execution) before Booking Endpoints:** Validates the riskier AI tool execution loop early, before building more CRUD operations. Tool execution is more complex and benefits from earlier testing.
+- **Milestone 6 (Booking Endpoints):** CRUD operations for bookings, needed before completing booking flow
+- **Milestones 7-8 (Workflows + Booking Flow):** State management then complete flow
 - **Milestone 9 (Calendar):** Add-on feature that doesn't block core functionality
 - **Milestone 10 (Observability):** Polish and production-readiness after all features work
 
@@ -1017,10 +1019,10 @@ A milestone is complete when:
 - Milestone 2 requires Milestone 1 (database schema for messages)
 - Milestone 3 requires Milestone 2 (WebSocket infrastructure)
 - Milestone 4 requires Milestone 1 (database schema for providers)
-- Milestone 5 requires Milestone 1 (database schema for bookings)
-- Milestone 6 requires Milestones 3, 4 (AI service + provider data)
-- Milestone 7 requires Milestone 6 (tool execution)
-- Milestone 8 requires Milestones 5, 7 (booking service + workflow state)
+- Milestone 5 (Tool Execution) requires Milestones 3, 4 (AI service + provider data)
+- Milestone 6 (Booking Endpoints) requires Milestone 1 (database schema for bookings)
+- Milestone 7 requires Milestone 5 (tool execution)
+- Milestone 8 requires Milestones 6, 7 (booking service + workflow state)
 - Milestone 9 requires Milestone 8 (booking creation)
 - Milestone 10 can run in parallel with 9 (incremental polish)
 
@@ -1045,4 +1047,4 @@ A milestone is complete when:
 ---
 
 **Last Updated:** 2025-12-17
-**Next Review:** After Milestone 5 completion
+**Next Review:** After Milestone 5 (Tool Execution) completion
