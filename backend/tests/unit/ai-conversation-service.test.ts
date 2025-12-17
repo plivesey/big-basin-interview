@@ -31,7 +31,7 @@ describe('ai-conversation-service', () => {
       ]);
     });
 
-    it('should filter out non-text content blocks', () => {
+    it('should include tool_use content blocks for tool loop', () => {
       const history: ChatMessage[] = [
         {
           id: '1',
@@ -48,7 +48,13 @@ describe('ai-conversation-service', () => {
       const result = buildMessagesArray(history);
 
       expect(result).toEqual([
-        { role: 'assistant', content: [{ type: 'text', text: 'Let me search for that' }] },
+        {
+          role: 'assistant',
+          content: [
+            { type: 'text', text: 'Let me search for that' },
+            { type: 'tool_use', id: 'tool-1', name: 'search', input: {} },
+          ],
+        },
       ]);
     });
 
@@ -78,7 +84,7 @@ describe('ai-conversation-service', () => {
       expect(result).toEqual([]);
     });
 
-    it('should handle messages with only non-text content', () => {
+    it('should handle messages with only tool_use content', () => {
       const history: ChatMessage[] = [
         {
           id: '1',
@@ -93,9 +99,12 @@ describe('ai-conversation-service', () => {
 
       const result = buildMessagesArray(history);
 
-      // Message should still exist but with empty content array
+      // tool_use blocks should be preserved for the tool loop
       expect(result).toEqual([
-        { role: 'assistant', content: [] },
+        {
+          role: 'assistant',
+          content: [{ type: 'tool_use', id: 'tool-1', name: 'search', input: {} }],
+        },
       ]);
     });
 
@@ -131,7 +140,7 @@ describe('ai-conversation-service', () => {
       expect(result[2].content).toEqual([{ type: 'text', text: 'Third' }]);
     });
 
-    it('should handle tool_result content blocks', () => {
+    it('should include tool_result content blocks for tool loop', () => {
       const history: ChatMessage[] = [
         {
           id: '1',
@@ -147,9 +156,15 @@ describe('ai-conversation-service', () => {
 
       const result = buildMessagesArray(history);
 
-      // Only text content should be included
+      // tool_result blocks should be preserved for the tool loop
       expect(result).toEqual([
-        { role: 'user', content: [{ type: 'text', text: 'Here are the results' }] },
+        {
+          role: 'user',
+          content: [
+            { type: 'tool_result', tool_use_id: 'tool-1', content: 'Result data' },
+            { type: 'text', text: 'Here are the results' },
+          ],
+        },
       ]);
     });
 

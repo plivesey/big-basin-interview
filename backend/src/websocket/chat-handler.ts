@@ -17,6 +17,10 @@ export interface ServerToClientEvents {
   text_delta: (data: { text: string }) => void;
   message_complete: (data: { messageId: string }) => void;
 
+  // Tool events
+  tool_start: (data: { toolName: string; toolUseId: string }) => void;
+  tool_complete: (data: { toolName: string; toolUseId: string; success: boolean }) => void;
+
   // Status events
   error: (data: { error: string; code?: string }) => void;
 }
@@ -111,10 +115,18 @@ export function initializeChatHandler(io: ChatServer): void {
         // Emit message start to indicate processing
         socket.emit('message_start', { messageId: assistantMessageId });
 
-        // Call AI service with streaming - emit text deltas as they arrive
+        // Call AI service with streaming and tool callbacks
         const aiResponse = await sendAIMessage(sessionId, messageText, {
           onTextDelta: (text) => {
             socket.emit('text_delta', { text });
+          },
+          onToolStart: (toolName, toolUseId) => {
+            logger.debug('Tool started', { toolName, toolUseId, sessionId });
+            socket.emit('tool_start', { toolName, toolUseId });
+          },
+          onToolComplete: (toolName, toolUseId, result) => {
+            logger.debug('Tool completed', { toolName, toolUseId, success: result.success, sessionId });
+            socket.emit('tool_complete', { toolName, toolUseId, success: result.success });
           },
         });
 
