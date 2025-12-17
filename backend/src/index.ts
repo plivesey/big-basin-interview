@@ -1,5 +1,6 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
+import { logger } from './utils/logger';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -19,5 +20,5 @@ app.get('/api/heartbeat', (req: Request, res: Response) => {
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+  logger.info(`Server is running on http://localhost:${PORT}`);
 });

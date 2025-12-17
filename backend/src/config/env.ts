@@ -24,8 +24,9 @@ function validateEnv(): Env {
 
   if (!parsed.success) {
     const errors = parsed.error.issues.map((e: z.ZodIssue) => `  - ${e.path.join('.')}: ${e.message}`);
-    console.error('Environment validation failed:');
-    console.error(errors.join('\n'));
+    // Note: Using console.error here because logger depends on env being validated first
+    process.stderr.write('Environment validation failed:\n');
+    process.stderr.write(errors.join('\n') + '\n');
     process.exit(1);
   }
 

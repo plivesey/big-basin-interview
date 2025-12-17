@@ -54,7 +54,6 @@ describe('Database Schema', () => {
         status TEXT NOT NULL,
         calendar_event_id TEXT,
         idempotency_key TEXT NOT NULL UNIQUE,
-        notes TEXT,
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL
       );
@@ -267,7 +266,6 @@ describe('Database Schema', () => {
         duration: 60,
         status: 'pending',
         idempotencyKey: `test:${testProviderId}:${scheduledAt.toISOString()}`,
-        notes: 'Test booking',
         createdAt: now,
         updatedAt: now,
       };

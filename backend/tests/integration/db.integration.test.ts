@@ -58,7 +58,6 @@ describe('Database Integration Tests', () => {
         status TEXT NOT NULL,
         calendar_event_id TEXT,
         idempotency_key TEXT NOT NULL UNIQUE,
-        notes TEXT,
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL
       );

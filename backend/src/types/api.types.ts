@@ -21,8 +21,6 @@ export interface ApiError {
 export interface ProviderSearchParams {
   category?: string;
   location?: string;
-  ratingMin?: number;
-  limit?: number;
 }
 
 export interface ProviderListResponse {
@@ -40,7 +38,6 @@ export interface CreateBookingRequest {
   serviceType: string;
   scheduledAt: string; // ISO datetime
   duration: number; // minutes
-  notes?: string;
   idempotencyKey: string;
 }
 

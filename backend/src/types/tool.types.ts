@@ -59,8 +59,6 @@ export interface SearchProvidersInput {
   category?: string;
   location?: string;
   serviceType?: string;
-  ratingMin?: number;
-  limit?: number;
 }
 
 export interface DisplayProviderCardsInput {
@@ -110,7 +108,6 @@ export interface CreateBookingInput {
   serviceType: string;
   scheduledAt: string;
   duration: number;
-  notes?: string;
 }
 
 export interface SelectProviderInput {

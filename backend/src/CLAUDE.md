@@ -13,11 +13,13 @@ src/
 │   ├── index.ts          # Drizzle ORM database connection
 │   ├── schema.ts         # Database schema definitions (providers, bookings, sessions, messages, workflows)
 │   └── seed.ts           # Seed script with 10 mock providers
-└── types/
-    ├── index.ts          # Central type exports
-    ├── workflow.types.ts # Workflow state machine types and transitions
-    ├── api.types.ts      # API request/response types
-    └── tool.types.ts     # Claude SDK tool definition types
+├── types/
+│   ├── index.ts          # Central type exports
+│   ├── workflow.types.ts # Workflow state machine types and transitions
+│   ├── api.types.ts      # API request/response types
+│   └── tool.types.ts     # Claude SDK tool definition types
+└── utils/
+    └── logger.ts         # Centralized logging utility
 ```
 
 ## Key Files
@@ -43,6 +45,21 @@ Five main tables:
 3. **sessions** - Chat sessions with default user for MVP
 4. **messages** - Conversation history with JSON content (supports text, tool_use, tool_result)
 5. **workflow_states** - Booking workflow state machine (supports multiple workflows per session)
+
+## Logging
+
+**IMPORTANT: Never use `console.log`, `console.error`, or `console.warn` directly.** Always use the centralized logger from `utils/logger.ts`.
+
+```typescript
+import { logger } from './utils/logger';
+
+logger.debug('Detailed debug info', { context: 'optional' });
+logger.info('General information');
+logger.warn('Warning message');
+logger.error('Error occurred', { error: String(err) });
+```
+
+The logger respects the `LOG_LEVEL` environment variable and formats output with timestamps. The only exception is `config/env.ts` which must use `process.stderr.write` directly because the logger depends on env validation completing first.
 
 ## NPM Scripts
 

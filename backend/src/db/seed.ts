@@ -1,5 +1,6 @@
 import { db, providers, type NewProvider, type WorkingHours } from './index';
 import { v4 as uuidv4 } from 'uuid';
+import { logger } from '../utils/logger';
 
 // Standard working hours templates
 const weekdayHours: WorkingHours = {
@@ -194,16 +195,16 @@ const mockProviders: Omit<NewProvider, 'id' | 'createdAt' | 'updatedAt'>[] = [
 ];
 
 async function seed(): Promise<void> {
-  console.log('Seeding database...');
+  logger.info('Seeding database...');
 
   const now = new Date();
 
   // Clear existing providers (idempotent - safe to run multiple times)
-  console.log('Clearing existing providers...');
+  logger.info('Clearing existing providers...');
   db.delete(providers).run();
 
   // Insert mock providers
-  console.log(`Inserting ${mockProviders.length} providers...`);
+  logger.info(`Inserting ${mockProviders.length} providers...`);
 
   for (const provider of mockProviders) {
     const newProvider: NewProvider = {
@@ -214,20 +215,17 @@ async function seed(): Promise<void> {
     };
 
     db.insert(providers).values(newProvider).run();
-    console.log(`  - Added: ${provider.name} (${provider.category})`);
+    logger.debug(`Added: ${provider.name} (${provider.category})`);
   }
 
-  console.log('\nSeed completed successfully!');
-  console.log(`Total providers: ${mockProviders.length}`);
-  console.log('Categories:');
-  console.log('  - Salons: 3');
-  console.log('  - Mechanics: 3');
-  console.log('  - Dentists: 2');
-  console.log('  - Other (Spa, Pet Grooming): 2');
+  logger.info('Seed completed successfully!', {
+    totalProviders: mockProviders.length,
+    categories: { salons: 3, mechanics: 3, dentists: 2, other: 2 },
+  });
 }
 
 // Run seed if executed directly
 seed().catch((error) => {
-  console.error('Seed failed:', error);
+  logger.error('Seed failed', { error: String(error) });
   process.exit(1);
 });

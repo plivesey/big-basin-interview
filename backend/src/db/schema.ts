@@ -36,7 +36,6 @@ export const bookings = sqliteTable('bookings', {
   status: text('status').notNull(), // 'pending', 'confirmed', 'cancelled'
   calendarEventId: text('calendar_event_id'), // Google Calendar event ID
   idempotencyKey: text('idempotency_key').notNull().unique(), // Prevent duplicates
-  notes: text('notes'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
 });
@@ -90,11 +89,26 @@ export const messages = sqliteTable('messages', {
   index('messages_session_id_idx').on(table.sessionId),
 ]);
 
-// Message content types for JSON column
-export type MessageContent =
-  | { type: 'text'; text: string }
-  | { type: 'tool_use'; id: string; name: string; input: Record<string, unknown> }
-  | { type: 'tool_result'; tool_use_id: string; content: string };
+// Message content subtypes for JSON column
+export interface TextContent {
+  type: 'text';
+  text: string;
+}
+
+export interface ToolUseContent {
+  type: 'tool_use';
+  id: string;
+  name: string;
+  input: Record<string, unknown>;
+}
+
+export interface ToolResultContent {
+  type: 'tool_result';
+  tool_use_id: string;
+  content: string;
+}
+
+export type MessageContent = TextContent | ToolUseContent | ToolResultContent;
 
 // Type exports for use in other files
 export type Provider = typeof providers.$inferSelect;
