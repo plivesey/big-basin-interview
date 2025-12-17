@@ -1,6 +1,7 @@
 import { Server, Socket } from 'socket.io';
 import { saveMessage, getMessageHistory, ChatMessage } from '../services/message-service';
 import { getOrCreateSession } from '../services/session-service';
+import { sendMessage as sendAIMessage } from '../services/ai-conversation-service';
 import { logger } from '../utils/logger';
 
 // Types for WebSocket events
@@ -62,7 +63,7 @@ export function initializeChatHandler(io: ChatServer): void {
 
       logger.info('Session established', { sessionId: session.id, socketId: socket.id });
     } catch (error) {
-      logger.error('Error during connection setup', { error: String(error) });
+      logger.error('Error during connection setup', { error: String(error), socketId: socket.id });
       socket.emit('error', {
         error: 'Failed to initialize session',
         code: 'SESSION_INIT_ERROR',
@@ -101,37 +102,37 @@ export function initializeChatHandler(io: ChatServer): void {
           content: messageText,
         });
 
-        logger.debug('User message saved', { messageId: userMessage.id });
+        logger.info('User message saved', { messageId: userMessage.id, sessionId });
 
-        // Generate echo response (will be replaced with AI in Milestone 3)
-        const echoContent = `Echo: ${messageText}`;
+        // Emit message start to indicate processing
+        socket.emit('message_start', { messageId: 'pending' });
+
+        // Call AI service to get response
+        const aiResponse = await sendAIMessage(sessionId, messageText);
 
         // Save assistant message to database
         const assistantMessage = await saveMessage({
           sessionId,
           role: 'assistant',
-          content: echoContent,
+          content: aiResponse,
         });
 
-        // Emit message start
-        socket.emit('message_start', { messageId: assistantMessage.id });
-
-        // Emit the echo response
+        // Emit the AI response
         socket.emit('assistant_message', {
           id: assistantMessage.id,
-          content: echoContent,
+          content: aiResponse,
           timestamp: assistantMessage.createdAt.toISOString(),
         });
 
         // Emit message complete
         socket.emit('message_complete', { messageId: assistantMessage.id });
 
-        logger.debug('Echo response sent', { messageId: assistantMessage.id });
+        logger.info('AI response sent', { messageId: assistantMessage.id, sessionId });
       } catch (error) {
-        logger.error('Error handling user message', { error: String(error) });
+        logger.error('Error handling user message', { error: String(error), sessionId });
         socket.emit('error', {
-          error: 'Failed to process message',
-          code: 'MESSAGE_ERROR',
+          error: 'Failed to get AI response. Please try again.',
+          code: 'AI_ERROR',
         });
       }
     });
@@ -153,7 +154,7 @@ export function initializeChatHandler(io: ChatServer): void {
         const messageHistory = await getMessageHistory(sessionId);
         socket.emit('message_history', { messages: messageHistory });
       } catch (error) {
-        logger.error('Error during sync', { error: String(error) });
+        logger.error('Error during sync', { error: String(error), sessionId });
         socket.emit('error', {
           error: 'Failed to sync messages',
           code: 'SYNC_ERROR',
