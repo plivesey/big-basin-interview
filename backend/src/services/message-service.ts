@@ -1,20 +1,16 @@
 import { v4 as uuidv4 } from 'uuid';
 import { eq, asc, and, gt } from 'drizzle-orm';
-import { db, messages, MessageContent, Message, NewMessage } from '../db';
+import { db, messages, Message, NewMessage } from '../db';
+import type { ChatMessage, MessageContent, MessageRole } from '@asba/shared-types';
+
+// Re-export ChatMessage for consumers of this service
+export type { ChatMessage } from '@asba/shared-types';
 
 export interface SaveMessageParams {
   id?: string;
   sessionId: string;
-  role: 'user' | 'assistant';
+  role: MessageRole;
   content: string | MessageContent[];
-}
-
-export interface ChatMessage {
-  id: string;
-  sessionId: string;
-  role: 'user' | 'assistant';
-  content: MessageContent[];
-  createdAt: Date;
 }
 
 /**

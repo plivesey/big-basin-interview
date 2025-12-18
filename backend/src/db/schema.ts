@@ -1,4 +1,8 @@
 import { sqliteTable, text, integer, real, index } from 'drizzle-orm/sqlite-core';
+import type { MessageContent } from '@asba/shared-types';
+
+// Re-export message content types from shared package
+export type { TextContent, ToolUseContent, ToolResultContent, MessageContent } from '@asba/shared-types';
 
 // Working hours type for JSON column
 export type WorkingHours = Record<string, { open: string; close: string } | null>;
@@ -87,27 +91,6 @@ export const messages = sqliteTable('messages', {
 }, (table) => [
   index('messages_session_id_idx').on(table.sessionId),
 ]);
-
-// Message content subtypes for JSON column
-export interface TextContent {
-  type: 'text';
-  text: string;
-}
-
-export interface ToolUseContent {
-  type: 'tool_use';
-  id: string;
-  name: string;
-  input: Record<string, unknown>;
-}
-
-export interface ToolResultContent {
-  type: 'tool_result';
-  tool_use_id: string;
-  content: string;
-}
-
-export type MessageContent = TextContent | ToolUseContent | ToolResultContent;
 
 // Type exports for use in other files
 export type Provider = typeof providers.$inferSelect;

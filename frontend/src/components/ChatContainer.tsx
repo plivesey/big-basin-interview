@@ -1,11 +1,25 @@
-import { useChatStore } from '../store/chat-store';
+import {
+  useChatStore,
+  selectMessages,
+  selectIsLoading,
+  selectConnectionStatus,
+} from '../store/chat-store';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { MessageList } from './MessageList';
 import { ChatInput } from './ChatInput';
-import { Badge } from './Badge';
+import { ConnectionStatus } from './ConnectionStatus';
 
+/**
+ * Main chat container component.
+ * Uses Zustand selectors to only re-render when specific state changes.
+ */
 export function ChatContainer() {
-  const { messages, isLoading, connectionStatus } = useChatStore();
+  // Use selectors to subscribe to specific pieces of state
+  // This prevents re-renders when unrelated state changes
+  const messages = useChatStore(selectMessages);
+  const isLoading = useChatStore(selectIsLoading);
+  const connectionStatus = useChatStore(selectConnectionStatus);
+
   const { sendMessage, reconnect } = useWebSocket();
 
   const isConnected = connectionStatus === 'connected';
@@ -46,53 +60,5 @@ export function ChatContainer() {
         }
       />
     </div>
-  );
-}
-
-interface ConnectionStatusProps {
-  status: 'connecting' | 'connected' | 'disconnected' | 'error';
-  onReconnect: () => void;
-}
-
-function ConnectionStatus({ status, onReconnect }: ConnectionStatusProps) {
-  if (status === 'connected') {
-    return (
-      <Badge variant="success">
-        <span className="w-2 h-2 rounded-full bg-green-500 mr-1.5 animate-pulse" />
-        Ready
-      </Badge>
-    );
-  }
-
-  if (status === 'connecting') {
-    return (
-      <Badge variant="warning">
-        <span className="w-2 h-2 rounded-full bg-amber-500 mr-1.5 animate-pulse" />
-        Getting ready...
-      </Badge>
-    );
-  }
-
-  if (status === 'error') {
-    return (
-      <button
-        onClick={onReconnect}
-        className="badge-error flex items-center gap-1.5 cursor-pointer hover:bg-red-200 transition-colors"
-      >
-        <span className="w-2 h-2 rounded-full bg-red-500" />
-        Having trouble - Click to retry
-      </button>
-    );
-  }
-
-  // disconnected
-  return (
-    <button
-      onClick={onReconnect}
-      className="badge-warning flex items-center gap-1.5 cursor-pointer hover:bg-amber-200 transition-colors"
-    >
-      <span className="w-2 h-2 rounded-full bg-amber-500" />
-      Connection lost - Click to reconnect
-    </button>
   );
 }

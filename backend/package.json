@@ -23,6 +23,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@asba/shared-types": "file:../packages/shared-types",
     "@anthropic-ai/sdk": "^0.71.2",
     "better-sqlite3": "^12.5.0",
     "cors": "^2.8.5",

@@ -296,18 +296,19 @@ describe('parseMessage', () => {
     expect(parsed.createdAt.toISOString()).toBe('2024-01-15T10:30:00.000Z');
   });
 
-  it('should parse raw message data with Date object', () => {
-    const date = new Date();
+  it('should parse raw message data with ISO date string', () => {
+    const dateString = new Date().toISOString();
     const raw = {
       id: '2',
       sessionId: 'session-2',
       role: 'assistant' as const,
       content: [{ type: 'text' as const, text: 'Hi' }],
-      createdAt: date,
+      createdAt: dateString,
     };
 
     const parsed = parseMessage(raw);
 
-    expect(parsed.createdAt).toBe(date);
+    expect(parsed.createdAt).toBeInstanceOf(Date);
+    expect(parsed.createdAt.toISOString()).toBe(dateString);
   });
 });
