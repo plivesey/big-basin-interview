@@ -41,6 +41,9 @@ export interface TimeSlot {
   start: string; // ISO datetime
   end: string; // ISO datetime
   available: boolean;
+  conflict?: {
+    eventTitle: string;
+  };
 }
 
 /**

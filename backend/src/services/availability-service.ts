@@ -5,8 +5,11 @@
  * mock availability patterns to simulate realistic booking availability.
  */
 
+import type { TimeSlot } from '@asba/shared-types';
 import { getProviderById } from './provider-service';
+import { checkConflicts } from './calendar-service';
 import { getBusyLevel, applyMockPattern } from '../utils/mock-availability';
+import { annotateWithConflicts } from '../utils/slot-conflict-checker';
 import {
   getLocalDateString,
   parseTimeToMinutes,
@@ -15,12 +18,10 @@ import {
 } from '../utils/date-utils';
 import { ProviderNotFoundError } from '../middleware/error-handler';
 import type { WorkingHours } from '../db/schema';
+import { logger } from '../utils/logger';
 
-export interface TimeSlot {
-  start: string; // ISO datetime
-  end: string; // ISO datetime
-  available: boolean;
-}
+// Re-export TimeSlot for dependent files
+export type { TimeSlot } from '@asba/shared-types';
 
 export interface AvailabilityResult {
   providerId: string;
@@ -163,6 +164,29 @@ export async function getAvailableSlots(
 
   // Apply mock availability (in production, replace with real availability data)
   slots = applyMockAvailability(slots, providerId, date);
+
+  // Check for calendar conflicts if slots exist
+  // Note: checkConflicts handles errors gracefully and returns [] if calendar not connected
+  if (slots.length > 0) {
+    const dateObj = new Date(date + 'T00:00:00');
+    const dayIndex = dateObj.getDay();
+    const dayName = DAY_NAMES[dayIndex];
+    const dayHours = provider.workingHours[dayName];
+
+    if (dayHours) {
+      const dayStart = new Date(`${date}T${dayHours.open}:00`);
+      const dayEnd = new Date(`${date}T${dayHours.close}:00`);
+
+      const calendarEvents = await checkConflicts(dayStart, dayEnd);
+      if (calendarEvents.length > 0) {
+        logger.debug('Found calendar conflicts', {
+          date,
+          eventCount: calendarEvents.length,
+        });
+        slots = annotateWithConflicts(slots, calendarEvents);
+      }
+    }
+  }
 
   return {
     providerId: provider.id,
