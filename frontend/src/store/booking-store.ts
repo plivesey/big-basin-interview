@@ -20,6 +20,7 @@ export interface BookingResult {
   scheduledAt: string;
   providerName: string;
   serviceType: string;
+  calendarEventAdded: boolean;
 }
 
 /**
@@ -130,14 +131,36 @@ export const useBookingStore = create<BookingState>((set, get) => ({
     });
 
     try {
+      // Notify backend that user selected this provider (updates workflow state)
+      if (workflowId) {
+        try {
+          await fetch(`${BACKEND_URL}/api/workflows/${workflowId}/select-provider`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ providerId }),
+          });
+          logger.debug('Workflow updated for provider selection', { workflowId, providerId });
+        } catch (workflowError) {
+          // Log but don't fail - workflow update is not critical for modal display
+          logger.warn('Failed to update workflow state', { workflowId, error: String(workflowError) });
+        }
+      }
+
+      const providerUrl = `${BACKEND_URL}/api/providers/${providerId}`;
+      const availabilityUrl = `${BACKEND_URL}/api/providers/${providerId}/availability?date=${getTodayDate()}`;
+
+      logger.debug('Fetching provider details', { providerUrl, availabilityUrl });
+
       // Fetch provider details and availability in parallel
       const [providerResponse, availabilityResponse] = await Promise.all([
-        fetch(`${BACKEND_URL}/api/providers/${providerId}`),
-        fetch(`${BACKEND_URL}/api/providers/${providerId}/availability?date=${getTodayDate()}`),
+        fetch(providerUrl),
+        fetch(availabilityUrl),
       ]);
 
       if (!providerResponse.ok) {
-        throw new Error('Failed to load provider details');
+        const errorData = await providerResponse.json().catch(() => ({}));
+        const errorMessage = errorData?.error?.message || `HTTP ${providerResponse.status}`;
+        throw new Error(`Failed to load provider: ${errorMessage}`);
       }
 
       const providerData = await providerResponse.json();
@@ -150,7 +173,9 @@ export const useBookingStore = create<BookingState>((set, get) => ({
       });
 
       if (!availabilityResponse.ok) {
-        throw new Error('Failed to load availability');
+        const errorData = await availabilityResponse.json().catch(() => ({}));
+        const errorMessage = errorData?.error?.message || `HTTP ${availabilityResponse.status}`;
+        throw new Error(`Failed to load availability: ${errorMessage}`);
       }
 
       const availabilityData = await availabilityResponse.json();
@@ -167,9 +192,14 @@ export const useBookingStore = create<BookingState>((set, get) => ({
         slotsCount: slots.length,
       });
     } catch (error) {
-      logger.error('Failed to open provider modal', { providerId, error: String(error) });
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error('Failed to open provider modal', {
+        providerId,
+        error: errorMessage,
+        backendUrl: BACKEND_URL,
+      });
       set({
-        error: 'Unable to load provider details. Please try again.',
+        error: errorMessage || 'Unable to load provider details. Please try again.',
         isLoadingProvider: false,
         isLoadingSlots: false,
       });
@@ -289,6 +319,7 @@ export const useBookingStore = create<BookingState>((set, get) => ({
           scheduledAt: selectedSlot.start,
           providerName: selectedProvider.name,
           serviceType: selectedService,
+          calendarEventAdded: !!booking.calendarEventId,
         },
         isConfirming: false,
       });

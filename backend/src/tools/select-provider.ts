@@ -2,7 +2,7 @@
  * select_provider tool - selects a provider for booking
  *
  * Takes a provider ID, validates it exists in the workflow's selectedProviders,
- * transitions the workflow to TIME_SELECTION state, and emits a WebSocket event
+ * transitions the workflow to PROVIDER_SELECTION state, and emits a WebSocket event
  * to open the provider detail modal in the frontend.
  */
 
@@ -108,12 +108,12 @@ async function handler(
     };
   }
 
-  // Transition workflow to TIME_SELECTION state with selectedProviderId
+  // Transition workflow to PROVIDER_SELECTION state with selectedProviderId
   try {
-    await transitionState(workflow.id, WorkflowState.TIME_SELECTION, {
+    await transitionState(workflow.id, WorkflowState.PROVIDER_SELECTION, {
       selectedProviderId: input.providerId,
     });
-    logger.info('Workflow transitioned to TIME_SELECTION', {
+    logger.info('Workflow transitioned to PROVIDER_SELECTION', {
       workflowId: workflow.id,
       providerId: input.providerId,
     });

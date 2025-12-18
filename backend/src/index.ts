@@ -6,17 +6,15 @@ import { createApp } from './app';
 
 const app = createApp();
 const PORT = process.env.PORT || 3001;
-const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 
 // Create HTTP server
 const httpServer = createServer(app);
 
-// Create Socket.io server with CORS configuration
+// Create Socket.io server
+// CORS disabled for demo purposes - allows all origins
 const io: ChatServer = new Server(httpServer, {
   cors: {
-    origin: FRONTEND_URL,
-    methods: ['GET', 'POST'],
-    credentials: true,
+    origin: '*',
   },
 });
 

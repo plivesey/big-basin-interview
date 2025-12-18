@@ -17,3 +17,7 @@ export { TimeSlotGrid } from './TimeSlotGrid';
 export { ServiceSelector } from './ServiceSelector';
 export { BookingConfirmation } from './BookingConfirmation';
 export { ProviderDetailModal } from './ProviderDetailModal';
+
+// Menu components
+export { HamburgerButton } from './HamburgerButton';
+export { SideMenu } from './SideMenu';

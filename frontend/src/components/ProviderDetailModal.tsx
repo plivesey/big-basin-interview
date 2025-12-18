@@ -15,6 +15,7 @@ import {
   selectIsLoadingSlots,
   selectIsConfirming,
 } from '../store/booking-store';
+import { useMenuStore, selectCalendarConnected } from '../store/menu-store';
 import { RatingStars } from './RatingStars';
 import { TimeSlotGrid } from './TimeSlotGrid';
 import { ServiceSelector } from './ServiceSelector';
@@ -111,7 +112,7 @@ function DetailsView() {
   const { selectTimeSlot, selectService, setSelectedDate, proceedToConfirmation, closeModal } =
     useBookingStore();
 
-  if (isLoadingProvider || !provider) {
+  if (isLoadingProvider) {
     return (
       <div className="p-6">
         <div className="flex justify-end">
@@ -120,6 +121,37 @@ function DetailsView() {
         <div className="flex items-center justify-center py-12">
           <div className="spinner" />
           <span className="ml-3 text-slate-600">Loading provider details...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!provider) {
+    return (
+      <div className="p-6">
+        <div className="flex justify-end">
+          <CloseButton onClick={closeModal} />
+        </div>
+        <div className="flex flex-col items-center justify-center py-12 space-y-4">
+          <svg
+            className="w-12 h-12 text-red-500"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={1.5}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"
+            />
+          </svg>
+          <p className="text-slate-600 text-center">
+            {error || 'Unable to load provider details. Please try again.'}
+          </p>
+          <Button variant="secondary" onClick={closeModal}>
+            Close
+          </Button>
         </div>
       </div>
     );
@@ -274,6 +306,11 @@ function SuccessView() {
         <p className="body-small mt-2">
           Your appointment at {bookingResult.providerName} is confirmed.
         </p>
+        {bookingResult.calendarEventAdded && (
+          <p className="body-small mt-2 text-slate-600">
+            I've added it to your Google Calendar.
+          </p>
+        )}
       </div>
 
       {/* Booking Details */}
@@ -307,6 +344,7 @@ export const ProviderDetailModal = memo(function ProviderDetailModal() {
   const selectedService = useBookingStore(selectSelectedService);
   const isConfirming = useBookingStore(selectIsConfirming);
   const error = useBookingStore(selectError);
+  const calendarConnected = useMenuStore(selectCalendarConnected);
   const { confirmBooking, goBackToDetails, closeModal } = useBookingStore();
 
   const handleClose = useCallback(() => {
@@ -348,6 +386,7 @@ export const ProviderDetailModal = memo(function ProviderDetailModal() {
               service={selectedService}
               slot={selectedSlot}
               isConfirming={isConfirming}
+              calendarConnected={calendarConnected}
               onConfirm={confirmBooking}
               onBack={goBackToDetails}
             />

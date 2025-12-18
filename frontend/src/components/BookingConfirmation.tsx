@@ -7,6 +7,7 @@ interface BookingConfirmationProps {
   service: string;
   slot: TimeSlot;
   isConfirming: boolean;
+  calendarConnected?: boolean;
   onConfirm: () => void;
   onBack: () => void;
 }
@@ -37,6 +38,7 @@ export const BookingConfirmation = memo(function BookingConfirmation({
   service,
   slot,
   isConfirming,
+  calendarConnected,
   onConfirm,
   onBack,
 }: BookingConfirmationProps) {
@@ -48,6 +50,11 @@ export const BookingConfirmation = memo(function BookingConfirmation({
         <p className="body-small mt-1">
           Review the details below. Once you confirm, your booking will be finalized.
         </p>
+        {calendarConnected && (
+          <p className="body-small mt-2 text-slate-600">
+            I'll add this to your Google Calendar once you confirm.
+          </p>
+        )}
       </div>
 
       {/* Booking Summary */}

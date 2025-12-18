@@ -5,9 +5,6 @@
 export enum WorkflowState {
   PROVIDER_SEARCH = 'PROVIDER_SEARCH',
   PROVIDER_SELECTION = 'PROVIDER_SELECTION',
-  TIME_SELECTION = 'TIME_SELECTION',
-  CONFIRMATION = 'CONFIRMATION',
-  BOOKING_CREATED = 'BOOKING_CREATED',
   COMPLETE = 'COMPLETE',
 }
 
@@ -34,10 +31,7 @@ export interface WorkflowStateRecord {
 // Valid state transitions
 export const VALID_TRANSITIONS: Record<WorkflowState, WorkflowState[]> = {
   [WorkflowState.PROVIDER_SEARCH]: [WorkflowState.PROVIDER_SELECTION],
-  [WorkflowState.PROVIDER_SELECTION]: [WorkflowState.TIME_SELECTION, WorkflowState.PROVIDER_SEARCH],
-  [WorkflowState.TIME_SELECTION]: [WorkflowState.CONFIRMATION, WorkflowState.PROVIDER_SELECTION],
-  [WorkflowState.CONFIRMATION]: [WorkflowState.BOOKING_CREATED, WorkflowState.TIME_SELECTION],
-  [WorkflowState.BOOKING_CREATED]: [WorkflowState.COMPLETE],
+  [WorkflowState.PROVIDER_SELECTION]: [WorkflowState.PROVIDER_SELECTION, WorkflowState.COMPLETE, WorkflowState.PROVIDER_SEARCH],
   [WorkflowState.COMPLETE]: [], // Terminal state
 };
 

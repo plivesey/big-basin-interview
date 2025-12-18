@@ -5,8 +5,7 @@
  * and emits a WebSocket event to display the cards. This prevents AI hallucination
  * of provider details.
  *
- * Also transitions the workflow to PROVIDER_SELECTION state and stores
- * the displayed provider IDs in the workflow context.
+ * The workflow stays in PROVIDER_SEARCH state until the user clicks on a provider.
  */
 
 import { z } from 'zod';
@@ -18,11 +17,7 @@ import {
   DisplayProvider,
 } from '../types/tool.types';
 import { getProviderById } from '../services/provider-service';
-import {
-  getCurrentWorkflow,
-  transitionState,
-  WorkflowState,
-} from '../services/workflow-service';
+import { getCurrentWorkflow } from '../services/workflow-service';
 import { logger } from '../utils/logger';
 
 // Input schema (Zod for validation) - IDs only
@@ -72,36 +67,9 @@ async function handler(
     sessionId: context.sessionId,
   });
 
-  // Get the current workflow to transition it
+  // Get the current workflow (stays in PROVIDER_SEARCH until user clicks)
   const workflow = await getCurrentWorkflow(context.sessionId);
-  let workflowId: string | undefined;
-
-  if (workflow) {
-    try {
-      // Transition to PROVIDER_SELECTION state with the provider IDs
-      const updatedWorkflow = await transitionState(
-        workflow.id,
-        WorkflowState.PROVIDER_SELECTION,
-        { selectedProviders: input.providerIds }
-      );
-      workflowId = updatedWorkflow.id;
-      logger.info('Workflow transitioned to PROVIDER_SELECTION', {
-        workflowId,
-        providerCount: input.providerIds.length,
-      });
-    } catch (error) {
-      // Log but don't fail the tool - workflow transition is not critical for display
-      logger.warn('Failed to transition workflow state', {
-        workflowId: workflow.id,
-        error: String(error),
-      });
-      workflowId = workflow.id;
-    }
-  } else {
-    logger.warn('No current workflow found for session', {
-      sessionId: context.sessionId,
-    });
-  }
+  const workflowId = workflow?.id;
 
   // Look up each provider from database
   const providers: DisplayProvider[] = [];
