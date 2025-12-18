@@ -3,7 +3,7 @@
  */
 
 import { toolRegistry } from '../tools';
-import { ToolExecutionContext, ToolResult } from '../types/tool.types';
+import { ToolExecutionContext, ToolResult, DisplayProvider } from '../types/tool.types';
 import { ToolUseContent, ToolResultContent } from '../db/schema';
 import { logger } from '../utils/logger';
 
@@ -13,6 +13,7 @@ import { logger } from '../utils/logger';
 export interface ToolExecutionCallbacks {
   onToolStart?: (toolName: string, toolUseId: string) => void;
   onToolComplete?: (toolName: string, toolUseId: string, result: ToolResult) => void;
+  onDisplayProviders?: (providers: DisplayProvider[]) => void;
 }
 
 /**
@@ -37,6 +38,12 @@ export async function executeTools(
 ): Promise<ExecuteToolsResult> {
   const toolResults: ToolResultContent[] = [];
 
+  // Extend context with display providers callback
+  const extendedContext: ToolExecutionContext = {
+    ...context,
+    emitDisplayProviders: callbacks?.onDisplayProviders,
+  };
+
   for (const toolUse of toolUseBlocks) {
     const toolName = toolUse.name;
 
@@ -46,7 +53,7 @@ export async function executeTools(
     callbacks?.onToolStart?.(toolName, toolUse.id);
 
     // Execute the tool via registry
-    const result = await toolRegistry.execute(toolName, toolUse.input, context);
+    const result = await toolRegistry.execute(toolName, toolUse.input, extendedContext);
 
     // Construct tool_result content block
     toolResults.push({

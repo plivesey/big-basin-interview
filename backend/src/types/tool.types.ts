@@ -26,6 +26,8 @@ export interface ToolExecutionContext {
   sessionId: string;
   workflowId?: string;
   userId: string;
+  // Callback for emitting display_providers WebSocket event
+  emitDisplayProviders?: (providers: DisplayProvider[]) => void;
 }
 
 // Tool execution result
@@ -61,16 +63,20 @@ export interface SearchProvidersInput {
   serviceType?: string;
 }
 
+// Provider data for display (returned from backend lookup)
+export interface DisplayProvider {
+  id: string;
+  name: string;
+  category: string;
+  rating: number;
+  reviewCount: number | null;
+  services: string[];
+  address: string;
+}
+
+// Tool input - only IDs, backend looks up full data
 export interface DisplayProviderCardsInput {
-  providers: Array<{
-    id: string;
-    name: string;
-    category: string;
-    rating: number;
-    location?: string;
-    distance?: number;
-  }>;
-  message: string;
+  providerIds: string[];
 }
 
 export interface GetAvailableSlotsInput {
