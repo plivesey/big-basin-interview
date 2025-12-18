@@ -5,10 +5,12 @@ import {
   selectConnectionStatus,
 } from '../store/chat-store';
 import { useBookingStore, selectIsChatDisabled } from '../store/booking-store';
+import { usePanelStore } from '../store/panel-store';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { MessageList } from './MessageList';
 import { ChatInput } from './ChatInput';
 import { ConnectionStatus } from './ConnectionStatus';
+import { PanelToggleButton } from './PanelToggleButton';
 
 /**
  * Main chat container component.
@@ -22,10 +24,24 @@ export function ChatContainer() {
   const connectionStatus = useChatStore(selectConnectionStatus);
   const isModalOpen = useBookingStore(selectIsChatDisabled);
 
+  // Panel state for toggle button
+  const isProviderPanelOpen = usePanelStore((state) => state.isProviderPanelOpen);
+  const displayedProviders = usePanelStore((state) => state.displayedProviders);
+  const workflowState = usePanelStore((state) => state.workflowState);
+  const reopenProviderPanel = usePanelStore((state) => state.reopenProviderPanel);
+
   const { sendMessage, reconnect } = useWebSocket();
 
   const isConnected = connectionStatus === 'connected';
   const isConnecting = connectionStatus === 'connecting';
+
+  // Toggle button visibility: connected, panel closed, has providers, workflow not complete
+  const isWorkflowComplete = workflowState === 'BOOKING_CREATED' || workflowState === 'COMPLETE';
+  const showToggleButton =
+    isConnected &&
+    !isProviderPanelOpen &&
+    displayedProviders.length > 0 &&
+    !isWorkflowComplete;
 
   return (
     <div className="flex flex-col h-full bg-white rounded-xl shadow-lg overflow-hidden">
@@ -40,10 +56,16 @@ export function ChatContainer() {
             <p className="text-xs text-slate-500">Your guide to local services</p>
           </div>
         </div>
-        <ConnectionStatus
-          status={connectionStatus}
-          onReconnect={reconnect}
-        />
+        <div className="flex items-center gap-2">
+          <PanelToggleButton
+            onClick={reopenProviderPanel}
+            visible={showToggleButton}
+          />
+          <ConnectionStatus
+            status={connectionStatus}
+            onReconnect={reconnect}
+          />
+        </div>
       </div>
 
       {/* Messages */}
