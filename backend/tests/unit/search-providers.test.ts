@@ -119,22 +119,22 @@ describe('search_providers tool', () => {
   });
 
   describe('handler', () => {
-    it('should call searchProviders with query', async () => {
+    it('should call searchProviders with query and user location', async () => {
       mockSearchProviders.mockResolvedValue([mockProvider]);
 
       const input: SearchProvidersInput = { query: 'salon' };
       await searchProvidersTool.handler(input, mockContext);
 
-      expect(mockSearchProviders).toHaveBeenCalledWith('salon');
+      expect(mockSearchProviders).toHaveBeenCalledWith('salon', 'seattle');
     });
 
-    it('should call searchProviders with undefined when no query provided', async () => {
+    it('should call searchProviders with undefined query and user location when no query provided', async () => {
       mockSearchProviders.mockResolvedValue([]);
 
       const input: SearchProvidersInput = {};
       await searchProvidersTool.handler(input, mockContext);
 
-      expect(mockSearchProviders).toHaveBeenCalledWith(undefined);
+      expect(mockSearchProviders).toHaveBeenCalledWith(undefined, 'seattle');
     });
 
     it('should return providers in correct format', async () => {

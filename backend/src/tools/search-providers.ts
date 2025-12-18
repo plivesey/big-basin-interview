@@ -106,7 +106,7 @@ async function handler(
     location: userLocation,
   });
 
-  const providers = await searchProviders(input.query);
+  const providers = await searchProviders(input.query, userLocation);
 
   logger.info('search_providers found results', {
     count: providers.length,

@@ -200,6 +200,56 @@ describe('provider-service', () => {
 
       expect(results).toHaveLength(1);
     });
+
+    it('should filter by geo when provided', async () => {
+      insertTestProvider({ name: 'Seattle Salon', category: 'salon', geo: 'seattle' });
+      insertTestProvider({ name: 'SF Salon', category: 'salon', geo: 'san_francisco' });
+      insertTestProvider({ name: 'NYC Salon', category: 'salon', geo: 'new_york' });
+
+      const seattleResults = await searchProviders(undefined, 'seattle');
+      expect(seattleResults).toHaveLength(1);
+      expect(seattleResults[0].name).toBe('Seattle Salon');
+
+      const sfResults = await searchProviders(undefined, 'san_francisco');
+      expect(sfResults).toHaveLength(1);
+      expect(sfResults[0].name).toBe('SF Salon');
+    });
+
+    it('should combine query and geo filter', async () => {
+      insertTestProvider({ name: 'Seattle Salon', category: 'salon', geo: 'seattle' });
+      insertTestProvider({ name: 'Seattle Mechanic', category: 'mechanic', geo: 'seattle' });
+      insertTestProvider({ name: 'NYC Salon', category: 'salon', geo: 'new_york' });
+
+      const results = await searchProviders('salon', 'seattle');
+
+      expect(results).toHaveLength(1);
+      expect(results[0].name).toBe('Seattle Salon');
+    });
+
+    it('should return empty when geo has no providers', async () => {
+      insertTestProvider({ name: 'Seattle Salon', category: 'salon', geo: 'seattle' });
+
+      const results = await searchProviders(undefined, 'vancouver');
+
+      expect(results).toHaveLength(0);
+    });
+
+    it('should return empty when query matches but geo does not', async () => {
+      insertTestProvider({ name: 'Seattle Salon', category: 'salon', geo: 'seattle' });
+
+      const results = await searchProviders('salon', 'vancouver');
+
+      expect(results).toHaveLength(0);
+    });
+
+    it('should return all matching geos when no geo filter provided', async () => {
+      insertTestProvider({ name: 'Seattle Salon', category: 'salon', geo: 'seattle' });
+      insertTestProvider({ name: 'NYC Salon', category: 'salon', geo: 'new_york' });
+
+      const results = await searchProviders('salon');
+
+      expect(results).toHaveLength(2);
+    });
   });
 
   describe('getProviderById', () => {
