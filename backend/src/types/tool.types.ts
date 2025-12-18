@@ -28,6 +28,8 @@ export interface ToolExecutionContext {
   userId: string;
   // Callback for emitting display_providers WebSocket event (with optional workflowId)
   emitDisplayProviders?: (providers: DisplayProvider[], workflowId?: string) => void;
+  // Callback for emitting open_provider_detail WebSocket event (opens modal in frontend)
+  emitOpenProviderDetail?: (providerId: string, providerName: string, workflowId: string) => void;
 }
 
 // Tool execution result

@@ -3,6 +3,7 @@ import { env, requireAnthropicKey } from '../config/env';
 import { getMessageHistory, ChatMessage } from './message-service';
 import { executeTools, ToolExecutionCallbacks } from './tool-executor';
 import { getCurrentWorkflow, WorkflowStateRecord } from './workflow-service';
+import { getProviderById } from './provider-service';
 import { logger } from '../utils/logger';
 import { ToolUseContent, MessageContent } from '../db/schema';
 import { toolRegistry } from '../tools';
@@ -117,6 +118,8 @@ Communication guidelines:
 - Never refer to yourself in third person - use "I" not "Scout"
 
 Tool usage guidelines:
+
+Searching for providers:
 - When a user asks about finding services or providers, use the search_providers tool
 - IMPORTANT: Use short, simple search terms (1-2 words) for best results. The search uses partial text matching.
   - Good: "salon", "haircut", "mechanic", "dentist", "oil change"
@@ -127,13 +130,24 @@ Tool usage guidelines:
   - Example: display_provider_cards({ providerIds: ["id1", "id2", "id3"] })
 - After displaying cards, provide a brief conversational summary (1-2 sentences)
 - Do NOT list out all provider details in text - the cards will show that information
-- If no results are found, try a broader search term (e.g., if "haircut" returns nothing, try "salon")`;
+- If no results are found, try a broader search term (e.g., if "haircut" returns nothing, try "salon")
+
+Selecting a provider (booking flow):
+- When a user indicates they want to book with a specific provider (e.g., "I'll go with Luxe Salon", "book me with that one", "let's do the first one"), use the select_provider tool
+- CRITICAL: You MUST use the exact UUID from the search results or from the "VALID PROVIDER IDs" list in the workflow context. Never guess or make up provider IDs.
+- This opens a booking modal in the UI where the user will select a time slot and complete the booking
+- Keep your response brief - just acknowledge their choice and let the modal guide them
+
+Checking availability (conversational):
+- When a user asks about availability without intending to book immediately (e.g., "What times are available at Luxe tomorrow?", "Is the dentist free on Friday?"), use the get_available_slots tool
+- This returns availability data that you should describe conversationally
+- Do NOT use get_available_slots if the user wants to book - use select_provider instead to open the booking modal`;
 
 /**
  * Build workflow context string for system prompt
  * Returns empty string if no workflow or workflow is in initial state
  */
-function buildWorkflowContext(workflow: WorkflowStateRecord | null): string {
+async function buildWorkflowContext(workflow: WorkflowStateRecord | null): Promise<string> {
   if (!workflow) {
     return '';
   }
@@ -145,9 +159,19 @@ function buildWorkflowContext(workflow: WorkflowStateRecord | null): string {
   if (workflow.context.serviceType) {
     parts.push(`Service type: ${workflow.context.serviceType}`);
   }
+
+  // Include actual provider IDs with names so AI knows what to use with select_provider
   if (workflow.context.selectedProviders && workflow.context.selectedProviders.length > 0) {
-    parts.push(`Providers shown: ${workflow.context.selectedProviders.length}`);
+    const providerDetails = await Promise.all(
+      workflow.context.selectedProviders.map(async (id: string) => {
+        const provider = await getProviderById(id);
+        return provider ? `  - ${id} (${provider.name})` : `  - ${id}`;
+      })
+    );
+    parts.push(`VALID PROVIDER IDs for select_provider (use these exact UUIDs):`);
+    parts.push(providerDetails.join('\n'));
   }
+
   if (workflow.context.selectedProviderId) {
     parts.push(`Selected provider ID: ${workflow.context.selectedProviderId}`);
   }
@@ -360,7 +384,7 @@ export async function sendMessage(
 
   // Load current workflow for context
   const workflow = await getCurrentWorkflow(sessionId);
-  const workflowContext = buildWorkflowContext(workflow);
+  const workflowContext = await buildWorkflowContext(workflow);
   if (workflow) {
     logger.debug('Workflow context loaded', {
       sessionId,

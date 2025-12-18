@@ -58,7 +58,7 @@ export function initializeChatHandler(io: ChatServer): void {
       const messageHistory = await getMessageHistory(session.id);
       socket.emit('message_history', { messages: messageHistory.map(toRawMessage) });
 
-      logger.info('Session established', { sessionId: session.id, socketId: socket.id });
+      logger.info('Session established', { sessionId: session.id, socketId: socket.id, currentWorkflowId: session.currentWorkflowId });
     } catch (error) {
       logger.error('Error during connection setup', { error: String(error), socketId: socket.id });
       socket.emit('error', {
@@ -123,6 +123,10 @@ export function initializeChatHandler(io: ChatServer): void {
           onDisplayProviders: (providers, workflowId) => {
             logger.debug('Displaying providers', { count: providers.length, workflowId, sessionId });
             socket.emit('display_providers', { providers, workflowId });
+          },
+          onOpenProviderDetail: (providerId, providerName, workflowId) => {
+            logger.debug('Opening provider detail modal', { providerId, providerName, workflowId, sessionId });
+            socket.emit('open_provider_detail', { providerId, providerName, workflowId });
           },
         });
 

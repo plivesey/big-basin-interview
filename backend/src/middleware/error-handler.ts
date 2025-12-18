@@ -28,6 +28,19 @@ export class NotFoundError extends ApiError {
 }
 
 /**
+ * Provider not found error - thrown when a provider ID doesn't exist
+ */
+export class ProviderNotFoundError extends NotFoundError {
+  public providerId: string;
+
+  constructor(providerId: string) {
+    super('Provider', providerId);
+    this.name = 'ProviderNotFoundError';
+    this.providerId = providerId;
+  }
+}
+
+/**
  * API response format for errors
  */
 interface ErrorResponse {

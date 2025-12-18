@@ -531,53 +531,52 @@ This document outlines the implementation plan for the Service Booking Assistant
 
 ---
 
-## Milestone 8: Booking Flow - Time Slots & Confirmation
+## Milestone 8: Booking Flow - Time Slots & Confirmation ✅ COMPLETE
 
 **Goal:** Complete end-to-end booking flow with time selection and confirmation
 
 ### Features
-- [ ] Time slot generation based on provider working hours
-- [ ] **Mock availability using hash-based deterministic patterns** (no fake bookings in DB)
-- [ ] Time slot filtering (remove past times, real user bookings)
-- [ ] `get_availability` tool (AI query, read-only - for conversational use)
-- [ ] `confirm_booking` tool implementation
-- [ ] `create_booking` tool implementation
-- [ ] **"View Availability" button on ProviderCard** (user-initiated slot display)
-- [ ] Booking confirmation UI
-- [ ] Workflow completion on successful booking
+- [x] Time slot generation based on provider working hours
+- [x] **Mock availability using hash-based deterministic patterns** (no fake bookings in DB)
+- [x] Time slot filtering (remove past times)
+- [x] `get_availability` tool (AI query, read-only - for conversational use)
+- [x] `select_provider` tool (opens booking modal from chat)
+- [x] **Click on ProviderCard opens detail modal** (user-initiated booking flow)
+- [x] Booking confirmation UI (modal with 3 views: details, confirmation, success)
+- [x] Workflow completion on successful booking
+- [x] Chat disabled while booking modal is open
 
 ### Implementation Tasks
-- [ ] Create mock availability utility: `backend/src/utils/mock-availability.ts`
-  - [ ] `hashProviderDate(providerId, date)` - Deterministic hash function
-  - [ ] `applyMockPattern(slots, patternIndex)` - Apply one of 4 busy-level patterns
-  - [ ] Pattern 0: Fully available (no changes)
-  - [ ] Pattern 1: Light busy (2-3 slots unavailable)
-  - [ ] Pattern 2: Moderate busy (~50% unavailable)
-  - [ ] Pattern 3: Heavy busy (only 2-3 slots available)
-- [ ] Create availability service: `backend/src/services/availability-service.ts`
-  - [ ] `generateTimeSlots(providerId, date)` - Based on working hours
-  - [ ] `filterPastSlots(slots)` - Remove past times
-  - [ ] `filterBookedSlots(slots, existingBookings)` - Remove real user bookings only
-  - [ ] `getAvailableSlots(providerId, date)` - Combined logic + mock patterns
-  - [ ] Return slots in 30-minute increments
-- [ ] Create tools: `backend/src/tools/`
-  - [ ] `get_availability.ts` - Query availability for AI conversation (returns data, no UI)
-  - [ ] `confirm_booking.ts` - Show confirmation dialog, wait for user approval
-  - [ ] `create_booking.ts` - Create booking in database via booking service
-- [ ] Add REST endpoint: `GET /api/providers/:id/availability` (for UI button)
-- [ ] Update booking service to integrate with workflow
-- [ ] Update workflow manager:
-  - [ ] Store selected time slot in context
-  - [ ] Transition to CONFIRMATION state
-  - [ ] Transition to BOOKING_CREATED on success
-  - [ ] Complete workflow after booking created
-- [ ] Frontend: Add "View Availability" button to `ProviderCard.tsx`
-- [ ] Frontend: Create time slot components:
-  - [ ] `TimeSlotGrid.tsx` - Display available slots (modal or inline)
-  - [ ] `TimeSlotButton.tsx` - Clickable time slot
-  - [ ] `BookingConfirmation.tsx` - Confirmation dialog
-- [ ] Frontend: Handle time slot selection and confirmation events
-- [ ] Frontend: Display booking confirmation with booking ID
+- [x] Create mock availability utility: `backend/src/utils/mock-availability.ts`
+  - [x] `hashProviderDate(providerId, date)` - Deterministic hash function
+  - [x] `applyMockPattern(slots, busyLevel, providerId, date)` - Apply one of 4 busy-level patterns
+  - [x] Pattern 0: Fully available (no changes)
+  - [x] Pattern 1: Light busy (2-3 slots unavailable)
+  - [x] Pattern 2: Moderate busy (~50% unavailable)
+  - [x] Pattern 3: Heavy busy (only 2-3 slots available)
+- [x] Create availability service: `backend/src/services/availability-service.ts`
+  - [x] `generateTimeSlots(providerId, date)` - Based on working hours
+  - [x] `filterPastSlots(slots)` - Remove past times
+  - [x] `getAvailableSlots(providerId, date)` - Combined logic + mock patterns
+  - [x] Return slots in 30-minute increments
+- [x] Create tools: `backend/src/tools/`
+  - [x] `get-availability.ts` - Query availability for AI conversation (returns data, no UI)
+  - [x] `select-provider.ts` - Opens booking modal, transitions workflow to TIME_SELECTION
+- [x] Add REST endpoint: `GET /api/providers/:id/availability`
+- [x] Update POST /api/bookings to accept optional workflowId and complete workflow
+- [x] Add `onOpenProviderDetail` callback to tool executor
+- [x] Frontend: Create booking store: `frontend/src/store/booking-store.ts`
+- [x] Frontend: Make ProviderCard clickable to open modal
+- [x] Frontend: Create time slot components:
+  - [x] `TimeSlotGrid.tsx` - Display available slots with date picker
+  - [x] `TimeSlotButton.tsx` - Clickable time slot
+  - [x] `ServiceSelector.tsx` - Service selection buttons
+  - [x] `BookingConfirmation.tsx` - Confirmation view
+  - [x] `ProviderDetailModal.tsx` - Main modal (details, confirmation, success views)
+- [x] Frontend: Handle `open_provider_detail` WebSocket event
+- [x] Frontend: Disable chat input while modal is open
+- [x] Frontend: Add ProviderDetailModal to App.tsx
+- [x] Update system prompt with select_provider and get_availability tool usage
 
 ### Testing
 - [ ] **Unit Tests:**
@@ -992,10 +991,10 @@ A milestone is complete when:
 - [x] Milestone 3: AI Integration - Basic Conversation
 - [x] Milestone 4: REST API - Provider Endpoints
 - [x] Milestone 5: Tool Execution - Provider Search & Display ✅
-- [ ] **Milestone 6: REST API - Booking Endpoints** ← Do this next
-- [ ] Milestone 7: Workflow State Engine
-- [ ] Milestone 8: Booking Flow - Time Slots & Confirmation
-- [ ] Milestone 9: Calendar Integration
+- [x] Milestone 6: REST API - Booking Endpoints ✅
+- [x] Milestone 7: Workflow State Engine ✅
+- [x] Milestone 8: Booking Flow - Time Slots & Confirmation ✅
+- [ ] **Milestone 9: Calendar Integration** ← Do this next
 - [ ] Milestone 10: Production Readiness & Polish
 - [ ] Milestone 11: Experimental - Web Search Integration (Optional)
 

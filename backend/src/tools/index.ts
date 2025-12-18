@@ -5,11 +5,15 @@
 import { toolRegistry } from './tool-registry';
 import { searchProvidersTool } from './search-providers';
 import { displayProviderCardsTool } from './display-provider-cards';
+import { selectProviderTool } from './select-provider';
+import { getAvailabilityTool } from './get-availability';
 import { ToolName } from '../types/tool.types';
 
 // Register all tools
 toolRegistry.register(ToolName.SEARCH_PROVIDERS, searchProvidersTool);
 toolRegistry.register(ToolName.DISPLAY_PROVIDER_CARDS, displayProviderCardsTool);
+toolRegistry.register(ToolName.SELECT_PROVIDER, selectProviderTool);
+toolRegistry.register(ToolName.GET_AVAILABLE_SLOTS, getAvailabilityTool);
 
 // Export the registry
 export { toolRegistry, ToolRegistry } from './tool-registry';
@@ -30,3 +34,19 @@ export {
   type DisplayProviderCardsInput,
   type DisplayProviderCardsOutput,
 } from './display-provider-cards';
+
+export {
+  selectProviderTool,
+  selectProviderInputSchema,
+  selectProviderDefinition,
+  type SelectProviderInput,
+  type SelectProviderOutput,
+} from './select-provider';
+
+export {
+  getAvailabilityTool,
+  getAvailabilityInputSchema,
+  getAvailabilityDefinition,
+  type GetAvailabilityInput,
+  type GetAvailabilityOutput,
+} from './get-availability';

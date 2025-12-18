@@ -5,6 +5,7 @@ import {
   bookingIdSchema,
   bookingQuerySchema,
 } from '../validation/booking-schemas';
+import { transitionState, WorkflowState } from '../services/workflow-service';
 import { NotFoundError } from '../middleware/error-handler';
 import { logger } from '../utils/logger';
 
@@ -47,12 +48,13 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
  *   - scheduledAt: ISO 8601 datetime
  *   - duration: Duration in minutes (optional, default 60)
  *   - idempotencyKey: Unique key to prevent duplicate bookings
+ *   - workflowId: Workflow ID to complete on successful booking
  * Returns 201 if created, 200 if idempotent return
  */
 router.post('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
     // Validate request body
-    const { providerId, serviceType, scheduledAt, duration, idempotencyKey } =
+    const { providerId, serviceType, scheduledAt, duration, idempotencyKey, workflowId } =
       createBookingSchema.parse(req.body);
 
     logger.debug('Booking create request', {
@@ -60,6 +62,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       serviceType,
       scheduledAt,
       idempotencyKey,
+      workflowId,
     });
 
     // Create booking (uses default_user for MVP)
@@ -73,6 +76,26 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       },
       idempotencyKey
     );
+
+    // Complete the workflow if booking was created
+    if (result.created) {
+      try {
+        await transitionState(workflowId, WorkflowState.COMPLETE, {
+          bookingId: result.booking.id,
+        });
+        logger.info('Workflow completed after booking', {
+          workflowId,
+          bookingId: result.booking.id,
+        });
+      } catch (workflowError) {
+        // Log but don't fail the booking if workflow completion fails
+        logger.warn('Failed to complete workflow after booking', {
+          workflowId,
+          bookingId: result.booking.id,
+          error: String(workflowError),
+        });
+      }
+    }
 
     // Return 201 if created, 200 if idempotent return
     const statusCode = result.created ? 201 : 200;
