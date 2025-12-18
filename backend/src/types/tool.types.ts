@@ -26,8 +26,8 @@ export interface ToolExecutionContext {
   sessionId: string;
   workflowId?: string;
   userId: string;
-  // Callback for emitting display_providers WebSocket event
-  emitDisplayProviders?: (providers: DisplayProvider[]) => void;
+  // Callback for emitting display_providers WebSocket event (with optional workflowId)
+  emitDisplayProviders?: (providers: DisplayProvider[], workflowId?: string) => void;
 }
 
 // Tool execution result

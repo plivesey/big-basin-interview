@@ -48,6 +48,7 @@ export const bookings = sqliteTable('bookings', {
 export const sessions = sqliteTable('sessions', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().default('default_user'), // Static for MVP
+  currentWorkflowId: text('current_workflow_id'), // Currently active workflow (nullable, no FK to avoid circular ref)
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   lastActivityAt: integer('last_activity_at', { mode: 'timestamp' }).notNull(),
 });
@@ -63,7 +64,7 @@ export const workflowStates = sqliteTable('workflow_states', {
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   lastUpdated: integer('last_updated', { mode: 'timestamp' }).notNull(),
   completedAt: integer('completed_at', { mode: 'timestamp' }),
-  expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
+  expiresAt: integer('expires_at', { mode: 'timestamp' }), // Optional, not currently used
 }, (table) => [
   index('workflow_session_id_idx').on(table.sessionId),
   index('workflow_status_idx').on(table.status),

@@ -39,6 +39,7 @@ describe('Database Schema', () => {
       CREATE TABLE IF NOT EXISTS sessions (
         id TEXT PRIMARY KEY,
         user_id TEXT NOT NULL DEFAULT 'default_user',
+        current_workflow_id TEXT,
         created_at INTEGER NOT NULL,
         last_activity_at INTEGER NOT NULL
       );
@@ -66,7 +67,7 @@ describe('Database Schema', () => {
         created_at INTEGER NOT NULL,
         last_updated INTEGER NOT NULL,
         completed_at INTEGER,
-        expires_at INTEGER NOT NULL
+        expires_at INTEGER
       );
 
       CREATE TABLE IF NOT EXISTS messages (

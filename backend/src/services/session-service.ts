@@ -5,6 +5,7 @@ import { db, sessions, NewSession } from '../db';
 export interface ChatSession {
   id: string;
   userId: string;
+  currentWorkflowId: string | null;
   createdAt: Date;
   lastActivityAt: Date;
 }
@@ -18,6 +19,7 @@ export async function createSession(userId: string = 'default_user'): Promise<Ch
   const newSession: NewSession = {
     id: uuidv4(),
     userId,
+    currentWorkflowId: null,
     createdAt: now,
     lastActivityAt: now,
   };
@@ -27,6 +29,7 @@ export async function createSession(userId: string = 'default_user'): Promise<Ch
   return {
     id: newSession.id,
     userId,
+    currentWorkflowId: null,
     createdAt: now,
     lastActivityAt: now,
   };
@@ -54,6 +57,7 @@ export async function getSession(sessionId: string): Promise<ChatSession | null>
   return {
     id: session.id,
     userId: session.userId,
+    currentWorkflowId: session.currentWorkflowId ?? null,
     createdAt: session.createdAt,
     lastActivityAt: session.lastActivityAt,
   };
@@ -109,4 +113,23 @@ export async function deleteSession(sessionId: string): Promise<boolean> {
     .where(eq(sessions.id, sessionId));
 
   return result.changes > 0;
+}
+
+/**
+ * Set the current workflow ID for a session
+ */
+export async function setCurrentWorkflow(
+  sessionId: string,
+  workflowId: string | null
+): Promise<ChatSession | null> {
+  if (!sessionId || !sessionId.trim()) {
+    return null;
+  }
+
+  await db
+    .update(sessions)
+    .set({ currentWorkflowId: workflowId })
+    .where(eq(sessions.id, sessionId));
+
+  return getSession(sessionId);
 }

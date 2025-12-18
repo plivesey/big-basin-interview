@@ -33,6 +33,7 @@ beforeAll(async () => {
     CREATE TABLE IF NOT EXISTS sessions (
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL DEFAULT 'default_user',
+      current_workflow_id TEXT,
       created_at INTEGER NOT NULL,
       last_activity_at INTEGER NOT NULL
     );
@@ -61,7 +62,7 @@ beforeAll(async () => {
       created_at INTEGER NOT NULL,
       last_updated INTEGER NOT NULL,
       completed_at INTEGER,
-      expires_at INTEGER NOT NULL
+      expires_at INTEGER
     );
 
     CREATE INDEX IF NOT EXISTS workflow_session_id_idx ON workflow_states(session_id);

@@ -105,9 +105,13 @@ export function useWebSocket(): UseWebSocketReturn {
 
     // Session events
     socket.on('session_created', (data) => {
-      logger.info('Session created', { sessionId: data.sessionId });
+      logger.info('Session created', { sessionId: data.sessionId, currentWorkflowId: data.currentWorkflowId });
       setSessionId(data.sessionId);
       storeSessionId(data.sessionId);
+      // Restore active workflow ID if present
+      if (data.currentWorkflowId) {
+        usePanelStore.getState().setActiveWorkflowId(data.currentWorkflowId);
+      }
     });
 
     // Message history
@@ -189,8 +193,8 @@ export function useWebSocket(): UseWebSocketReturn {
 
     // Provider display events
     socket.on('display_providers', (data) => {
-      logger.debug('Display providers received', { count: data.providers.length });
-      usePanelStore.getState().openProviderPanel(data.providers);
+      logger.debug('Display providers received', { count: data.providers.length, workflowId: data.workflowId });
+      usePanelStore.getState().openProviderPanel(data.providers, data.workflowId);
     });
   }, [
     setSessionId,
