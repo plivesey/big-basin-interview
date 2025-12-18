@@ -26,7 +26,7 @@ export const ChatMessage = memo(function ChatMessage({
       <div className={messageClass}>
         <div className="text-base leading-relaxed">{children}</div>
         {timestamp && (
-          <div className="mt-1 text-xs opacity-70">{timestamp}</div>
+          <div className="mt-1 text-xs opacity-70 text-right">{timestamp}</div>
         )}
       </div>
     </div>
