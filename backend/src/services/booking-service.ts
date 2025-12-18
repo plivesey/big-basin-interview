@@ -3,6 +3,7 @@ import { eq, desc } from 'drizzle-orm';
 import { db, bookings, Booking, NewBooking } from '../db';
 import { getProviderById } from './provider-service';
 import { submitBookingToProvider } from './external-booking-service';
+import { isCalendarConnected, createEvent } from './calendar-service';
 import { ApiError } from '../middleware/error-handler';
 import { logger } from '../utils/logger';
 
@@ -119,6 +120,43 @@ export async function createBooking(
 
   await db.insert(bookings).values(newBooking);
 
+  let calendarEventId: string | null = null;
+
+  // Step 5: Create calendar event if connected (non-blocking)
+  try {
+    const calendarConnected = await isCalendarConnected();
+    if (calendarConnected) {
+      const endTime = new Date(data.scheduledAt.getTime() + data.duration * 60 * 1000);
+
+      calendarEventId = await createEvent({
+        title: `${data.serviceType} at ${provider.name}`,
+        startTime: data.scheduledAt,
+        endTime,
+        location: provider.address,
+        description: `Booking ID: ${newBooking.id}\nService: ${data.serviceType}`,
+      });
+
+      if (calendarEventId) {
+        // Update booking with calendar event ID
+        await db
+          .update(bookings)
+          .set({ calendarEventId, updatedAt: new Date() })
+          .where(eq(bookings.id, newBooking.id));
+
+        logger.info('Calendar event created for booking', {
+          bookingId: newBooking.id,
+          calendarEventId,
+        });
+      }
+    }
+  } catch (calendarError) {
+    // Log but don't fail the booking if calendar event creation fails
+    logger.warn('Failed to create calendar event', {
+      bookingId: newBooking.id,
+      error: String(calendarError),
+    });
+  }
+
   const booking: Booking = {
     id: newBooking.id,
     userId: data.userId,
@@ -128,7 +166,7 @@ export async function createBooking(
     duration: data.duration,
     status: 'confirmed',
     idempotencyKey,
-    calendarEventId: null,
+    calendarEventId,
     createdAt: now,
     updatedAt: now,
   };
@@ -137,6 +175,7 @@ export async function createBooking(
     bookingId: booking.id,
     providerId: data.providerId,
     scheduledAt: data.scheduledAt.toISOString(),
+    calendarEventId,
   });
 
   return { booking, created: true };

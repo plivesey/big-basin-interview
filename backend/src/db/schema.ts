@@ -53,6 +53,19 @@ export const sessions = sqliteTable('sessions', {
   lastActivityAt: integer('last_activity_at', { mode: 'timestamp' }).notNull(),
 });
 
+// Calendar connections table - stores Google Calendar OAuth tokens per user
+export const calendarConnections = sqliteTable('calendar_connections', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull().unique(), // 'default_user' for MVP, one calendar per user
+  accessToken: text('access_token').notNull(),
+  refreshToken: text('refresh_token').notNull(),
+  expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
+  calendarId: text('calendar_id').notNull().default('primary'),
+  email: text('email'), // Google account email for display
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+});
+
 // Workflow states table - tracks booking workflow progress
 export const workflowStates = sqliteTable('workflow_states', {
   id: text('id').primaryKey(), // Unique workflow ID (supports multiple bookings per session)
@@ -105,3 +118,6 @@ export type NewWorkflowState = typeof workflowStates.$inferInsert;
 
 export type Message = typeof messages.$inferSelect;
 export type NewMessage = typeof messages.$inferInsert;
+
+export type CalendarConnection = typeof calendarConnections.$inferSelect;
+export type NewCalendarConnection = typeof calendarConnections.$inferInsert;

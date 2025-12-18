@@ -74,6 +74,18 @@ beforeAll(async () => {
     );
 
     CREATE INDEX IF NOT EXISTS messages_session_id_idx ON messages(session_id);
+
+    CREATE TABLE IF NOT EXISTS calendar_connections (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL UNIQUE,
+      access_token TEXT NOT NULL,
+      refresh_token TEXT NOT NULL,
+      expires_at INTEGER NOT NULL,
+      calendar_id TEXT NOT NULL DEFAULT 'primary',
+      email TEXT,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
   `);
 });
 
@@ -86,6 +98,7 @@ beforeEach(async () => {
   rawDb.exec('DELETE FROM workflow_states');
   rawDb.exec('DELETE FROM bookings');
   rawDb.exec('DELETE FROM sessions');
+  rawDb.exec('DELETE FROM calendar_connections');
 });
 
 afterAll(async () => {

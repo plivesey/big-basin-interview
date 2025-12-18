@@ -23,13 +23,14 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "@asba/shared-types": "file:../packages/shared-types",
     "@anthropic-ai/sdk": "^0.71.2",
+    "@asba/shared-types": "file:../packages/shared-types",
     "better-sqlite3": "^12.5.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.45.1",
     "express": "^5.2.1",
+    "googleapis": "^169.0.0",
     "socket.io": "^4.8.1",
     "uuid": "^13.0.0",
     "zod": "^4.2.1"

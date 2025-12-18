@@ -3,6 +3,7 @@ import cors from 'cors';
 import providerRoutes from './routes/providers';
 import bookingRoutes from './routes/bookings';
 import sessionRoutes from './routes/sessions';
+import authRoutes from './routes/auth';
 import { errorHandler } from './middleware/error-handler';
 
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
@@ -30,6 +31,9 @@ export function createApp() {
   app.use('/api/providers', providerRoutes);
   app.use('/api/bookings', bookingRoutes);
   app.use('/api/sessions', sessionRoutes);
+
+  // Auth routes (non-prefixed for OAuth callback compatibility)
+  app.use('/auth', authRoutes);
 
   // Error handler middleware (must be registered after routes)
   app.use(errorHandler);

@@ -2,6 +2,8 @@ import { ChatContainer } from './components/ChatContainer';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ProviderPanel } from './components/ProviderPanel';
 import { ProviderDetailModal } from './components/ProviderDetailModal';
+import { SideMenu } from './components/SideMenu';
+import { HamburgerButton } from './components/HamburgerButton';
 import { usePanelStore } from './store/panel-store';
 
 function App() {
@@ -9,6 +11,11 @@ function App() {
 
   return (
     <ErrorBoundary>
+      {/* Hamburger button - fixed top left of window */}
+      <div className="fixed top-4 left-4 z-50">
+        <HamburgerButton />
+      </div>
+      <SideMenu />
       <ProviderDetailModal />
       <div className="h-screen bg-slate-100 overflow-hidden flex items-center justify-center p-4">
         {/* Main container - animates width to fit content, always centered */}
