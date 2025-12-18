@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import type { ReactNode } from 'react';
+import { MarkdownMessage } from './MarkdownMessage';
 
 type MessageRole = 'user' | 'assistant';
 
@@ -24,7 +25,13 @@ export const ChatMessage = memo(function ChatMessage({
   return (
     <div className={containerClass}>
       <div className={messageClass}>
-        <div className="text-base leading-relaxed">{children}</div>
+        <div className="text-base leading-relaxed">
+          {role === 'assistant' && typeof children === 'string' ? (
+            <MarkdownMessage content={children} />
+          ) : (
+            children
+          )}
+        </div>
         {timestamp && (
           <div className="mt-1 text-xs opacity-70 text-right">{timestamp}</div>
         )}
