@@ -1,4 +1,6 @@
 import { RatingStars } from './RatingStars';
+import { useBookingStore } from '../store/booking-store';
+import { usePanelStore } from '../store/panel-store';
 import type { DisplayProvider } from '../store/panel-store';
 
 interface ProviderCardProps {
@@ -6,14 +8,32 @@ interface ProviderCardProps {
 }
 
 export function ProviderCard({ provider }: ProviderCardProps) {
-  const { name, category, rating, reviewCount, services, address } = provider;
+  const { name, category, rating, reviewCount, services, address, id } = provider;
+  const openProviderModal = useBookingStore((s) => s.openProviderModal);
+  const activeWorkflowId = usePanelStore((s) => s.activeWorkflowId);
 
   // Show max 3 services as badges
   const displayedServices = services.slice(0, 3);
   const additionalCount = services.length - 3;
 
+  const handleClick = () => {
+    openProviderModal(id, activeWorkflowId ?? undefined);
+  };
+
   return (
-    <div className="card-hover bg-white rounded-lg border border-slate-200 p-4">
+    <div
+      className="card-hover bg-white rounded-lg border border-slate-200 p-4"
+      onClick={handleClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleClick();
+        }
+      }}
+      aria-label={`View details for ${name}`}
+    >
       {/* Name */}
       <h3 className="font-semibold text-slate-900">{name}</h3>
 

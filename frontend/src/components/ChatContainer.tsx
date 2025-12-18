@@ -4,6 +4,7 @@ import {
   selectIsLoading,
   selectConnectionStatus,
 } from '../store/chat-store';
+import { useBookingStore, selectIsChatDisabled } from '../store/booking-store';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { MessageList } from './MessageList';
 import { ChatInput } from './ChatInput';
@@ -19,6 +20,7 @@ export function ChatContainer() {
   const messages = useChatStore(selectMessages);
   const isLoading = useChatStore(selectIsLoading);
   const connectionStatus = useChatStore(selectConnectionStatus);
+  const isModalOpen = useBookingStore(selectIsChatDisabled);
 
   const { sendMessage, reconnect } = useWebSocket();
 
@@ -50,13 +52,15 @@ export function ChatContainer() {
       {/* Input */}
       <ChatInput
         onSendMessage={sendMessage}
-        disabled={!isConnected || isLoading}
+        disabled={!isConnected || isLoading || isModalOpen}
         placeholder={
-          isConnecting
-            ? 'Getting ready...'
-            : !isConnected
-              ? 'Connection lost. Click above to reconnect.'
-              : 'What can I help you find today?'
+          isModalOpen
+            ? 'Complete or close the booking to continue chatting'
+            : isConnecting
+              ? 'Getting ready...'
+              : !isConnected
+                ? 'Connection lost. Click above to reconnect.'
+                : 'What can I help you find today?'
         }
       />
     </div>

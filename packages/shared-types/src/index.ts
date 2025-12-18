@@ -28,4 +28,7 @@ export type {
   ClientToServerEvents,
   ConnectionStatus,
   DisplayProvider,
+  ProviderDetail,
+  TimeSlot,
+  WorkingHours,
 } from './websocket-events';

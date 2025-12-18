@@ -6,9 +6,10 @@ import { z } from 'zod';
 export const createBookingSchema = z.object({
   providerId: z.string().uuid('Invalid provider ID format'),
   serviceType: z.string().min(1, 'Service type is required'),
-  scheduledAt: z.string().datetime({ message: 'Invalid datetime format (use ISO 8601)' }),
+  scheduledAt: z.string().datetime({ local: true, message: 'Invalid datetime format (use ISO 8601)' }),
   duration: z.number().int().min(15, 'Duration must be at least 15 minutes').max(480, 'Duration cannot exceed 8 hours').default(60),
   idempotencyKey: z.string().min(1, 'Idempotency key is required'),
+  workflowId: z.string().uuid('Invalid workflow ID format').optional(),
 });
 
 export type CreateBookingInput = z.infer<typeof createBookingSchema>;

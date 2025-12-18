@@ -1,6 +1,7 @@
 import { ChatContainer } from './components/ChatContainer';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ProviderPanel } from './components/ProviderPanel';
+import { ProviderDetailModal } from './components/ProviderDetailModal';
 import { usePanelStore } from './store/panel-store';
 
 function App() {
@@ -8,6 +9,7 @@ function App() {
 
   return (
     <ErrorBoundary>
+      <ProviderDetailModal />
       <div className="h-screen bg-slate-100 overflow-hidden flex items-center justify-center p-4">
         {/* Main container - animates width to fit content, always centered */}
         <div

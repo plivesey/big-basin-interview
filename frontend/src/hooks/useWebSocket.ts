@@ -8,6 +8,7 @@ import type {
   ClientToServerEvents,
 } from '@asba/shared-types';
 import { usePanelStore } from '../store/panel-store';
+import { useBookingStore } from '../store/booking-store';
 import { logger } from '../utils/logger';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
@@ -195,6 +196,16 @@ export function useWebSocket(): UseWebSocketReturn {
     socket.on('display_providers', (data) => {
       logger.debug('Display providers received', { count: data.providers.length, workflowId: data.workflowId });
       usePanelStore.getState().openProviderPanel(data.providers, data.workflowId);
+    });
+
+    // Open provider detail modal (from AI select_provider tool)
+    socket.on('open_provider_detail', (data) => {
+      logger.debug('Open provider detail received', {
+        providerId: data.providerId,
+        providerName: data.providerName,
+        workflowId: data.workflowId,
+      });
+      useBookingStore.getState().openProviderModal(data.providerId, data.workflowId);
     });
   }, [
     setSessionId,

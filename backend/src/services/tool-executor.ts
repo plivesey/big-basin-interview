@@ -14,6 +14,7 @@ export interface ToolExecutionCallbacks {
   onToolStart?: (toolName: string, toolUseId: string) => void;
   onToolComplete?: (toolName: string, toolUseId: string, result: ToolResult) => void;
   onDisplayProviders?: (providers: DisplayProvider[], workflowId?: string) => void;
+  onOpenProviderDetail?: (providerId: string, providerName: string, workflowId: string) => void;
 }
 
 /**
@@ -38,10 +39,11 @@ export async function executeTools(
 ): Promise<ExecuteToolsResult> {
   const toolResults: ToolResultContent[] = [];
 
-  // Extend context with display providers callback
+  // Extend context with UI callbacks
   const extendedContext: ToolExecutionContext = {
     ...context,
     emitDisplayProviders: callbacks?.onDisplayProviders,
+    emitOpenProviderDetail: callbacks?.onOpenProviderDetail,
   };
 
   for (const toolUse of toolUseBlocks) {
