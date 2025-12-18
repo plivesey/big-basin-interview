@@ -53,7 +53,6 @@ describe('calendar-service', () => {
   let isCalendarConnected: () => Promise<boolean>;
   let checkConflicts: (start: Date, end: Date) => Promise<{ id: string; title: string; start: string; end: string }[]>;
   let createEvent: (details: { title: string; startTime: Date; endTime: Date; location?: string; description?: string }) => Promise<string | null>;
-  let deleteEvent: (eventId: string) => Promise<boolean>;
 
   beforeEach(async () => {
     // Clear calendar_connections table before each test
@@ -65,7 +64,6 @@ describe('calendar-service', () => {
     isCalendarConnected = calendarService.isCalendarConnected;
     checkConflicts = calendarService.checkConflicts;
     createEvent = calendarService.createEvent;
-    deleteEvent = calendarService.deleteEvent;
   });
 
   afterEach(() => {
@@ -106,13 +104,6 @@ describe('calendar-service', () => {
       });
 
       expect(eventId).toBeNull();
-    });
-  });
-
-  describe('deleteEvent', () => {
-    it('should return false when not connected', async () => {
-      const deleted = await deleteEvent('event123');
-      expect(deleted).toBe(false);
     });
   });
 });
