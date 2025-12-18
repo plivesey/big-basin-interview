@@ -7,6 +7,7 @@ import type {
   ServerToClientEvents,
   ClientToServerEvents,
 } from '@asba/shared-types';
+import { usePanelStore } from '../store/panel-store';
 import { logger } from '../utils/logger';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
@@ -184,6 +185,12 @@ export function useWebSocket(): UseWebSocketReturn {
     socket.on('error', (data) => {
       logger.error('WebSocket error', { error: data.error, code: data.code });
       setIsLoading(false);
+    });
+
+    // Provider display events
+    socket.on('display_providers', (data) => {
+      logger.debug('Display providers received', { count: data.providers.length });
+      usePanelStore.getState().openProviderPanel(data.providers);
     });
   }, [
     setSessionId,

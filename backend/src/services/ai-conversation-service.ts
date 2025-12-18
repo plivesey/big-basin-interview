@@ -121,8 +121,11 @@ Tool usage guidelines:
   - Good: "salon", "haircut", "mechanic", "dentist", "oil change"
   - Bad: "I need a haircut appointment", "best salon in the area"
 - Extract the core service type or category from the user's request
-- After getting search results, summarize them conversationally for the user
-- Include key details like provider names, ratings, and services offered
+- After search_providers returns results, ALWAYS use display_provider_cards to show them in the side panel
+- IMPORTANT: Pass only the provider IDs from the search results, not the full data
+  - Example: display_provider_cards({ providerIds: ["id1", "id2", "id3"] })
+- After displaying cards, provide a brief conversational summary (1-2 sentences)
+- Do NOT list out all provider details in text - the cards will show that information
 - If no results are found, try a broader search term (e.g., if "haircut" returns nothing, try "salon")`;
 
 /**

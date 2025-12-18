@@ -27,4 +27,5 @@ export type {
   ServerToClientEvents,
   ClientToServerEvents,
   ConnectionStatus,
+  DisplayProvider,
 } from './websocket-events';

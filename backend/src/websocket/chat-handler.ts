@@ -117,6 +117,10 @@ export function initializeChatHandler(io: ChatServer): void {
             logger.debug('Tool completed', { toolName, toolUseId, success: result.success, sessionId });
             socket.emit('tool_complete', { toolName, toolUseId, success: result.success });
           },
+          onDisplayProviders: (providers) => {
+            logger.debug('Displaying providers', { count: providers.length, sessionId });
+            socket.emit('display_providers', { providers });
+          },
         });
 
         // Save assistant message to database with pre-generated ID
