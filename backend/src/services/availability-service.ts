@@ -125,15 +125,15 @@ function filterPastSlots(slots: TimeSlot[], now: Date = new Date()): TimeSlot[] 
  * Get available time slots for a provider on a specific date
  *
  * @param providerId - The provider ID
- * @param date - Date string in YYYY-MM-DD format (defaults to today)
- * @param duration - Slot duration in minutes (defaults to 30)
+ * @param date - Date string in YYYY-MM-DD format
+ * @param duration - Slot duration in minutes
  * @returns Availability result with slots
  * @throws Error if provider not found
  */
 export async function getAvailableSlots(
   providerId: string,
-  date?: string,
-  duration: number = 30
+  date: string,
+  duration: number
 ): Promise<AvailabilityResult> {
   // Get provider from database
   const provider = await getProviderById(providerId);
@@ -142,32 +142,28 @@ export async function getAvailableSlots(
     throw new Error(`Provider not found: ${providerId}`);
   }
 
-  // Get today's date in local timezone
+  // Get today's date in local timezone for comparison
   const now = new Date();
   const todayLocal = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
-  // Default to today if no date provided
-  const targetDate = date || todayLocal;
-
   // Generate base time slots from working hours
-  let slots = generateTimeSlots(provider.workingHours, targetDate, duration);
+  let slots = generateTimeSlots(provider.workingHours, date, duration);
 
   // Filter out past times if date is today
-  const today = todayLocal;
-  if (targetDate === today) {
+  if (date === todayLocal) {
     slots = filterPastSlots(slots);
   }
 
   // Apply mock availability pattern
   // Note: We do NOT filter real bookings - providers can serve multiple customers
   // at the same time (e.g., nail salons). Mock API is the source of truth.
-  const busyLevel = getBusyLevel(providerId, targetDate);
-  slots = applyMockPattern(slots, busyLevel, providerId, targetDate);
+  const busyLevel = getBusyLevel(providerId, date);
+  slots = applyMockPattern(slots, busyLevel, providerId, date);
 
   return {
     providerId: provider.id,
     providerName: provider.name,
-    date: targetDate,
+    date,
     slots,
   };
 }
@@ -177,8 +173,8 @@ export async function getAvailableSlots(
  */
 export async function getOnlyAvailableSlots(
   providerId: string,
-  date?: string,
-  duration: number = 30
+  date: string,
+  duration: number
 ): Promise<AvailabilityResult> {
   const result = await getAvailableSlots(providerId, date, duration);
 

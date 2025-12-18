@@ -43,8 +43,8 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
  * GET /api/providers/:id/availability
  * Get available time slots for a provider on a specific date
  * Query params:
- *   - date: Optional date in YYYY-MM-DD format (defaults to today)
- *   - duration: Optional slot duration in minutes (defaults to 30)
+ *   - date: Date in YYYY-MM-DD format
+ *   - duration: Slot duration in minutes (15-480)
  * Returns time slots with availability status
  */
 router.get(

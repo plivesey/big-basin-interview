@@ -86,11 +86,17 @@ async function handler(
   });
 
   try {
+    // Default to today's date if not provided
+    const now = new Date();
+    const defaultDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const date = input.date || defaultDate;
+    const duration = input.duration || 30;
+
     // Get availability from service
     const result = await getAvailableSlots(
       input.providerId,
-      input.date,
-      input.duration || 30
+      date,
+      duration
     );
 
     // Filter to only available slots for the response

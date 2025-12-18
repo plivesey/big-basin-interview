@@ -48,7 +48,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
  *   - scheduledAt: ISO 8601 datetime
  *   - duration: Duration in minutes (optional, default 60)
  *   - idempotencyKey: Unique key to prevent duplicate bookings
- *   - workflowId: Optional workflow ID to complete on successful booking
+ *   - workflowId: Workflow ID to complete on successful booking
  * Returns 201 if created, 200 if idempotent return
  */
 router.post('/', async (req: Request, res: Response, next: NextFunction) => {
@@ -77,8 +77,8 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       idempotencyKey
     );
 
-    // Complete the workflow if workflowId is provided and booking was created
-    if (workflowId && result.created) {
+    // Complete the workflow if booking was created (workflowId is always provided)
+    if (result.created) {
       try {
         await transitionState(workflowId, WorkflowState.COMPLETE, {
           bookingId: result.booking.id,
