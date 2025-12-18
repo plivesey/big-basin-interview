@@ -2,9 +2,11 @@ import { Server, Socket } from 'socket.io';
 import { v4 as uuidv4 } from 'uuid';
 import { saveMessage, getMessageHistory } from '../services/message-service';
 import { getOrCreateSession, getSession } from '../services/session-service';
+import { getWorkflow, WorkflowState } from '../services/workflow-service';
+import { getProvidersByIds } from '../services/provider-service';
 import { sendMessage as sendAIMessage, AIError } from '../services/ai-conversation-service';
 import { logger } from '../utils/logger';
-import type { ServerToClientEvents, ClientToServerEvents, ChatMessage, RawChatMessage } from '@asba/shared-types';
+import type { ServerToClientEvents, ClientToServerEvents, ChatMessage, RawChatMessage, DisplayProvider, WorkflowState as SharedWorkflowState } from '@asba/shared-types';
 
 // Re-export WebSocket event types for consumers
 export type { ServerToClientEvents, ClientToServerEvents } from '@asba/shared-types';
@@ -59,6 +61,66 @@ export function initializeChatHandler(io: ChatServer): void {
       socket.emit('message_history', { messages: messageHistory.map(toRawMessage) });
 
       logger.info('Session established', { sessionId: session.id, socketId: socket.id, currentWorkflowId: session.currentWorkflowId });
+
+      // Auto-restore provider panel on session reconnect.
+      // When users refresh the page during an active booking workflow, this ensures
+      // they don't lose their provider search results. Only restores for active
+      // workflow states (PROVIDER_SEARCH, PROVIDER_SELECTION), not completed ones.
+      // See: documentation/features/provider-panel-persistence.md
+      if (session.currentWorkflowId) {
+        try {
+          const workflow = await getWorkflow(session.currentWorkflowId);
+
+          // Active workflow states that should show the provider panel
+          const activeStates: WorkflowState[] = [
+            WorkflowState.PROVIDER_SEARCH,
+            WorkflowState.PROVIDER_SELECTION,
+          ];
+
+          if (
+            workflow &&
+            activeStates.includes(workflow.currentState) &&
+            workflow.context.selectedProviders &&
+            workflow.context.selectedProviders.length > 0
+          ) {
+            // Fetch provider details from IDs
+            const providerRecords = await getProvidersByIds(workflow.context.selectedProviders);
+
+            // Convert to DisplayProvider format
+            const displayProviders: DisplayProvider[] = providerRecords.map((p) => ({
+              id: p.id,
+              name: p.name,
+              category: p.category,
+              rating: p.rating,
+              reviewCount: p.reviewCount,
+              services: p.services as string[],
+              address: p.address,
+            }));
+
+            if (displayProviders.length > 0) {
+              socket.emit('display_providers', {
+                providers: displayProviders,
+                workflowId: workflow.id,
+                workflowState: workflow.currentState,
+              });
+
+              logger.info('Provider panel restored on session reconnect', {
+                sessionId: session.id,
+                workflowId: workflow.id,
+                workflowState: workflow.currentState,
+                providerCount: displayProviders.length,
+              });
+            }
+          }
+        } catch (error) {
+          // Don't fail connection setup if panel restore fails
+          logger.error('Error restoring provider panel', {
+            error: String(error),
+            sessionId: session.id,
+            workflowId: session.currentWorkflowId,
+          });
+        }
+      }
     } catch (error) {
       logger.error('Error during connection setup', { error: String(error), socketId: socket.id });
       socket.emit('error', {
@@ -120,9 +182,14 @@ export function initializeChatHandler(io: ChatServer): void {
             logger.debug('Tool completed', { toolName, toolUseId, success: result.success, sessionId });
             socket.emit('tool_complete', { toolName, toolUseId, success: result.success });
           },
-          onDisplayProviders: (providers, workflowId) => {
-            logger.debug('Displaying providers', { count: providers.length, workflowId, sessionId });
-            socket.emit('display_providers', { providers, workflowId });
+          onDisplayProviders: (providers, workflowId, workflowState) => {
+            logger.debug('Displaying providers', { count: providers.length, workflowId, workflowState, sessionId });
+            // Cast workflowState to the shared-types WorkflowState union type
+            socket.emit('display_providers', {
+              providers,
+              workflowId,
+              workflowState: workflowState as SharedWorkflowState | undefined,
+            });
           },
           onOpenProviderDetail: (providerId, providerName, workflowId) => {
             logger.debug('Opening provider detail modal', { providerId, providerName, workflowId, sessionId });

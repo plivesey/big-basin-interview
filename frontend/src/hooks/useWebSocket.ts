@@ -194,8 +194,12 @@ export function useWebSocket(): UseWebSocketReturn {
 
     // Provider display events
     socket.on('display_providers', (data) => {
-      logger.debug('Display providers received', { count: data.providers.length, workflowId: data.workflowId });
-      usePanelStore.getState().openProviderPanel(data.providers, data.workflowId);
+      logger.debug('Display providers received', {
+        count: data.providers.length,
+        workflowId: data.workflowId,
+        workflowState: data.workflowState,
+      });
+      usePanelStore.getState().openProviderPanel(data.providers, data.workflowId, data.workflowState);
     });
 
     // Open provider detail modal (from AI select_provider tool)
@@ -206,6 +210,16 @@ export function useWebSocket(): UseWebSocketReturn {
         workflowId: data.workflowId,
       });
       useBookingStore.getState().openProviderModal(data.providerId, data.workflowId);
+    });
+
+    // Booking completed - clear provider panel
+    socket.on('booking_success', (data) => {
+      logger.debug('Booking success received', {
+        bookingId: data.bookingId,
+        providerId: data.providerId,
+      });
+      // Clear providers when workflow completes
+      usePanelStore.getState().clearProviders();
     });
   }, [
     setSessionId,

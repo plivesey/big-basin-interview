@@ -4,6 +4,7 @@ import {
   searchProviders,
   getProviderById,
   getAllProviders,
+  getProvidersByIds,
 } from '../../src/services/provider-service';
 import { rawDb } from '../../src/db';
 
@@ -256,6 +257,70 @@ describe('provider-service', () => {
 
       expect(results[0].name).toBe('High');
       expect(results[1].name).toBe('Low');
+    });
+  });
+
+  describe('getProvidersByIds', () => {
+    it('should return providers in order of input IDs', async () => {
+      const provider1 = insertTestProvider({ name: 'Provider A', rating: 3.0 });
+      const provider2 = insertTestProvider({ name: 'Provider B', rating: 5.0 });
+      const provider3 = insertTestProvider({ name: 'Provider C', rating: 4.0 });
+
+      // Request in specific order (not rating order)
+      const results = await getProvidersByIds([provider3.id, provider1.id, provider2.id]);
+
+      expect(results).toHaveLength(3);
+      expect(results[0].id).toBe(provider3.id);
+      expect(results[1].id).toBe(provider1.id);
+      expect(results[2].id).toBe(provider2.id);
+    });
+
+    it('should return empty array for empty input', async () => {
+      insertTestProvider({ name: 'Provider A' });
+
+      const results = await getProvidersByIds([]);
+
+      expect(results).toHaveLength(0);
+    });
+
+    it('should return only found providers and skip missing IDs', async () => {
+      const provider1 = insertTestProvider({ name: 'Provider A' });
+      const provider2 = insertTestProvider({ name: 'Provider B' });
+
+      const results = await getProvidersByIds([provider1.id, 'non-existent-id', provider2.id]);
+
+      expect(results).toHaveLength(2);
+      expect(results[0].id).toBe(provider1.id);
+      expect(results[1].id).toBe(provider2.id);
+    });
+
+    it('should return empty array when all IDs are not found', async () => {
+      insertTestProvider({ name: 'Provider A' });
+
+      const results = await getProvidersByIds(['fake-id-1', 'fake-id-2']);
+
+      expect(results).toHaveLength(0);
+    });
+
+    it('should handle single ID', async () => {
+      const provider = insertTestProvider({ name: 'Single Provider' });
+
+      const results = await getProvidersByIds([provider.id]);
+
+      expect(results).toHaveLength(1);
+      expect(results[0].name).toBe('Single Provider');
+    });
+
+    it('should handle duplicate IDs in input', async () => {
+      const provider = insertTestProvider({ name: 'Provider A' });
+
+      const results = await getProvidersByIds([provider.id, provider.id, provider.id]);
+
+      // Each ID in input should map to a result
+      expect(results).toHaveLength(3);
+      expect(results[0].id).toBe(provider.id);
+      expect(results[1].id).toBe(provider.id);
+      expect(results[2].id).toBe(provider.id);
     });
   });
 });

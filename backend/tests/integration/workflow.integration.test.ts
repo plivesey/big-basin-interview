@@ -237,7 +237,7 @@ describe('Workflow Integration Tests', () => {
       await db.insert(schema.workflowStates).values({
         id: workflowId,
         sessionId,
-        currentState: WorkflowState.TIME_SELECTION,
+        currentState: WorkflowState.PROVIDER_SELECTION,
         context: { serviceType: 'salon', selectedProviderId: 'p1' },
         createdAt: now,
         lastUpdated: now,

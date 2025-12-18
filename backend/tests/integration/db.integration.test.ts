@@ -377,61 +377,15 @@ describe('Database Integration Tests', () => {
       let workflowResults = db.select().from(schema.workflowStates).where(eq(schema.workflowStates.id, workflowId)).all();
       expect(workflowResults[0]?.currentState).toBe('PROVIDER_SELECTION');
 
-      // Transition: PROVIDER_SELECTION -> TIME_SELECTION
-      db.update(schema.workflowStates)
-        .set({
-          currentState: 'TIME_SELECTION',
-          context: {
-            serviceType: 'haircut',
-            selectedProviderId: 'provider_1',
-          },
-          lastUpdated: new Date(),
-        })
-        .where(eq(schema.workflowStates.id, workflowId))
-        .run();
-
-      workflowResults = db.select().from(schema.workflowStates).where(eq(schema.workflowStates.id, workflowId)).all();
-      expect(workflowResults[0]?.currentState).toBe('TIME_SELECTION');
-
-      // Transition: TIME_SELECTION -> CONFIRMATION
-      db.update(schema.workflowStates)
-        .set({
-          currentState: 'CONFIRMATION',
-          context: {
-            serviceType: 'haircut',
-            selectedProviderId: 'provider_1',
-            selectedTimeSlot: '2025-01-15T10:00:00Z',
-          },
-          lastUpdated: new Date(),
-        })
-        .where(eq(schema.workflowStates.id, workflowId))
-        .run();
-
-      workflowResults = db.select().from(schema.workflowStates).where(eq(schema.workflowStates.id, workflowId)).all();
-      expect(workflowResults[0]?.currentState).toBe('CONFIRMATION');
-
-      // Transition: CONFIRMATION -> BOOKING_CREATED
-      db.update(schema.workflowStates)
-        .set({
-          currentState: 'BOOKING_CREATED',
-          context: {
-            serviceType: 'haircut',
-            selectedProviderId: 'provider_1',
-            selectedTimeSlot: '2025-01-15T10:00:00Z',
-            bookingId: 'booking_123',
-          },
-          lastUpdated: new Date(),
-        })
-        .where(eq(schema.workflowStates.id, workflowId))
-        .run();
-
-      workflowResults = db.select().from(schema.workflowStates).where(eq(schema.workflowStates.id, workflowId)).all();
-      expect(workflowResults[0]?.currentState).toBe('BOOKING_CREATED');
-
-      // Transition: BOOKING_CREATED -> COMPLETE
+      // Transition: PROVIDER_SELECTION -> COMPLETE
       db.update(schema.workflowStates)
         .set({
           currentState: 'COMPLETE',
+          context: {
+            serviceType: 'haircut',
+            selectedProviderId: 'provider_1',
+            bookingId: 'booking_123',
+          },
           completedAt: new Date(),
           lastUpdated: new Date(),
         })

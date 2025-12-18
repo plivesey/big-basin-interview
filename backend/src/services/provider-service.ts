@@ -1,4 +1,4 @@
-import { eq, desc, sql, or } from 'drizzle-orm';
+import { eq, desc, sql, or, inArray } from 'drizzle-orm';
 import { db, providers, Provider } from '../db';
 import { logger } from '../utils/logger';
 
@@ -76,4 +76,30 @@ export async function getProviderById(id: string): Promise<Provider | null> {
  */
 export async function getAllProviders(): Promise<Provider[]> {
   return searchProviders();
+}
+
+/**
+ * Get multiple providers by IDs
+ * Preserves order of input IDs
+ */
+export async function getProvidersByIds(ids: string[]): Promise<Provider[]> {
+  if (!ids || ids.length === 0) {
+    return [];
+  }
+
+  logger.debug('Getting providers by IDs', { count: ids.length });
+
+  const results = await db
+    .select()
+    .from(providers)
+    .where(inArray(providers.id, ids));
+
+  // Preserve order of input IDs
+  const providerMap = new Map(results.map((p) => [p.id, p]));
+  const orderedResults = ids
+    .map((id) => providerMap.get(id))
+    .filter((p): p is Provider => p !== undefined);
+
+  logger.debug('Providers found', { requested: ids.length, found: orderedResults.length });
+  return orderedResults;
 }

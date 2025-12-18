@@ -44,6 +44,14 @@ export interface TimeSlot {
 }
 
 /**
+ * Workflow state for booking flow (mirrors backend enum)
+ */
+export type WorkflowState =
+  | 'PROVIDER_SEARCH'
+  | 'PROVIDER_SELECTION'
+  | 'COMPLETE';
+
+/**
  * Events emitted from server to client
  */
 export interface ServerToClientEvents {
@@ -80,7 +88,11 @@ export interface ServerToClientEvents {
   }) => void;
 
   /** Display providers in side panel */
-  display_providers: (data: { providers: DisplayProvider[]; workflowId?: string }) => void;
+  display_providers: (data: {
+    providers: DisplayProvider[];
+    workflowId?: string;
+    workflowState?: WorkflowState;
+  }) => void;
 
   /** AI selected a provider via tool - open detail modal */
   open_provider_detail: (data: {

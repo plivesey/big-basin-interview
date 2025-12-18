@@ -61,13 +61,54 @@ describe('panel-store', () => {
   });
 
   describe('closeProviderPanel', () => {
-    it('should close panel and clear providers', () => {
+    it('should close panel but preserve providers for toggle button', () => {
       usePanelStore.getState().openProviderPanel(mockProviders);
       usePanelStore.getState().closeProviderPanel();
 
       const { isProviderPanelOpen, displayedProviders } = usePanelStore.getState();
       expect(isProviderPanelOpen).toBe(false);
+      // Providers are preserved so toggle button can re-open panel
+      expect(displayedProviders).toEqual(mockProviders);
+    });
+  });
+
+  describe('reopenProviderPanel', () => {
+    it('should reopen panel with existing providers', () => {
+      usePanelStore.getState().openProviderPanel(mockProviders);
+      usePanelStore.getState().closeProviderPanel();
+      usePanelStore.getState().reopenProviderPanel();
+
+      const { isProviderPanelOpen, displayedProviders } = usePanelStore.getState();
+      expect(isProviderPanelOpen).toBe(true);
+      expect(displayedProviders).toEqual(mockProviders);
+    });
+  });
+
+  describe('clearProviders', () => {
+    it('should clear providers and close panel when workflow completes', () => {
+      usePanelStore.getState().openProviderPanel(mockProviders, 'workflow-1', 'PROVIDER_SELECTION');
+      usePanelStore.getState().clearProviders();
+
+      const { isProviderPanelOpen, displayedProviders, workflowState } = usePanelStore.getState();
+      expect(isProviderPanelOpen).toBe(false);
       expect(displayedProviders).toEqual([]);
+      expect(workflowState).toBeNull();
+    });
+  });
+
+  describe('workflowState', () => {
+    it('should set workflow state when opening panel', () => {
+      usePanelStore.getState().openProviderPanel(mockProviders, 'workflow-1', 'PROVIDER_SELECTION');
+
+      const { workflowState } = usePanelStore.getState();
+      expect(workflowState).toBe('PROVIDER_SELECTION');
+    });
+
+    it('should allow setting workflow state independently', () => {
+      usePanelStore.getState().setWorkflowState('PROVIDER_SELECTION');
+
+      const { workflowState } = usePanelStore.getState();
+      expect(workflowState).toBe('PROVIDER_SELECTION');
     });
   });
 

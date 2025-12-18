@@ -115,7 +115,7 @@ function insertTestWorkflow(sessionId: string, overrides: Partial<{
     VALUES (
       '${workflowId}',
       '${sessionId}',
-      '${overrides.currentState || 'TIME_SELECTION'}',
+      '${overrides.currentState || 'PROVIDER_SELECTION'}',
       '${JSON.stringify({ serviceType: 'salon' })}',
       ${now},
       ${now}

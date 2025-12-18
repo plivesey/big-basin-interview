@@ -31,4 +31,5 @@ export type {
   ProviderDetail,
   TimeSlot,
   WorkingHours,
+  WorkflowState,
 } from './websocket-events';

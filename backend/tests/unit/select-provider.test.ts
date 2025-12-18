@@ -17,7 +17,7 @@ vi.mock('../../src/services/workflow-service', () => ({
   getCurrentWorkflow: vi.fn(),
   transitionState: vi.fn(),
   WorkflowState: {
-    TIME_SELECTION: 'TIME_SELECTION',
+    PROVIDER_SELECTION: 'PROVIDER_SELECTION',
   },
 }));
 
@@ -178,12 +178,12 @@ describe('select_provider tool', () => {
       mockTransitionState.mockResolvedValue(undefined);
     });
 
-    it('should transition workflow to TIME_SELECTION state', async () => {
+    it('should transition workflow to PROVIDER_SELECTION state', async () => {
       await selectProviderTool.handler({ providerId: 'provider-1' }, mockContext);
 
       expect(mockTransitionState).toHaveBeenCalledWith(
         'workflow-1',
-        'TIME_SELECTION',
+        'PROVIDER_SELECTION',
         { selectedProviderId: 'provider-1' }
       );
     });

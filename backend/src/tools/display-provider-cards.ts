@@ -17,7 +17,7 @@ import {
   DisplayProvider,
 } from '../types/tool.types';
 import { getProviderById } from '../services/provider-service';
-import { getCurrentWorkflow } from '../services/workflow-service';
+import { getCurrentWorkflow, WorkflowState } from '../services/workflow-service';
 import { logger } from '../utils/logger';
 
 // Input schema (Zod for validation) - IDs only
@@ -93,12 +93,13 @@ async function handler(
     }
   }
 
-  // Emit to frontend via context callback (with workflowId)
+  // Emit to frontend via context callback (with workflowId and state)
   if (providers.length > 0 && context.emitDisplayProviders) {
-    context.emitDisplayProviders(providers, workflowId);
+    context.emitDisplayProviders(providers, workflowId, WorkflowState.PROVIDER_SELECTION);
     logger.info('display_provider_cards emitted to frontend', {
       count: providers.length,
       workflowId,
+      workflowState: WorkflowState.PROVIDER_SELECTION,
     });
   }
 
