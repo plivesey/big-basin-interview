@@ -8,25 +8,34 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <div className="h-screen bg-slate-100 overflow-hidden">
-        {/* Chat area - shifts left when panel opens */}
+      <div className="h-screen bg-slate-100 overflow-hidden flex items-center justify-center p-4">
+        {/* Main container - animates width to fit content, always centered */}
         <div
-          className={`h-full flex items-center justify-center p-4 transition-all duration-300 ease-in-out ${
-            isProviderPanelOpen ? 'mr-80' : 'mr-0'
+          className={`flex gap-4 h-[700px] max-h-[90vh] transition-all duration-300 ease-in-out ${
+            isProviderPanelOpen ? 'w-[936px]' : 'w-[700px]'
           }`}
         >
-          <div className="w-full max-w-2xl h-[600px]">
+          {/* Chat window - expands when panel is closed */}
+          <div
+            className={`flex-shrink-0 transition-all duration-300 ease-in-out ${
+              isProviderPanelOpen ? 'w-[600px]' : 'w-[700px]'
+            }`}
+          >
             <ChatContainer />
           </div>
-        </div>
 
-        {/* Provider panel - fixed on right, slides in/out */}
-        <div
-          className={`fixed top-0 right-0 h-full w-80 transition-transform duration-300 ease-in-out ${
-            isProviderPanelOpen ? 'translate-x-0' : 'translate-x-full'
-          }`}
-        >
-          <ProviderPanel />
+          {/* Provider panel - animates in/out */}
+          <div
+            className={`overflow-hidden transition-all duration-300 ease-in-out ${
+              isProviderPanelOpen
+                ? 'w-80 opacity-100'
+                : 'w-0 opacity-0'
+            }`}
+          >
+            <div className="w-80 h-full">
+              <ProviderPanel />
+            </div>
+          </div>
         </div>
       </div>
     </ErrorBoundary>

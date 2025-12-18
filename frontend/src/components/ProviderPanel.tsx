@@ -5,13 +5,13 @@ export function ProviderPanel() {
   const { displayedProviders, closeProviderPanel } = usePanelStore();
 
   return (
-    <div className="flex h-full flex-col bg-slate-50 border-l border-slate-200">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3">
-        <h2 className="text-lg font-semibold text-slate-900">Your options</h2>
+    <div className="flex flex-col h-full bg-white rounded-xl shadow-lg overflow-hidden">
+      {/* Header - matches ChatContainer header style */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-slate-50">
+        <h2 className="font-semibold text-gray-800">Your options</h2>
         <button
           onClick={closeProviderPanel}
-          className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+          className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-200 hover:text-slate-600 transition-colors"
           aria-label="Close provider list"
         >
           <svg
@@ -31,7 +31,7 @@ export function ProviderPanel() {
       </div>
 
       {/* Provider List */}
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto p-4 bg-slate-50">
         <div className="space-y-3">
           {displayedProviders.map((provider) => (
             <ProviderCard key={provider.id} provider={provider} />
