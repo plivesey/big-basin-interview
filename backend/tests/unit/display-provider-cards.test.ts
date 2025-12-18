@@ -12,6 +12,17 @@ vi.mock('../../src/services/provider-service', () => ({
   getProviderById: vi.fn(),
 }));
 
+// Mock the workflow service
+vi.mock('../../src/services/workflow-service', () => ({
+  getCurrentWorkflow: vi.fn(),
+  updateContext: vi.fn(),
+  WorkflowState: {
+    PROVIDER_SEARCH: 'PROVIDER_SEARCH',
+    PROVIDER_SELECTION: 'PROVIDER_SELECTION',
+    COMPLETE: 'COMPLETE',
+  },
+}));
+
 // Mock logger to avoid console output during tests
 vi.mock('../../src/utils/logger', () => ({
   logger: {
@@ -24,7 +35,10 @@ vi.mock('../../src/utils/logger', () => ({
 
 // Import after mocking
 import { getProviderById } from '../../src/services/provider-service';
+import { getCurrentWorkflow, updateContext } from '../../src/services/workflow-service';
 const mockGetProviderById = vi.mocked(getProviderById);
+const mockGetCurrentWorkflow = vi.mocked(getCurrentWorkflow);
+const mockUpdateContext = vi.mocked(updateContext);
 
 describe('display_provider_cards tool', () => {
   const mockEmitDisplayProviders = vi.fn();
@@ -213,6 +227,84 @@ describe('display_provider_cards tool', () => {
 
     it('should have inputSchema property', () => {
       expect(displayProviderCardsTool.inputSchema).toBeDefined();
+    });
+  });
+
+  /**
+   * Session restore tests for selectedProviders persistence.
+   *
+   * CRITICAL: These tests ensure the provider panel can be restored after page refresh.
+   *
+   * When a user searches for providers and sees results, then refreshes the page,
+   * the session restore logic in chat-handler.ts reads workflow.context.selectedProviders
+   * to redisplay the provider panel. If selectedProviders is not saved when providers
+   * are displayed, the restore functionality breaks and users lose their search results.
+   *
+   * See: documentation/features/provider-panel-persistence.md
+   */
+  describe('selectedProviders persistence for session restore', () => {
+    const mockWorkflow = {
+      id: 'workflow-123',
+      sessionId: 'test-session',
+      currentState: 'PROVIDER_SEARCH',
+      context: {},
+      createdAt: new Date(),
+      lastUpdated: new Date(),
+    };
+
+    beforeEach(() => {
+      mockGetCurrentWorkflow.mockResolvedValue(mockWorkflow);
+      mockUpdateContext.mockResolvedValue(mockWorkflow);
+    });
+
+    it('should save displayed provider IDs to workflow context', async () => {
+      mockGetProviderById.mockResolvedValue(mockProvider);
+
+      const input: DisplayProviderCardsInput = { providerIds: ['provider-1', 'provider-2'] };
+      await displayProviderCardsTool.handler(input, mockContext);
+
+      // Verify updateContext was called with the displayed provider IDs
+      expect(mockUpdateContext).toHaveBeenCalledWith('workflow-123', {
+        selectedProviders: ['provider-1', 'provider-1'], // Both resolve to mockProvider.id
+      });
+    });
+
+    it('should only save IDs of providers that were found', async () => {
+      mockGetProviderById.mockImplementation((id) => {
+        if (id === 'found-id') {
+          return Promise.resolve(mockProvider);
+        }
+        return Promise.resolve(null);
+      });
+
+      const input: DisplayProviderCardsInput = {
+        providerIds: ['found-id', 'not-found-id'],
+      };
+      await displayProviderCardsTool.handler(input, mockContext);
+
+      // Only the found provider's ID should be saved
+      expect(mockUpdateContext).toHaveBeenCalledWith('workflow-123', {
+        selectedProviders: ['provider-1'], // mockProvider.id
+      });
+    });
+
+    it('should not call updateContext when no providers are found', async () => {
+      mockGetProviderById.mockResolvedValue(null);
+
+      const input: DisplayProviderCardsInput = { providerIds: ['bad-id'] };
+      await displayProviderCardsTool.handler(input, mockContext);
+
+      expect(mockUpdateContext).not.toHaveBeenCalled();
+    });
+
+    it('should not call updateContext when no workflow exists', async () => {
+      mockGetCurrentWorkflow.mockResolvedValue(null);
+      mockGetProviderById.mockResolvedValue(mockProvider);
+
+      const input: DisplayProviderCardsInput = { providerIds: ['provider-1'] };
+      await displayProviderCardsTool.handler(input, mockContext);
+
+      expect(mockUpdateContext).not.toHaveBeenCalled();
     });
   });
 });

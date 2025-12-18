@@ -31,13 +31,14 @@ function insertTestProvider(overrides: Partial<{
   };
 
   rawDb.exec(`
-    INSERT INTO providers (id, name, category, description, address, latitude, longitude, rating, review_count, working_hours, services, created_at, updated_at)
+    INSERT INTO providers (id, name, category, description, address, geo, latitude, longitude, rating, review_count, working_hours, services, created_at, updated_at)
     VALUES (
       '${provider.id}',
       '${provider.name}',
       '${provider.category}',
       '${provider.description}',
       '${provider.address}',
+      'seattle',
       ${provider.latitude},
       ${provider.longitude},
       ${provider.rating},

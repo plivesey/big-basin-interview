@@ -16,13 +16,14 @@ function insertTestProvider(id?: string): string {
   const now = Math.floor(Date.now() / 1000);
 
   rawDb.exec(`
-    INSERT INTO providers (id, name, category, description, address, latitude, longitude, rating, review_count, working_hours, services, created_at, updated_at)
+    INSERT INTO providers (id, name, category, description, address, geo, latitude, longitude, rating, review_count, working_hours, services, created_at, updated_at)
     VALUES (
       '${providerId}',
       'Test Provider',
       'salon',
       'A test provider',
       '123 Test St',
+      'seattle',
       40.7128,
       -74.006,
       4.5,
