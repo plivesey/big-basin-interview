@@ -60,20 +60,18 @@ export function ChatInput({
 
   return (
     <form onSubmit={handleSubmit} className="border-t border-slate-200 bg-white p-4">
-      <div className="flex items-end gap-3">
-        <div className="flex-1 relative">
-          <textarea
-            ref={textareaRef}
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={placeholder}
-            disabled={disabled}
-            rows={1}
-            className="textarea min-h-[44px] py-2.5 pr-12 overflow-hidden"
-            aria-label="Message input"
-          />
-        </div>
+      <div className="flex items-stretch gap-3">
+        <textarea
+          ref={textareaRef}
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder}
+          disabled={disabled}
+          rows={1}
+          className="textarea flex-1 min-h-[44px] py-2.5 overflow-hidden"
+          aria-label="Message input"
+        />
         <Button
           type="submit"
           variant="primary"
@@ -83,9 +81,6 @@ export function ChatInput({
           <SendIcon />
         </Button>
       </div>
-      <p className="mt-2 text-xs text-slate-400 text-center">
-        Hit Enter to send, or Shift+Enter for more lines
-      </p>
     </form>
   );
 }
