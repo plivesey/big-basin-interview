@@ -14,6 +14,7 @@ export interface ChatState {
   // Messages state
   messages: ChatMessage[];
   isLoading: boolean;
+  isAiWorking: boolean;
   streamingMessageId: string | null;
 
   // Actions
@@ -26,6 +27,7 @@ export interface ChatState {
   setStreamingMessageId: (messageId: string | null) => void;
   clearMessages: () => void;
   setIsLoading: (isLoading: boolean) => void;
+  setIsAiWorking: (isAiWorking: boolean) => void;
   reset: () => void;
 }
 
@@ -35,6 +37,7 @@ const initialState = {
   connectionStatus: 'disconnected' as ConnectionStatus,
   messages: [],
   isLoading: false,
+  isAiWorking: false,
   streamingMessageId: null,
 };
 
@@ -88,6 +91,8 @@ export const useChatStore = create<ChatState>((set) => ({
 
   setIsLoading: (isLoading: boolean) => set({ isLoading }),
 
+  setIsAiWorking: (isAiWorking: boolean) => set({ isAiWorking }),
+
   reset: () => set(initialState),
 }));
 
@@ -95,6 +100,7 @@ export const useChatStore = create<ChatState>((set) => ({
 // This prevents unnecessary re-renders when unrelated state changes
 export const selectMessages = (state: ChatState) => state.messages;
 export const selectIsLoading = (state: ChatState) => state.isLoading;
+export const selectIsAiWorking = (state: ChatState) => state.isAiWorking;
 export const selectConnectionStatus = (state: ChatState) => state.connectionStatus;
 export const selectSessionId = (state: ChatState) => state.sessionId;
 export const selectStreamingMessageId = (state: ChatState) => state.streamingMessageId;

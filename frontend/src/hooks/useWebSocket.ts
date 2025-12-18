@@ -42,6 +42,7 @@ export function useWebSocket(): UseWebSocketReturn {
     appendTextToMessage,
     setStreamingMessageId,
     setIsLoading,
+    setIsAiWorking,
   } = useChatStore();
 
   // Get stored session ID
@@ -126,13 +127,22 @@ export function useWebSocket(): UseWebSocketReturn {
     socket.on('message_start', (data) => {
       logger.debug('Message started', { messageId: data.messageId });
       setIsLoading(true);
+      setIsAiWorking(true);
 
-      // Set up streaming ID but don't create message yet
-      // Message will be created on first text_delta to avoid empty bubble
+      // Create message immediately with empty content (typing indicator will show)
       const streamingId = `streaming-${Date.now()}`;
       streamingIdRef.current = streamingId;
-      streamingMessageCreatedRef.current = false;
+      streamingMessageCreatedRef.current = true;
       setStreamingMessageId(streamingId);
+
+      const message: ChatMessage = {
+        id: streamingId,
+        sessionId: useChatStore.getState().sessionId || '',
+        role: 'assistant',
+        content: [{ type: 'text', text: '' }],
+        createdAt: new Date(),
+      };
+      addMessage(message);
     });
 
     socket.on('text_delta', (data) => {
@@ -140,21 +150,8 @@ export function useWebSocket(): UseWebSocketReturn {
       const streamingId = streamingIdRef.current;
       if (!streamingId) return;
 
-      if (!streamingMessageCreatedRef.current) {
-        // First text_delta - create the message with initial text
-        const message: ChatMessage = {
-          id: streamingId,
-          sessionId: useChatStore.getState().sessionId || '',
-          role: 'assistant',
-          content: [{ type: 'text', text: data.text }],
-          createdAt: new Date(),
-        };
-        addMessage(message);
-        streamingMessageCreatedRef.current = true;
-      } else {
-        // Subsequent text_delta - append to existing message
-        appendTextToMessage(streamingId, data.text);
-      }
+      // Message already exists from message_start, just append
+      appendTextToMessage(streamingId, data.text);
     });
 
     socket.on('assistant_message', (data) => {
@@ -184,12 +181,14 @@ export function useWebSocket(): UseWebSocketReturn {
       streamingMessageCreatedRef.current = false;
       setStreamingMessageId(null);
       setIsLoading(false);
+      setIsAiWorking(false);
     });
 
     // Error handling
     socket.on('error', (data) => {
       logger.error('WebSocket error', { error: data.error, code: data.code });
       setIsLoading(false);
+      setIsAiWorking(false);
     });
 
     // Provider display events
@@ -230,6 +229,7 @@ export function useWebSocket(): UseWebSocketReturn {
     appendTextToMessage,
     setStreamingMessageId,
     setIsLoading,
+    setIsAiWorking,
     getStoredSessionId,
     storeSessionId,
   ]);
