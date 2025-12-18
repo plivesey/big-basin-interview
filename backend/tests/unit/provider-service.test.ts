@@ -15,6 +15,7 @@ function insertTestProvider(overrides: Partial<{
   category: string;
   description: string;
   address: string;
+  geo: string;
   latitude: number;
   longitude: number;
   rating: number;
@@ -27,6 +28,7 @@ function insertTestProvider(overrides: Partial<{
     category: overrides.category || 'salon',
     description: overrides.description || 'A test provider',
     address: overrides.address || '123 Test St',
+    geo: overrides.geo || 'seattle',
     latitude: overrides.latitude || 40.7128,
     longitude: overrides.longitude || -74.006,
     rating: overrides.rating ?? 4.5,
@@ -34,13 +36,14 @@ function insertTestProvider(overrides: Partial<{
   };
 
   rawDb.exec(`
-    INSERT INTO providers (id, name, category, description, address, latitude, longitude, rating, review_count, working_hours, services, created_at, updated_at)
+    INSERT INTO providers (id, name, category, description, address, geo, latitude, longitude, rating, review_count, working_hours, services, created_at, updated_at)
     VALUES (
       '${provider.id}',
       '${provider.name}',
       '${provider.category}',
       '${provider.description}',
       '${provider.address}',
+      '${provider.geo}',
       ${provider.latitude},
       ${provider.longitude},
       ${provider.rating},

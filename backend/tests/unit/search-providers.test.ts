@@ -17,6 +17,11 @@ vi.mock('../../src/services/workflow-service', () => ({
   createWorkflow: vi.fn(),
 }));
 
+// Mock the memory service
+vi.mock('../../src/services/memory-service', () => ({
+  getUserLocation: vi.fn(),
+}));
+
 // Mock logger to avoid console output during tests
 vi.mock('../../src/utils/logger', () => ({
   logger: {
@@ -30,8 +35,10 @@ vi.mock('../../src/utils/logger', () => ({
 // Import after mocking
 import { searchProviders } from '../../src/services/provider-service';
 import { createWorkflow } from '../../src/services/workflow-service';
+import { getUserLocation } from '../../src/services/memory-service';
 const mockSearchProviders = vi.mocked(searchProviders);
 const mockCreateWorkflow = vi.mocked(createWorkflow);
+const mockGetUserLocation = vi.mocked(getUserLocation);
 
 describe('search_providers tool', () => {
   const mockContext: ToolExecutionContext = {
@@ -67,8 +74,9 @@ describe('search_providers tool', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    // Set up default mock for createWorkflow
+    // Set up default mocks
     mockCreateWorkflow.mockResolvedValue(mockWorkflow as never);
+    mockGetUserLocation.mockResolvedValue('seattle'); // Default: location is set
   });
 
   describe('definition', () => {
@@ -182,6 +190,50 @@ describe('search_providers tool', () => {
       const result = await searchProvidersTool.handler({ query: 'test' }, mockContext);
 
       expect(result.providers[0].services).toEqual(['haircut', 'styling', 'coloring']);
+    });
+
+    describe('location requirement', () => {
+      it('should return error when location is not set', async () => {
+        mockGetUserLocation.mockResolvedValue(null);
+
+        const result = await searchProvidersTool.handler({ query: 'salon' }, mockContext);
+
+        expect('error' in result).toBe(true);
+        if ('error' in result) {
+          expect(result.error).toContain('Location not set');
+          expect(result.error).toContain('set_location');
+          expect(result.providers).toEqual([]);
+          expect(result.count).toBe(0);
+          expect(result.supportedLocations).toBeDefined();
+          expect(result.supportedLocations.length).toBeGreaterThan(0);
+        }
+        expect(mockSearchProviders).not.toHaveBeenCalled();
+        expect(mockCreateWorkflow).not.toHaveBeenCalled();
+      });
+
+      it('should proceed with search when location is set', async () => {
+        mockGetUserLocation.mockResolvedValue('san_francisco');
+        mockSearchProviders.mockResolvedValue([mockProvider]);
+
+        const result = await searchProvidersTool.handler({ query: 'salon' }, mockContext);
+
+        expect('workflowId' in result).toBe(true);
+        expect(result.providers).toHaveLength(1);
+        expect(mockSearchProviders).toHaveBeenCalled();
+        expect(mockCreateWorkflow).toHaveBeenCalled();
+      });
+
+      it('should include location in workflow context', async () => {
+        mockGetUserLocation.mockResolvedValue('toronto');
+        mockSearchProviders.mockResolvedValue([]);
+
+        await searchProvidersTool.handler({ query: 'dentist' }, mockContext);
+
+        expect(mockCreateWorkflow).toHaveBeenCalledWith(
+          'test-session',
+          expect.objectContaining({ location: 'toronto' })
+        );
+      });
     });
   });
 

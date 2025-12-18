@@ -17,6 +17,7 @@ beforeAll(async () => {
       category TEXT NOT NULL,
       description TEXT,
       address TEXT NOT NULL,
+      geo TEXT NOT NULL,
       latitude REAL NOT NULL,
       longitude REAL NOT NULL,
       rating REAL NOT NULL,
@@ -29,6 +30,8 @@ beforeAll(async () => {
       created_at INTEGER NOT NULL,
       updated_at INTEGER NOT NULL
     );
+
+    CREATE INDEX IF NOT EXISTS provider_geo_idx ON providers(geo);
 
     CREATE TABLE IF NOT EXISTS sessions (
       id TEXT PRIMARY KEY,
@@ -86,6 +89,17 @@ beforeAll(async () => {
       created_at INTEGER NOT NULL,
       updated_at INTEGER NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS memories (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      type TEXT NOT NULL,
+      value TEXT NOT NULL,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS memories_user_type_idx ON memories(user_id, type);
   `);
 });
 
@@ -99,6 +113,7 @@ beforeEach(async () => {
   rawDb.exec('DELETE FROM bookings');
   rawDb.exec('DELETE FROM sessions');
   rawDb.exec('DELETE FROM calendar_connections');
+  rawDb.exec('DELETE FROM memories');
 });
 
 afterAll(async () => {

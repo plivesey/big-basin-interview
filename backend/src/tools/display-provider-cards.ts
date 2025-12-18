@@ -17,7 +17,7 @@ import {
   DisplayProvider,
 } from '../types/tool.types';
 import { getProviderById } from '../services/provider-service';
-import { getCurrentWorkflow, WorkflowState } from '../services/workflow-service';
+import { getCurrentWorkflow, updateContext, WorkflowState } from '../services/workflow-service';
 import { logger } from '../utils/logger';
 
 // Input schema (Zod for validation) - IDs only
@@ -100,6 +100,16 @@ async function handler(
       count: providers.length,
       workflowId,
       workflowState: WorkflowState.PROVIDER_SELECTION,
+    });
+  }
+
+  // Save displayed provider IDs to workflow context for session restore
+  if (workflowId && providers.length > 0) {
+    const displayedIds = providers.map((p) => p.id);
+    await updateContext(workflowId, { selectedProviders: displayedIds });
+    logger.debug('Saved selectedProviders to workflow context', {
+      workflowId,
+      selectedProviders: displayedIds,
     });
   }
 

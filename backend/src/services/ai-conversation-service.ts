@@ -3,7 +3,10 @@ import { env, requireAnthropicKey } from '../config/env';
 import { getMessageHistory, ChatMessage } from './message-service';
 import { executeTools, ToolExecutionCallbacks } from './tool-executor';
 import { getCurrentWorkflow, WorkflowStateRecord } from './workflow-service';
+import { getSession } from './session-service';
 import { getProviderById } from './provider-service';
+import { getUserLocation } from './memory-service';
+import { PROVIDER_GEO_NAMES } from '../constants/supported-locations';
 import { logger } from '../utils/logger';
 import { ToolUseContent, MessageContent } from '../db/schema';
 import { toolRegistry } from '../tools';
@@ -180,6 +183,26 @@ async function buildWorkflowContext(workflow: WorkflowStateRecord | null): Promi
   }
 
   return `\n\nCurrent booking workflow:\n${parts.join('\n')}`;
+}
+
+/**
+ * Build location context string for system prompt
+ * If location is set, includes it. If not, instructs AI to ask for it.
+ */
+async function buildLocationContext(userId: string): Promise<string> {
+  const location = await getUserLocation(userId);
+
+  if (location) {
+    const displayName = PROVIDER_GEO_NAMES[location];
+    return `\n\nUser's current location: ${displayName}. When searching for providers, results will automatically show for this location.`;
+  }
+
+  const locationList = Object.values(PROVIDER_GEO_NAMES).join(', ');
+  return `\n\nIMPORTANT: The user has not set their location yet. Before searching for providers, you must ask them where they are located and use the set_location tool to save it.
+
+Supported locations: ${locationList}.
+
+If they mention a location not on this list, apologize and explain that only these locations are currently supported.`;
 }
 
 /**
@@ -378,6 +401,10 @@ export async function sendMessage(
 ): Promise<string> {
   logger.info('Sending message to AI', { sessionId, messageLength: userMessage.length });
 
+  // Load session to get userId
+  const session = await getSession(sessionId);
+  const userId = session?.userId ?? 'default_user';
+
   // Load conversation history from database
   const history = await getMessageHistory(sessionId);
   logger.debug('Loaded message history', { sessionId, messageCount: history.length });
@@ -393,6 +420,12 @@ export async function sendMessage(
     });
   }
 
+  // Load location context for user
+  const locationContext = await buildLocationContext(userId);
+
+  // Combine all context for system prompt
+  const fullContext = workflowContext + locationContext;
+
   // Build messages array for Claude API
   const messages = buildMessagesArray(history);
 
@@ -407,7 +440,7 @@ export async function sendMessage(
 
   for (let attempt = 0; attempt <= retryDelays.length; attempt++) {
     try {
-      return await sendMessageWithToolLoop(sessionId, messages, callbacks, workflowContext);
+      return await sendMessageWithToolLoop(sessionId, messages, callbacks, fullContext);
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
 

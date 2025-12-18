@@ -56,6 +56,7 @@ export enum ToolName {
   CONFIRM_BOOKING = 'confirm_booking',
   CREATE_BOOKING = 'create_booking',
   SELECT_PROVIDER = 'select_provider',
+  SET_LOCATION = 'set_location',
 }
 
 // Tool input types
