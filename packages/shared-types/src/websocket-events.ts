@@ -6,6 +6,19 @@
 import type { RawChatMessage } from './messages';
 
 /**
+ * Provider data for display in UI
+ */
+export interface DisplayProvider {
+  id: string;
+  name: string;
+  category: string;
+  rating: number;
+  reviewCount: number | null;
+  services: string[];
+  address: string;
+}
+
+/**
  * Events emitted from server to client
  */
 export interface ServerToClientEvents {
@@ -40,6 +53,9 @@ export interface ServerToClientEvents {
     toolUseId: string;
     success: boolean;
   }) => void;
+
+  /** Display providers in side panel */
+  display_providers: (data: { providers: DisplayProvider[] }) => void;
 
   /** Error occurred */
   error: (data: { error: string; code?: string }) => void;

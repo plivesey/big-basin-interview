@@ -1,15 +1,8 @@
 import { create } from 'zustand';
+import type { DisplayProvider } from '@asba/shared-types';
 
-// Provider data for display (matches backend DisplayProvider)
-export interface DisplayProvider {
-  id: string;
-  name: string;
-  category: string;
-  rating: number;
-  reviewCount: number | null;
-  services: string[];
-  address: string;
-}
+// Re-export for consumers
+export type { DisplayProvider } from '@asba/shared-types';
 
 // Panel store state
 export interface PanelState {
