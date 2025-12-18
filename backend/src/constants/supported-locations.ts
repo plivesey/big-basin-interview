@@ -58,6 +58,7 @@ export function matchProviderGeo(input: string): ProviderGeo | null {
     'nyc': 'new_york',
     'new york city': 'new_york',
     'manhattan': 'new_york',
+    'brooklyn': 'new_york',
     'princeton nj': 'princeton',
     'princeton, nj': 'princeton',
   };
