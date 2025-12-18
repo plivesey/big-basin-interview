@@ -22,7 +22,7 @@ router.get('/google/url', async (req: Request, res: Response, next: NextFunction
   try {
     // Check if Google Calendar is configured
     if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET || !env.GOOGLE_REDIRECT_URI) {
-      logger.warn('Google Calendar not configured');
+      logger.error('Google Calendar not configured');
       return res.status(503).json({
         success: false,
         error: {

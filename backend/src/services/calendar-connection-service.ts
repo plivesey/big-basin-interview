@@ -60,7 +60,10 @@ export async function exchangeCodeForTokens(
   }
 
   // Calculate expiration time
-  const expiresAt = new Date(Date.now() + (tokens.expiry_date || 3600000));
+  if (!tokens.expiry_date) {
+    throw new Error('Google did not return token expiry date');
+  }
+  const expiresAt = new Date(tokens.expiry_date);
 
   // Get user email from Google
   let email: string | null = null;
@@ -223,7 +226,10 @@ export async function refreshTokenIfNeeded(
       throw new Error('Failed to refresh access token');
     }
 
-    const expiresAt = new Date(Date.now() + (credentials.expiry_date || 3600000));
+    if (!credentials.expiry_date) {
+      throw new Error('Google did not return token expiry date');
+    }
+    const expiresAt = new Date(credentials.expiry_date);
 
     // Update database with new tokens
     await db

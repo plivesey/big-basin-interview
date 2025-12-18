@@ -31,7 +31,7 @@ export interface WorkflowStateRecord {
 // Valid state transitions
 export const VALID_TRANSITIONS: Record<WorkflowState, WorkflowState[]> = {
   [WorkflowState.PROVIDER_SEARCH]: [WorkflowState.PROVIDER_SELECTION],
-  [WorkflowState.PROVIDER_SELECTION]: [WorkflowState.COMPLETE, WorkflowState.PROVIDER_SEARCH],
+  [WorkflowState.PROVIDER_SELECTION]: [WorkflowState.PROVIDER_SELECTION, WorkflowState.COMPLETE, WorkflowState.PROVIDER_SEARCH],
   [WorkflowState.COMPLETE]: [], // Terminal state
 };
 

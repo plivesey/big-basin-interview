@@ -43,12 +43,12 @@ router.post(
         throw new NotFoundError('Workflow', workflowId);
       }
 
-      // Idempotent: If already in PROVIDER_SELECTION, just return success
-      if (workflow.currentState === WorkflowState.PROVIDER_SELECTION) {
-        logger.debug('Workflow already in PROVIDER_SELECTION state', {
-          workflowId,
-          providerId,
-        });
+      // Idempotent: Only skip if same provider already selected
+      if (
+        workflow.currentState === WorkflowState.PROVIDER_SELECTION &&
+        workflow.context.selectedProviderId === providerId
+      ) {
+        logger.debug('Same provider already selected', { workflowId, providerId });
 
         return res.json({
           success: true,
@@ -62,7 +62,7 @@ router.post(
         });
       }
 
-      // Transition to PROVIDER_SELECTION
+      // Transition to PROVIDER_SELECTION (works from PROVIDER_SEARCH or PROVIDER_SELECTION)
       const updatedWorkflow = await transitionState(
         workflowId,
         WorkflowState.PROVIDER_SELECTION,

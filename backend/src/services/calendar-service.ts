@@ -148,36 +148,3 @@ export async function createEvent(
     return null;
   }
 }
-
-/**
- * Delete a calendar event by ID
- * Returns true on success, false on failure
- */
-export async function deleteEvent(eventId: string): Promise<boolean> {
-  try {
-    const calendar = await getCalendarClient();
-
-    if (!calendar) {
-      logger.debug('Cannot delete event: no calendar connected');
-      return false;
-    }
-
-    const connection = await getConnection(DEFAULT_USER_ID);
-    const calendarId = connection?.calendarId || 'primary';
-
-    await calendar.events.delete({
-      calendarId,
-      eventId,
-    });
-
-    logger.info('Calendar event deleted', { eventId });
-
-    return true;
-  } catch (error) {
-    logger.error('Failed to delete calendar event', {
-      eventId,
-      error: String(error),
-    });
-    return false;
-  }
-}

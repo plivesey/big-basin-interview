@@ -30,7 +30,7 @@ export function createApp() {
   app.use('/api/sessions', sessionRoutes);
   app.use('/api/workflows', workflowRoutes);
 
-  // Auth routes (non-prefixed for OAuth callback compatibility)
+  // Google OAuth routes (non-prefixed for OAuth callback compatibility)
   app.use('/auth', authRoutes);
 
   // Error handler middleware (must be registered after routes)
