@@ -6,7 +6,7 @@ import { getWorkflow, WorkflowState } from '../services/workflow-service';
 import { getProvidersByIds } from '../services/provider-service';
 import { sendMessage as sendAIMessage, AIError } from '../services/ai-conversation-service';
 import { logger } from '../utils/logger';
-import type { ServerToClientEvents, ClientToServerEvents, ChatMessage, RawChatMessage, DisplayProvider } from '@asba/shared-types';
+import type { ServerToClientEvents, ClientToServerEvents, ChatMessage, RawChatMessage, DisplayProvider, WorkflowState as SharedWorkflowState } from '@asba/shared-types';
 
 // Re-export WebSocket event types for consumers
 export type { ServerToClientEvents, ClientToServerEvents } from '@asba/shared-types';
@@ -188,7 +188,7 @@ export function initializeChatHandler(io: ChatServer): void {
             socket.emit('display_providers', {
               providers,
               workflowId,
-              workflowState: workflowState as import('@asba/shared-types').WorkflowState | undefined,
+              workflowState: workflowState as SharedWorkflowState | undefined,
             });
           },
           onOpenProviderDetail: (providerId, providerName, workflowId) => {
