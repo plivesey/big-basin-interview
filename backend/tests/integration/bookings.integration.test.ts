@@ -102,6 +102,29 @@ function insertTestSession(id?: string) {
   return sessionId;
 }
 
+// Helper to insert test workflow directly
+function insertTestWorkflow(sessionId: string, overrides: Partial<{
+  id: string;
+  currentState: string;
+}> = {}) {
+  const workflowId = overrides.id || uuidv4();
+  const now = Math.floor(Date.now() / 1000);
+
+  rawDb.exec(`
+    INSERT INTO workflow_states (id, session_id, current_state, context, created_at, last_updated)
+    VALUES (
+      '${workflowId}',
+      '${sessionId}',
+      '${overrides.currentState || 'TIME_SELECTION'}',
+      '${JSON.stringify({ serviceType: 'salon' })}',
+      ${now},
+      ${now}
+    )
+  `);
+
+  return workflowId;
+}
+
 describe('Booking API Integration Tests', () => {
   beforeAll(() => {
     app = createApp();
@@ -110,6 +133,7 @@ describe('Booking API Integration Tests', () => {
   beforeEach(() => {
     // Clear tables before each test (order matters due to foreign keys)
     rawDb.exec('DELETE FROM bookings');
+    rawDb.exec('DELETE FROM workflow_states');
     rawDb.exec('DELETE FROM providers');
     rawDb.exec('DELETE FROM sessions');
   });
@@ -175,6 +199,8 @@ describe('Booking API Integration Tests', () => {
   describe('POST /api/bookings', () => {
     it('should create booking and return 201', async () => {
       const provider = insertTestProvider();
+      const sessionId = insertTestSession();
+      const workflowId = insertTestWorkflow(sessionId);
       const idempotencyKey = uuidv4();
 
       const response = await request(app)
@@ -185,6 +211,7 @@ describe('Booking API Integration Tests', () => {
           scheduledAt: '2025-12-20T10:00:00Z',
           duration: 60,
           idempotencyKey,
+          workflowId,
         });
 
       expect(response.status).toBe(201);
@@ -197,6 +224,8 @@ describe('Booking API Integration Tests', () => {
 
     it('should return existing booking with 200 on duplicate idempotencyKey', async () => {
       const provider = insertTestProvider();
+      const sessionId = insertTestSession();
+      const workflowId = insertTestWorkflow(sessionId);
       const idempotencyKey = uuidv4();
 
       // First request - should create
@@ -207,6 +236,7 @@ describe('Booking API Integration Tests', () => {
           serviceType: 'haircut',
           scheduledAt: '2025-12-20T10:00:00Z',
           idempotencyKey,
+          workflowId,
         });
 
       expect(response1.status).toBe(201);
@@ -220,6 +250,7 @@ describe('Booking API Integration Tests', () => {
           serviceType: 'haircut',
           scheduledAt: '2025-12-20T10:00:00Z',
           idempotencyKey,
+          workflowId,
         });
 
       expect(response2.status).toBe(200);
@@ -242,6 +273,9 @@ describe('Booking API Integration Tests', () => {
     });
 
     it('should return 400 for non-existent provider', async () => {
+      const sessionId = insertTestSession();
+      const workflowId = insertTestWorkflow(sessionId);
+
       const response = await request(app)
         .post('/api/bookings')
         .send({
@@ -249,6 +283,7 @@ describe('Booking API Integration Tests', () => {
           serviceType: 'haircut',
           scheduledAt: '2025-12-20T10:00:00Z',
           idempotencyKey: uuidv4(),
+          workflowId,
         });
 
       expect(response.status).toBe(400);
@@ -287,6 +322,8 @@ describe('Booking API Integration Tests', () => {
 
     it('should use default duration when not provided', async () => {
       const provider = insertTestProvider();
+      const sessionId = insertTestSession();
+      const workflowId = insertTestWorkflow(sessionId);
 
       const response = await request(app)
         .post('/api/bookings')
@@ -295,6 +332,7 @@ describe('Booking API Integration Tests', () => {
           serviceType: 'haircut',
           scheduledAt: '2025-12-20T10:00:00Z',
           idempotencyKey: uuidv4(),
+          workflowId,
           // duration not provided
         });
 

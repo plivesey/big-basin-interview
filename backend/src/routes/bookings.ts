@@ -77,7 +77,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       idempotencyKey
     );
 
-    // Complete the workflow if booking was created (workflowId is always provided)
+    // Complete the workflow if booking was created
     if (result.created) {
       try {
         await transitionState(workflowId, WorkflowState.COMPLETE, {
