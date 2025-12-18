@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useState, useEffect } from 'react';
 import type { ConnectionStatus as ConnectionStatusType } from '@asba/shared-types';
 import { Badge } from './Badge';
 
@@ -10,12 +10,25 @@ interface ConnectionStatusProps {
 /**
  * Connection status indicator with reconnect functionality.
  * Displays current WebSocket connection state and allows manual reconnection.
+ * The "Ready" badge fades out after 1 second to keep the UI clean.
  */
 export const ConnectionStatus = memo(function ConnectionStatus({
   status,
   onReconnect,
 }: ConnectionStatusProps) {
+  const [showReady, setShowReady] = useState(true);
+
+  useEffect(() => {
+    if (status === 'connected') {
+      const timer = setTimeout(() => setShowReady(false), 1000);
+      return () => clearTimeout(timer);
+    } else {
+      setShowReady(true);
+    }
+  }, [status]);
+
   if (status === 'connected') {
+    if (!showReady) return null;
     return (
       <Badge variant="success">
         <span className="w-2 h-2 rounded-full bg-green-500 mr-1.5 animate-pulse" />
