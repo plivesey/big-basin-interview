@@ -1,0 +1,120 @@
+import { Router, Request, Response, NextFunction } from 'express';
+import { createBooking, getBookingById, getBookingsByUser } from '../services/booking-service';
+import {
+  createBookingSchema,
+  bookingIdSchema,
+  bookingQuerySchema,
+} from '../validation/booking-schemas';
+import { NotFoundError } from '../middleware/error-handler';
+import { logger } from '../utils/logger';
+
+const router = Router();
+
+/**
+ * GET /api/bookings
+ * Get bookings for a user
+ * Query params:
+ *   - userId: Required user ID to filter bookings
+ * Returns bookings ordered by scheduledAt descending
+ */
+router.get('/', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    // Validate query parameters (userId is required)
+    const { userId } = bookingQuerySchema.parse(req.query);
+
+    logger.debug('Booking list request', { userId });
+
+    const bookings = await getBookingsByUser(userId);
+
+    res.json({
+      success: true,
+      data: {
+        bookings,
+        total: bookings.length,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * POST /api/bookings
+ * Create a new booking with idempotency support
+ * Body:
+ *   - providerId: UUID of the provider
+ *   - serviceType: Type of service (e.g., 'haircut')
+ *   - scheduledAt: ISO 8601 datetime
+ *   - duration: Duration in minutes (optional, default 60)
+ *   - idempotencyKey: Unique key to prevent duplicate bookings
+ * Returns 201 if created, 200 if idempotent return
+ */
+router.post('/', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    // Validate request body
+    const { providerId, serviceType, scheduledAt, duration, idempotencyKey } =
+      createBookingSchema.parse(req.body);
+
+    logger.debug('Booking create request', {
+      providerId,
+      serviceType,
+      scheduledAt,
+      idempotencyKey,
+    });
+
+    // Create booking (uses default_user for MVP)
+    const result = await createBooking(
+      {
+        userId: 'default_user',
+        providerId,
+        serviceType,
+        scheduledAt: new Date(scheduledAt),
+        duration,
+      },
+      idempotencyKey
+    );
+
+    // Return 201 if created, 200 if idempotent return
+    const statusCode = result.created ? 201 : 200;
+
+    res.status(statusCode).json({
+      success: true,
+      data: {
+        booking: result.booking,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * GET /api/bookings/:id
+ * Get a single booking by ID
+ * Returns 404 if booking not found
+ */
+router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    // Validate ID parameter
+    const { id } = bookingIdSchema.parse(req.params);
+
+    logger.debug('Booking detail request', { id });
+
+    const booking = await getBookingById(id);
+
+    if (!booking) {
+      throw new NotFoundError('Booking', id);
+    }
+
+    res.json({
+      success: true,
+      data: {
+        booking,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+export default router;
