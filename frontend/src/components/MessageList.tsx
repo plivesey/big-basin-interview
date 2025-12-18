@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { ChatMessage as ChatMessageComponent, ChatLoading } from './ChatMessage';
-import { getMessageText } from '../store/chat-store';
+import { ChatMessage as ChatMessageComponent } from './ChatMessage';
+import { useChatStore, getMessageText, selectStreamingMessageId, selectIsAiWorking } from '../store/chat-store';
 import type { ChatMessage } from '../store/chat-store';
 
 interface MessageListProps {
@@ -11,6 +11,8 @@ interface MessageListProps {
 export function MessageList({ messages, isLoading }: MessageListProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const streamingMessageId = useChatStore(selectStreamingMessageId);
+  const isAiWorking = useChatStore(selectIsAiWorking);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -52,15 +54,15 @@ export function MessageList({ messages, isLoading }: MessageListProps) {
           key={message.id}
           role={message.role}
           timestamp={formatTimestamp(message.createdAt)}
+          showTypingIndicator={
+            message.role === 'assistant' &&
+            message.id === streamingMessageId &&
+            isAiWorking
+          }
         >
           {getMessageText(message)}
         </ChatMessageComponent>
       ))}
-
-      {/* Only show loading if waiting for response AND no assistant message has started */}
-      {isLoading && (!messages.length || messages[messages.length - 1].role === 'user') && (
-        <ChatLoading text="Let me check..." />
-      )}
 
       <div ref={messagesEndRef} />
     </div>

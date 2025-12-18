@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import type { ReactNode } from 'react';
 import { MarkdownMessage } from './MarkdownMessage';
+import { TypingIndicator } from './TypingIndicator';
 
 type MessageRole = 'user' | 'assistant';
 
@@ -8,6 +9,7 @@ interface ChatMessageProps {
   role: MessageRole;
   children: ReactNode;
   timestamp?: string;
+  showTypingIndicator?: boolean;
 }
 
 /**
@@ -18,6 +20,7 @@ export const ChatMessage = memo(function ChatMessage({
   role,
   children,
   timestamp,
+  showTypingIndicator = false,
 }: ChatMessageProps) {
   const containerClass = role === 'user' ? 'flex justify-end mb-4' : 'flex justify-start mb-4';
   const messageClass = role === 'user' ? 'message-user' : 'message-assistant';
@@ -31,6 +34,7 @@ export const ChatMessage = memo(function ChatMessage({
           ) : (
             children
           )}
+          {showTypingIndicator && <TypingIndicator />}
         </div>
         {timestamp && (
           <div className="mt-1 text-xs opacity-70 text-right">{timestamp}</div>
@@ -52,33 +56,6 @@ export const ChatTimestamp = memo(function ChatTimestamp({ children }: ChatTimes
   return (
     <div className="flex justify-center mb-6">
       <span className="message-timestamp">{children}</span>
-    </div>
-  );
-});
-
-interface ChatLoadingProps {
-  text?: string;
-}
-
-/**
- * Loading indicator while waiting for assistant response.
- * Memoized to prevent unnecessary re-renders.
- */
-export const ChatLoading = memo(function ChatLoading({
-  text = 'Let me check...',
-}: ChatLoadingProps) {
-  return (
-    <div className="flex justify-start mb-4">
-      <div className="px-4 py-3 bg-slate-50 rounded-2xl rounded-tl-sm border border-slate-200">
-        <div className="flex items-center space-x-2">
-          <div className="flex space-x-1">
-            <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" />
-            <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
-            <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
-          </div>
-          <span className="text-sm text-slate-500">{text}</span>
-        </div>
-      </div>
     </div>
   );
 });

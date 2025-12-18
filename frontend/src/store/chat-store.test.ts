@@ -16,6 +16,7 @@ describe('chat-store', () => {
       expect(state.connectionStatus).toBe('disconnected');
       expect(state.messages).toEqual([]);
       expect(state.isLoading).toBe(false);
+      expect(state.isAiWorking).toBe(false);
     });
   });
 
@@ -192,6 +193,21 @@ describe('chat-store', () => {
     });
   });
 
+  describe('setIsAiWorking', () => {
+    it('should update AI working state to true', () => {
+      useChatStore.getState().setIsAiWorking(true);
+
+      expect(useChatStore.getState().isAiWorking).toBe(true);
+    });
+
+    it('should update AI working state to false', () => {
+      useChatStore.getState().setIsAiWorking(true);
+      useChatStore.getState().setIsAiWorking(false);
+
+      expect(useChatStore.getState().isAiWorking).toBe(false);
+    });
+  });
+
   describe('reset', () => {
     it('should reset all state to initial values', () => {
       // Set some state
@@ -205,6 +221,7 @@ describe('chat-store', () => {
         createdAt: new Date(),
       });
       useChatStore.getState().setIsLoading(true);
+      useChatStore.getState().setIsAiWorking(true);
 
       // Reset
       useChatStore.getState().reset();
@@ -215,6 +232,7 @@ describe('chat-store', () => {
       expect(state.connectionStatus).toBe('disconnected');
       expect(state.messages).toEqual([]);
       expect(state.isLoading).toBe(false);
+      expect(state.isAiWorking).toBe(false);
     });
   });
 });
