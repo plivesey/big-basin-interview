@@ -194,7 +194,7 @@ async function buildLocationContext(userId: string): Promise<string> {
 
   if (location) {
     const displayName = PROVIDER_GEO_NAMES[location];
-    return `\n\nUser's current location: ${displayName}. Use this when searching for providers.`;
+    return `\n\nUser's current location: ${displayName}. When searching for providers, results will automatically show for this location.`;
   }
 
   const locationList = Object.values(PROVIDER_GEO_NAMES).join(', ');

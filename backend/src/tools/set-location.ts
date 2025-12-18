@@ -4,7 +4,7 @@
 
 import { z } from 'zod';
 import { RegisteredTool, ToolName, ToolExecutionContext, ToolDefinition } from '../types/tool.types';
-import { setUserLocation } from '../services/memory-service';
+import { setLocationMemory } from '../services/memory-service';
 import { matchProviderGeo, PROVIDER_GEO_NAMES, ProviderGeo } from '../constants/supported-locations';
 import { logger } from '../utils/logger';
 
@@ -70,7 +70,7 @@ async function handler(
   }
 
   // Save the location
-  await setUserLocation(context.userId, matchedGeo);
+  await setLocationMemory(context.userId, matchedGeo);
 
   const displayName = PROVIDER_GEO_NAMES[matchedGeo];
   logger.info('set_location succeeded', {

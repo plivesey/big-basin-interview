@@ -90,7 +90,6 @@ await setUserLocation(userId, 'san_francisco');
 // Generic memory operations
 await getMemory(userId, 'location');
 await setMemory(userId, 'location', { location: 'san_francisco' });
-await deleteMemory(userId, 'location');
 ```
 
 ### Set Location Tool (`backend/src/tools/set-location.ts`)

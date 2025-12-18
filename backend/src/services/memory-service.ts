@@ -1,21 +1,18 @@
 /**
- * Memory service - manages user memories (location, preferences, etc.)
+ * Memory service - manages user memories (location only for now)
  */
 
 import { v4 as uuidv4 } from 'uuid';
 import { eq, and } from 'drizzle-orm';
 import { db, memories, NewMemory, Memory, ProviderGeo } from '../db';
 
-// Memory types
-export type MemoryType = 'location';
-
-// Memory value types - using Record<string, unknown> for database compatibility
-export type MemoryValue = Record<string, unknown>;
+// Memory types - only location is supported for now
+type MemoryType = 'location';
 
 /**
- * Get a memory by user ID and type
+ * Get a memory by user ID and type (internal helper)
  */
-export async function getMemory(userId: string, type: MemoryType): Promise<Memory | null> {
+async function getMemory(userId: string, type: MemoryType): Promise<Memory | null> {
   if (!userId || !userId.trim()) {
     return null;
   }
@@ -34,19 +31,29 @@ export async function getMemory(userId: string, type: MemoryType): Promise<Memor
 }
 
 /**
- * Set a memory (upsert - creates if doesn't exist, updates if exists)
+ * Get user's location
  */
-export async function setMemory(
-  userId: string,
-  type: MemoryType,
-  value: MemoryValue
-): Promise<Memory> {
+export async function getUserLocation(userId: string): Promise<ProviderGeo | null> {
+  const memory = await getMemory(userId, 'location');
+  if (!memory) {
+    return null;
+  }
+
+  const location = memory.value.location as ProviderGeo | undefined;
+  return location ?? null;
+}
+
+/**
+ * Set user's location (upsert - creates if doesn't exist, updates if exists)
+ */
+export async function setLocationMemory(userId: string, location: ProviderGeo): Promise<Memory> {
   if (!userId || !userId.trim()) {
     throw new Error('User ID is required');
   }
 
   const now = new Date();
-  const existingMemory = await getMemory(userId, type);
+  const value = { location };
+  const existingMemory = await getMemory(userId, 'location');
 
   if (existingMemory) {
     // Update existing memory
@@ -69,7 +76,7 @@ export async function setMemory(
   const newMemory: NewMemory = {
     id: uuidv4(),
     userId,
-    type,
+    type: 'location',
     value,
     createdAt: now,
     updatedAt: now,
@@ -80,7 +87,7 @@ export async function setMemory(
   return {
     id: newMemory.id,
     userId,
-    type,
+    type: 'location',
     value,
     createdAt: now,
     updatedAt: now,
@@ -88,36 +95,16 @@ export async function setMemory(
 }
 
 /**
- * Delete a memory
+ * Delete user's location memory
  */
-export async function deleteMemory(userId: string, type: MemoryType): Promise<boolean> {
+export async function deleteLocationMemory(userId: string): Promise<boolean> {
   if (!userId || !userId.trim()) {
     return false;
   }
 
   const result = await db
     .delete(memories)
-    .where(and(eq(memories.userId, userId), eq(memories.type, type)));
+    .where(and(eq(memories.userId, userId), eq(memories.type, 'location')));
 
   return result.changes > 0;
-}
-
-/**
- * Get user's location (convenience helper)
- */
-export async function getUserLocation(userId: string): Promise<ProviderGeo | null> {
-  const memory = await getMemory(userId, 'location');
-  if (!memory) {
-    return null;
-  }
-
-  const location = memory.value.location as ProviderGeo | undefined;
-  return location ?? null;
-}
-
-/**
- * Set user's location (convenience helper)
- */
-export async function setUserLocation(userId: string, location: ProviderGeo): Promise<Memory> {
-  return setMemory(userId, 'location', { location });
 }
