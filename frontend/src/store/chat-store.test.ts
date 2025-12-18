@@ -330,3 +330,126 @@ describe('parseMessage', () => {
     expect(parsed.createdAt.toISOString()).toBe(dateString);
   });
 });
+
+describe('error state', () => {
+  beforeEach(() => {
+    useChatStore.getState().reset();
+  });
+
+  describe('initial error state', () => {
+    it('should have empty failedMessageIds set', () => {
+      const state = useChatStore.getState();
+      expect(state.failedMessageIds).toBeInstanceOf(Set);
+      expect(state.failedMessageIds.size).toBe(0);
+    });
+
+    it('should have null lastError', () => {
+      expect(useChatStore.getState().lastError).toBeNull();
+    });
+
+    it('should have null lastAttemptedMessage', () => {
+      expect(useChatStore.getState().lastAttemptedMessage).toBeNull();
+    });
+  });
+
+  describe('markMessageFailed', () => {
+    it('should add message ID to failedMessageIds', () => {
+      useChatStore.getState().markMessageFailed('msg-1', 'Test error');
+
+      expect(useChatStore.getState().failedMessageIds.has('msg-1')).toBe(true);
+    });
+
+    it('should set lastError', () => {
+      useChatStore.getState().markMessageFailed('msg-1', 'Test error');
+
+      expect(useChatStore.getState().lastError).toBe('Test error');
+    });
+
+    it('should allow marking multiple messages as failed', () => {
+      useChatStore.getState().markMessageFailed('msg-1', 'Error 1');
+      useChatStore.getState().markMessageFailed('msg-2', 'Error 2');
+
+      const state = useChatStore.getState();
+      expect(state.failedMessageIds.has('msg-1')).toBe(true);
+      expect(state.failedMessageIds.has('msg-2')).toBe(true);
+      expect(state.failedMessageIds.size).toBe(2);
+    });
+  });
+
+  describe('clearMessageError', () => {
+    it('should remove message ID from failedMessageIds', () => {
+      useChatStore.getState().markMessageFailed('msg-1', 'Test error');
+      useChatStore.getState().clearMessageError('msg-1');
+
+      expect(useChatStore.getState().failedMessageIds.has('msg-1')).toBe(false);
+    });
+
+    it('should clear lastError when no more failed messages', () => {
+      useChatStore.getState().markMessageFailed('msg-1', 'Test error');
+      useChatStore.getState().clearMessageError('msg-1');
+
+      expect(useChatStore.getState().lastError).toBeNull();
+    });
+
+    it('should keep lastError when other messages still failed', () => {
+      useChatStore.getState().markMessageFailed('msg-1', 'Error 1');
+      useChatStore.getState().markMessageFailed('msg-2', 'Error 2');
+      useChatStore.getState().clearMessageError('msg-1');
+
+      expect(useChatStore.getState().lastError).toBe('Error 2');
+    });
+  });
+
+  describe('setLastError', () => {
+    it('should set lastError', () => {
+      useChatStore.getState().setLastError('New error');
+
+      expect(useChatStore.getState().lastError).toBe('New error');
+    });
+
+    it('should clear lastError when set to null', () => {
+      useChatStore.getState().setLastError('Some error');
+      useChatStore.getState().setLastError(null);
+
+      expect(useChatStore.getState().lastError).toBeNull();
+    });
+  });
+
+  describe('setLastAttemptedMessage', () => {
+    it('should set lastAttemptedMessage', () => {
+      useChatStore.getState().setLastAttemptedMessage('Hello, world!');
+
+      expect(useChatStore.getState().lastAttemptedMessage).toBe('Hello, world!');
+    });
+
+    it('should clear lastAttemptedMessage when set to null', () => {
+      useChatStore.getState().setLastAttemptedMessage('Test message');
+      useChatStore.getState().setLastAttemptedMessage(null);
+
+      expect(useChatStore.getState().lastAttemptedMessage).toBeNull();
+    });
+  });
+
+  describe('reset should clear error state', () => {
+    it('should clear failedMessageIds on reset', () => {
+      useChatStore.getState().markMessageFailed('msg-1', 'Test error');
+      useChatStore.getState().reset();
+
+      expect(useChatStore.getState().failedMessageIds.size).toBe(0);
+    });
+
+    it('should clear lastError on reset', () => {
+      useChatStore.getState().setLastError('Test error');
+      useChatStore.getState().reset();
+
+      expect(useChatStore.getState().lastError).toBeNull();
+    });
+
+    it('should clear lastAttemptedMessage on reset', () => {
+      useChatStore.getState().setLastAttemptedMessage('Test message');
+      useChatStore.getState().reset();
+
+      expect(useChatStore.getState().lastAttemptedMessage).toBeNull();
+    });
+  });
+});

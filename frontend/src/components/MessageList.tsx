@@ -1,18 +1,36 @@
 import { useEffect, useRef } from 'react';
 import { ChatMessage as ChatMessageComponent } from './ChatMessage';
-import { useChatStore, getMessageText, selectStreamingMessageId, selectIsAiWorking } from '../store/chat-store';
+import { ChatErrorMessage } from './ChatErrorMessage';
+import { FailedMessageBubble } from './FailedMessageBubble';
+import {
+  useChatStore,
+  getMessageText,
+  selectStreamingMessageId,
+  selectIsAiWorking,
+  selectFailedMessageIds,
+  selectLastError,
+} from '../store/chat-store';
 import type { ChatMessage } from '../store/chat-store';
 
 interface MessageListProps {
   messages: ChatMessage[];
   isLoading: boolean;
+  onRetryMessage?: () => void;
+  isRetrying?: boolean;
 }
 
-export function MessageList({ messages, isLoading }: MessageListProps) {
+export function MessageList({
+  messages,
+  isLoading,
+  onRetryMessage,
+  isRetrying = false,
+}: MessageListProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const streamingMessageId = useChatStore(selectStreamingMessageId);
   const isAiWorking = useChatStore(selectIsAiWorking);
+  const failedMessageIds = useChatStore(selectFailedMessageIds);
+  const lastError = useChatStore(selectLastError);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -49,20 +67,44 @@ export function MessageList({ messages, isLoading }: MessageListProps) {
       ref={containerRef}
       className="flex-1 overflow-y-auto p-4 space-y-2"
     >
-      {messages.map((message) => (
-        <ChatMessageComponent
-          key={message.id}
-          role={message.role}
-          timestamp={formatTimestamp(message.createdAt)}
-          showTypingIndicator={
-            message.role === 'assistant' &&
-            message.id === streamingMessageId &&
-            isAiWorking
-          }
-        >
-          {getMessageText(message)}
-        </ChatMessageComponent>
-      ))}
+      {messages.map((message) => {
+        const isFailed = message.role === 'user' && failedMessageIds.has(message.id);
+
+        if (isFailed) {
+          return (
+            <FailedMessageBubble
+              key={message.id}
+              message={getMessageText(message)}
+              onRetry={onRetryMessage || (() => {})}
+              isRetrying={isRetrying}
+            />
+          );
+        }
+
+        return (
+          <ChatMessageComponent
+            key={message.id}
+            role={message.role}
+            timestamp={formatTimestamp(message.createdAt)}
+            showTypingIndicator={
+              message.role === 'assistant' &&
+              message.id === streamingMessageId &&
+              isAiWorking
+            }
+          >
+            {getMessageText(message)}
+          </ChatMessageComponent>
+        );
+      })}
+
+      {/* Show error message if there's a last error */}
+      {lastError && (
+        <ChatErrorMessage
+          message={lastError}
+          onRetry={onRetryMessage}
+          isRetrying={isRetrying}
+        />
+      )}
 
       <div ref={messagesEndRef} />
     </div>

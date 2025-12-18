@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z, ZodIssue } from 'zod';
 import dotenv from 'dotenv';
 
 // Load environment variables from .env file
@@ -23,14 +23,48 @@ const envSchema = z.object({
 
 export type Env = z.infer<typeof envSchema>;
 
+/**
+ * Validate all environment variables and fail fast with clear error messages.
+ * Lists all missing and invalid variables to help with troubleshooting.
+ *
+ * Note: Uses process.stderr.write directly because logger depends on env being validated first.
+ */
 function validateEnv(): Env {
   const parsed = envSchema.safeParse(process.env);
 
   if (!parsed.success) {
-    const errors = parsed.error.issues.map((e: z.ZodIssue) => `  - ${e.path.join('.')}: ${e.message}`);
-    // Note: Using console.error here because logger depends on env being validated first
-    process.stderr.write('Environment validation failed:\n');
-    process.stderr.write(errors.join('\n') + '\n');
+    const missingVars: string[] = [];
+    const invalidVars: string[] = [];
+
+    parsed.error.issues.forEach((issue: ZodIssue) => {
+      const varName = issue.path.join('.');
+      // Check for missing variables (invalid_type with undefined received)
+      if (issue.code === 'invalid_type' && 'received' in issue && issue.received === 'undefined') {
+        missingVars.push(varName);
+      } else {
+        invalidVars.push(`${varName}: ${issue.message}`);
+      }
+    });
+
+    process.stderr.write('\n');
+    process.stderr.write('========================================\n');
+    process.stderr.write('  ENVIRONMENT VALIDATION FAILED\n');
+    process.stderr.write('========================================\n\n');
+
+    if (missingVars.length > 0) {
+      process.stderr.write('Missing required environment variables:\n');
+      missingVars.forEach((v) => process.stderr.write(`  - ${v}\n`));
+      process.stderr.write('\n');
+    }
+
+    if (invalidVars.length > 0) {
+      process.stderr.write('Invalid environment variables:\n');
+      invalidVars.forEach((v) => process.stderr.write(`  - ${v}\n`));
+      process.stderr.write('\n');
+    }
+
+    process.stderr.write('Please check your .env file or environment configuration.\n');
+    process.stderr.write('See backend/.env.example for required variables.\n\n');
     process.exit(1);
   }
 

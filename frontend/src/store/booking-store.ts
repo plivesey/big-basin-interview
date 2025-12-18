@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { ProviderDetail, TimeSlot } from '@asba/shared-types';
 import { logger } from '../utils/logger';
+import { ERROR_MESSAGES } from '../utils/error-messages';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
 
@@ -199,7 +200,7 @@ export const useBookingStore = create<BookingState>((set, get) => ({
         backendUrl: BACKEND_URL,
       });
       set({
-        error: errorMessage || 'Unable to load provider details. Please try again.',
+        error: ERROR_MESSAGES.PROVIDER_LOAD_FAILED,
         isLoadingProvider: false,
         isLoadingSlots: false,
       });
@@ -242,7 +243,7 @@ export const useBookingStore = create<BookingState>((set, get) => ({
     } catch (error) {
       logger.error('Failed to load availability', { date, error: String(error) });
       set({
-        error: 'Unable to load availability for this date. Please try again.',
+        error: ERROR_MESSAGES.AVAILABILITY_LOAD_FAILED,
         isLoadingSlots: false,
       });
     }
@@ -332,7 +333,7 @@ export const useBookingStore = create<BookingState>((set, get) => ({
     } catch (error) {
       logger.error('Failed to confirm booking', { error: String(error) });
       set({
-        error: 'Unable to complete your booking. Please try again.',
+        error: ERROR_MESSAGES.BOOKING_FAILED,
         isConfirming: false,
       });
     }

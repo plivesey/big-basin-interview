@@ -6,9 +6,13 @@ import sessionRoutes from './routes/sessions';
 import workflowRoutes from './routes/workflows';
 import authRoutes from './routes/auth';
 import { errorHandler } from './middleware/error-handler';
+import { requestIdMiddleware } from './middleware/request-id';
 
 export function createApp() {
   const app = express();
+
+  // Request ID middleware - must be first to track all requests
+  app.use(requestIdMiddleware);
 
   // Middleware
   // CORS disabled for demo purposes - allows all origins

@@ -5,7 +5,7 @@ import { getOrCreateSession, getSession } from '../services/session-service';
 import { getWorkflow, WorkflowState } from '../services/workflow-service';
 import { getProvidersByIds } from '../services/provider-service';
 import { sendMessage as sendAIMessage, AIError } from '../services/ai-conversation-service';
-import { logger } from '../utils/logger';
+import { logger, requestContext } from '../utils/logger';
 import type { ServerToClientEvents, ClientToServerEvents, ChatMessage, RawChatMessage, DisplayProvider, WorkflowState as SharedWorkflowState } from '@asba/shared-types';
 
 // Re-export WebSocket event types for consumers
@@ -131,109 +131,115 @@ export function initializeChatHandler(io: ChatServer): void {
 
     // Handle incoming user messages
     socket.on('user_message', async (data) => {
-      const sessionId = socket.data.sessionId;
+      // Generate a request ID for this message processing
+      const messageRequestId = uuidv4();
 
-      if (!sessionId) {
-        logger.warn('User message received without active session', { socketId: socket.id });
-        socket.emit('error', {
-          error: "Looks like your session timed out. Please refresh the page to reconnect.",
-          code: 'NO_SESSION',
-        });
-        return;
-      }
+      // Run the entire handler within request context for tracing
+      await requestContext.run({ requestId: messageRequestId }, async () => {
+        const sessionId = socket.data.sessionId;
 
-      if (!data.message || typeof data.message !== 'string' || !data.message.trim()) {
-        logger.warn('Invalid message received', { socketId: socket.id, sessionId });
-        socket.emit('error', {
-          error: "I didn't catch that. Try typing your message again.",
-          code: 'INVALID_MESSAGE',
-        });
-        return;
-      }
-
-      const messageText = data.message.trim();
-
-      try {
-        // Save user message to database
-        const userMessage = await saveMessage({
-          sessionId,
-          role: 'user',
-          content: messageText,
-        });
-
-        logger.info('User message saved', { messageId: userMessage.id, sessionId });
-
-        // Generate assistant message ID upfront for consistent tracking
-        const assistantMessageId = uuidv4();
-
-        // Emit message start to indicate processing
-        socket.emit('message_start', { messageId: assistantMessageId });
-
-        // Call AI service with streaming and tool callbacks
-        const aiResponse = await sendAIMessage(sessionId, messageText, {
-          onTextDelta: (text) => {
-            socket.emit('text_delta', { text });
-          },
-          onToolStart: (toolName, toolUseId) => {
-            logger.debug('Tool started', { toolName, toolUseId, sessionId });
-            socket.emit('tool_start', { toolName, toolUseId });
-          },
-          onToolComplete: (toolName, toolUseId, result) => {
-            logger.debug('Tool completed', { toolName, toolUseId, success: result.success, sessionId });
-            socket.emit('tool_complete', { toolName, toolUseId, success: result.success });
-          },
-          onDisplayProviders: (providers, workflowId, workflowState) => {
-            logger.debug('Displaying providers', { count: providers.length, workflowId, workflowState, sessionId });
-            // Cast workflowState to the shared-types WorkflowState union type
-            socket.emit('display_providers', {
-              providers,
-              workflowId,
-              workflowState: workflowState as SharedWorkflowState | undefined,
-            });
-          },
-          onOpenProviderDetail: (providerId, providerName, workflowId) => {
-            logger.debug('Opening provider detail modal', { providerId, providerName, workflowId, sessionId });
-            socket.emit('open_provider_detail', { providerId, providerName, workflowId });
-          },
-        });
-
-        // Save assistant message to database with pre-generated ID
-        const assistantMessage = await saveMessage({
-          id: assistantMessageId,
-          sessionId,
-          role: 'assistant',
-          content: aiResponse,
-        });
-
-        // Emit message complete with final message ID
-        socket.emit('message_complete', { messageId: assistantMessage.id });
-
-        logger.info('AI response sent', { messageId: assistantMessage.id, sessionId });
-      } catch (error) {
-        // Differentiate error types for better user feedback
-        let errorMessage = "Something went wrong on my end. Please try sending that again.";
-        let errorCode = 'AI_ERROR';
-
-        if (error instanceof AIError) {
-          if (error.code === 'TIMEOUT') {
-            errorMessage = "I'm taking longer than expected to think. Please try again.";
-            errorCode = 'AI_TIMEOUT';
-          } else if (error.code === 'MAX_RETRIES_EXCEEDED') {
-            errorMessage = "I'm having trouble connecting right now. Please try again in a moment.";
-            errorCode = 'AI_UNAVAILABLE';
-          }
+        if (!sessionId) {
+          logger.warn('User message received without active session', { socketId: socket.id });
+          socket.emit('error', {
+            error: "Looks like your session timed out. Please refresh the page to reconnect.",
+            code: 'NO_SESSION',
+          });
+          return;
         }
 
-        logger.error('Error handling user message', {
-          error: String(error),
-          errorCode,
-          sessionId,
-        });
-        socket.emit('error', {
-          error: errorMessage,
-          code: errorCode,
-        });
-      }
+        if (!data.message || typeof data.message !== 'string' || !data.message.trim()) {
+          logger.warn('Invalid message received', { socketId: socket.id, sessionId });
+          socket.emit('error', {
+            error: "I didn't catch that. Try typing your message again.",
+            code: 'INVALID_MESSAGE',
+          });
+          return;
+        }
+
+        const messageText = data.message.trim();
+
+        try {
+          // Save user message to database
+          const userMessage = await saveMessage({
+            sessionId,
+            role: 'user',
+            content: messageText,
+          });
+
+          logger.info('User message saved', { messageId: userMessage.id, sessionId });
+
+          // Generate assistant message ID upfront for consistent tracking
+          const assistantMessageId = uuidv4();
+
+          // Emit message start to indicate processing
+          socket.emit('message_start', { messageId: assistantMessageId });
+
+          // Call AI service with streaming and tool callbacks
+          const aiResponse = await sendAIMessage(sessionId, messageText, {
+            onTextDelta: (text) => {
+              socket.emit('text_delta', { text });
+            },
+            onToolStart: (toolName, toolUseId) => {
+              logger.debug('Tool started', { toolName, toolUseId, sessionId });
+              socket.emit('tool_start', { toolName, toolUseId });
+            },
+            onToolComplete: (toolName, toolUseId, result) => {
+              logger.debug('Tool completed', { toolName, toolUseId, success: result.success, sessionId });
+              socket.emit('tool_complete', { toolName, toolUseId, success: result.success });
+            },
+            onDisplayProviders: (providers, workflowId, workflowState) => {
+              logger.debug('Displaying providers', { count: providers.length, workflowId, workflowState, sessionId });
+              // Cast workflowState to the shared-types WorkflowState union type
+              socket.emit('display_providers', {
+                providers,
+                workflowId,
+                workflowState: workflowState as SharedWorkflowState | undefined,
+              });
+            },
+            onOpenProviderDetail: (providerId, providerName, workflowId) => {
+              logger.debug('Opening provider detail modal', { providerId, providerName, workflowId, sessionId });
+              socket.emit('open_provider_detail', { providerId, providerName, workflowId });
+            },
+          });
+
+          // Save assistant message to database with pre-generated ID
+          const assistantMessage = await saveMessage({
+            id: assistantMessageId,
+            sessionId,
+            role: 'assistant',
+            content: aiResponse,
+          });
+
+          // Emit message complete with final message ID
+          socket.emit('message_complete', { messageId: assistantMessage.id });
+
+          logger.info('AI response sent', { messageId: assistantMessage.id, sessionId });
+        } catch (error) {
+          // Differentiate error types for better user feedback
+          let errorMessage = "Something went wrong on my end. Please try sending that again.";
+          let errorCode = 'AI_ERROR';
+
+          if (error instanceof AIError) {
+            if (error.code === 'TIMEOUT') {
+              errorMessage = "I'm taking longer than expected to think. Please try again.";
+              errorCode = 'AI_TIMEOUT';
+            } else if (error.code === 'MAX_RETRIES_EXCEEDED') {
+              errorMessage = "I'm having trouble connecting right now. Please try again in a moment.";
+              errorCode = 'AI_UNAVAILABLE';
+            }
+          }
+
+          logger.error('Error handling user message', {
+            error: String(error),
+            errorCode,
+            sessionId,
+          });
+          socket.emit('error', {
+            error: errorMessage,
+            code: errorCode,
+          });
+        }
+      });
     });
 
     // Handle sync request (for reconnection)

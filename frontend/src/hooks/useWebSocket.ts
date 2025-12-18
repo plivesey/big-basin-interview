@@ -10,6 +10,7 @@ import type {
 import { usePanelStore } from '../store/panel-store';
 import { useBookingStore } from '../store/booking-store';
 import { logger } from '../utils/logger';
+import { ERROR_MESSAGES } from '../utils/error-messages';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
 const SESSION_STORAGE_KEY = 'chat_session_id';
@@ -20,6 +21,8 @@ export interface UseWebSocketReturn {
   sendMessage: (message: string) => void;
   reconnect: () => void;
   disconnect: () => void;
+  retryLastMessage: () => void;
+  isRetrying: boolean;
 }
 
 export function useWebSocket(): UseWebSocketReturn {
@@ -32,6 +35,10 @@ export function useWebSocket(): UseWebSocketReturn {
   const streamingIdRef = useRef<string | null>(null);
   // Track whether the streaming message has been created (on first text_delta)
   const streamingMessageCreatedRef = useRef<boolean>(false);
+  // Track retry state
+  const isRetryingRef = useRef<boolean>(false);
+  // Track the last user message ID for marking as failed
+  const lastUserMessageIdRef = useRef<string | null>(null);
 
   const {
     setSessionId,
@@ -43,6 +50,10 @@ export function useWebSocket(): UseWebSocketReturn {
     setStreamingMessageId,
     setIsLoading,
     setIsAiWorking,
+    markMessageFailed,
+    clearMessageError,
+    setLastError,
+    setLastAttemptedMessage,
   } = useChatStore();
 
   // Get stored session ID
@@ -187,8 +198,32 @@ export function useWebSocket(): UseWebSocketReturn {
     // Error handling
     socket.on('error', (data) => {
       logger.error('WebSocket error', { error: data.error, code: data.code });
+
+      // Mark last user message as failed if we have one
+      const lastUserMsgId = lastUserMessageIdRef.current;
+      if (lastUserMsgId) {
+        markMessageFailed(lastUserMsgId, ERROR_MESSAGES.AI_REQUEST_FAILED);
+      }
+
+      // Remove any incomplete streaming message
+      const streamingId = streamingIdRef.current;
+      if (streamingId && streamingMessageCreatedRef.current) {
+        // Remove the streaming message from the store
+        const messages = useChatStore.getState().messages;
+        const filteredMessages = messages.filter((msg) => msg.id !== streamingId);
+        setMessages(filteredMessages);
+      }
+
+      // Set the last error for display
+      setLastError(ERROR_MESSAGES.AI_REQUEST_FAILED);
+
+      // Clear streaming state
+      streamingIdRef.current = null;
+      streamingMessageCreatedRef.current = false;
+      setStreamingMessageId(null);
       setIsLoading(false);
       setIsAiWorking(false);
+      isRetryingRef.current = false;
     });
 
     // Provider display events
@@ -230,6 +265,8 @@ export function useWebSocket(): UseWebSocketReturn {
     setStreamingMessageId,
     setIsLoading,
     setIsAiWorking,
+    markMessageFailed,
+    setLastError,
     getStoredSessionId,
     storeSessionId,
   ]);
@@ -261,6 +298,7 @@ export function useWebSocket(): UseWebSocketReturn {
 
     if (!socket?.connected) {
       logger.warn('Cannot send message: not connected');
+      setLastError(ERROR_MESSAGES.CONNECTION_FAILED);
       return;
     }
 
@@ -268,20 +306,59 @@ export function useWebSocket(): UseWebSocketReturn {
       return;
     }
 
+    const trimmedMessage = message.trim();
+
+    // Track the message for potential retry
+    setLastAttemptedMessage(trimmedMessage);
+    // Clear any previous error state
+    setLastError(null);
+
     // Add user message to store immediately (optimistic update)
+    const messageId = `temp-${Date.now()}`;
     const userMessage: ChatMessage = {
-      id: `temp-${Date.now()}`,
+      id: messageId,
       sessionId: sessionId || '',
       role: 'user',
-      content: [{ type: 'text', text: message.trim() }],
+      content: [{ type: 'text', text: trimmedMessage }],
       createdAt: new Date(),
     };
     addMessage(userMessage);
     setIsLoading(true);
 
+    // Track the user message ID for error handling
+    lastUserMessageIdRef.current = messageId;
+
     // Send to server
-    socket.emit('user_message', { message: message.trim() });
-  }, [addMessage, setIsLoading]);
+    socket.emit('user_message', { message: trimmedMessage });
+  }, [addMessage, setIsLoading, setLastAttemptedMessage, setLastError]);
+
+  // Retry the last failed message
+  const retryLastMessage = useCallback(() => {
+    const lastMessage = useChatStore.getState().lastAttemptedMessage;
+    const lastUserMsgId = lastUserMessageIdRef.current;
+
+    if (!lastMessage) {
+      logger.warn('No message to retry');
+      return;
+    }
+
+    // Clear the failed message from the store
+    if (lastUserMsgId) {
+      clearMessageError(lastUserMsgId);
+      // Remove the failed message from the messages array
+      const messages = useChatStore.getState().messages;
+      const filteredMessages = messages.filter((msg) => msg.id !== lastUserMsgId);
+      setMessages(filteredMessages);
+    }
+
+    // Clear error state
+    setLastError(null);
+    isRetryingRef.current = true;
+
+    // Resend the message
+    sendMessage(lastMessage);
+    isRetryingRef.current = false;
+  }, [clearMessageError, setMessages, setLastError, sendMessage]);
 
   // Connect on mount, disconnect on unmount
   useEffect(() => {
@@ -296,5 +373,7 @@ export function useWebSocket(): UseWebSocketReturn {
     sendMessage,
     reconnect,
     disconnect,
+    retryLastMessage,
+    isRetrying: isRetryingRef.current,
   };
 }
