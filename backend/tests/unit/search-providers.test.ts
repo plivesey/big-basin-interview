@@ -59,12 +59,10 @@ describe('search_providers tool', () => {
     id: 'workflow-1',
     sessionId: 'test-session',
     currentState: 'PROVIDER_SEARCH',
-    status: 'active',
     context: {},
     createdAt: new Date(),
     lastUpdated: new Date(),
     completedAt: null,
-    expiresAt: null,
   };
 
   beforeEach(() => {

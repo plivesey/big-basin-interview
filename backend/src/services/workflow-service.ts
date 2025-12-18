@@ -6,11 +6,10 @@
  */
 
 import { v4 as uuidv4 } from 'uuid';
-import { eq, and } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { db, workflowStates, sessions } from '../db';
 import {
   WorkflowState,
-  WorkflowStatus,
   WorkflowContext,
   WorkflowStateRecord,
 } from '../types/workflow.types';
@@ -19,7 +18,7 @@ import { logger } from '../utils/logger';
 
 // Re-export types for convenience
 export type { WorkflowStateRecord, WorkflowContext };
-export { WorkflowState, WorkflowStatus };
+export { WorkflowState };
 
 /**
  * Custom error for workflow not found
@@ -51,30 +50,25 @@ function toWorkflowRecord(row: {
   id: string;
   sessionId: string;
   currentState: string;
-  status: string;
   context: WorkflowContext;
   createdAt: Date;
   lastUpdated: Date;
   completedAt: Date | null;
-  expiresAt: Date | null;
 }): WorkflowStateRecord {
   return {
     id: row.id,
     sessionId: row.sessionId,
     currentState: row.currentState as WorkflowState,
-    status: row.status as WorkflowStatus,
     context: row.context,
     createdAt: row.createdAt,
     lastUpdated: row.lastUpdated,
     completedAt: row.completedAt ?? undefined,
-    expiresAt: row.expiresAt ?? new Date('9999-12-31'),
   };
 }
 
 /**
  * Create a new workflow for a session.
- * - Abandons any existing active workflow for the session
- * - Updates session.currentWorkflowId
+ * - Updates session.currentWorkflowId (replacing any previous workflow)
  */
 export async function createWorkflow(
   sessionId: string,
@@ -83,17 +77,6 @@ export async function createWorkflow(
   const now = new Date();
   const workflowId = uuidv4();
   const initialState = bookingStateMachine.getInitialState();
-
-  // Get current workflow to abandon it
-  const currentWorkflow = await getCurrentWorkflow(sessionId);
-  if (currentWorkflow && currentWorkflow.status === WorkflowStatus.ACTIVE) {
-    logger.info('Abandoning previous workflow', {
-      previousWorkflowId: currentWorkflow.id,
-      newWorkflowId: workflowId,
-      sessionId,
-    });
-    await abandonWorkflow(currentWorkflow.id);
-  }
 
   // Create the new workflow
   const context: WorkflowContext = {
@@ -104,11 +87,9 @@ export async function createWorkflow(
     id: workflowId,
     sessionId,
     currentState: initialState,
-    status: WorkflowStatus.ACTIVE,
     context,
     createdAt: now,
     lastUpdated: now,
-    expiresAt: new Date('9999-12-31'), // Far future - no expiration
   });
 
   // Update session's currentWorkflowId
@@ -128,11 +109,9 @@ export async function createWorkflow(
     id: workflowId,
     sessionId,
     currentState: initialState,
-    status: WorkflowStatus.ACTIVE,
     context,
     createdAt: now,
     lastUpdated: now,
-    expiresAt: new Date('9999-12-31'),
   };
 }
 
@@ -280,68 +259,6 @@ export async function updateContext(
   return {
     ...workflow,
     context: mergedContext,
-    lastUpdated: now,
-  };
-}
-
-/**
- * Mark a workflow as completed
- */
-export async function completeWorkflow(
-  workflowId: string
-): Promise<WorkflowStateRecord> {
-  const workflow = await getWorkflow(workflowId);
-  if (!workflow) {
-    throw new WorkflowNotFoundError(workflowId);
-  }
-
-  const now = new Date();
-
-  await db
-    .update(workflowStates)
-    .set({
-      status: WorkflowStatus.COMPLETED,
-      completedAt: now,
-      lastUpdated: now,
-    })
-    .where(eq(workflowStates.id, workflowId));
-
-  logger.info('Workflow completed', { workflowId });
-
-  return {
-    ...workflow,
-    status: WorkflowStatus.COMPLETED,
-    completedAt: now,
-    lastUpdated: now,
-  };
-}
-
-/**
- * Mark a workflow as abandoned
- */
-export async function abandonWorkflow(
-  workflowId: string
-): Promise<WorkflowStateRecord> {
-  const workflow = await getWorkflow(workflowId);
-  if (!workflow) {
-    throw new WorkflowNotFoundError(workflowId);
-  }
-
-  const now = new Date();
-
-  await db
-    .update(workflowStates)
-    .set({
-      status: WorkflowStatus.ABANDONED,
-      lastUpdated: now,
-    })
-    .where(eq(workflowStates.id, workflowId));
-
-  logger.info('Workflow abandoned', { workflowId });
-
-  return {
-    ...workflow,
-    status: WorkflowStatus.ABANDONED,
     lastUpdated: now,
   };
 }

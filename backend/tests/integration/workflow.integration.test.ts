@@ -4,7 +4,7 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { eq } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import * as schema from '../../src/db/schema';
-import { WorkflowState, WorkflowStatus } from '../../src/types/workflow.types';
+import { WorkflowState } from '../../src/types/workflow.types';
 
 /**
  * Integration tests for workflow state persistence
@@ -34,16 +34,13 @@ describe('Workflow Integration Tests', () => {
         id TEXT PRIMARY KEY,
         session_id TEXT NOT NULL REFERENCES sessions(id),
         current_state TEXT NOT NULL,
-        status TEXT NOT NULL DEFAULT 'active',
         context TEXT NOT NULL,
         created_at INTEGER NOT NULL,
         last_updated INTEGER NOT NULL,
-        completed_at INTEGER,
-        expires_at INTEGER
+        completed_at INTEGER
       );
 
       CREATE INDEX IF NOT EXISTS workflow_session_id_idx ON workflow_states(session_id);
-      CREATE INDEX IF NOT EXISTS workflow_status_idx ON workflow_states(status);
     `);
   });
 
@@ -78,11 +75,9 @@ describe('Workflow Integration Tests', () => {
         id: workflowId,
         sessionId,
         currentState: WorkflowState.PROVIDER_SEARCH,
-        status: WorkflowStatus.ACTIVE,
         context: workflowContext,
         createdAt: now,
         lastUpdated: now,
-        expiresAt: null,
       });
 
       // Update session's currentWorkflowId
@@ -99,7 +94,6 @@ describe('Workflow Integration Tests', () => {
 
       expect(workflow).toBeDefined();
       expect(workflow.currentState).toBe(WorkflowState.PROVIDER_SEARCH);
-      expect(workflow.status).toBe(WorkflowStatus.ACTIVE);
       expect(workflow.context).toEqual(workflowContext);
 
       // Verify session updated
@@ -130,11 +124,9 @@ describe('Workflow Integration Tests', () => {
         id: workflowId,
         sessionId,
         currentState: WorkflowState.PROVIDER_SEARCH,
-        status: WorkflowStatus.ACTIVE,
         context: { serviceType: 'salon' },
         createdAt: now,
         lastUpdated: now,
-        expiresAt: null,
       });
 
       // Transition to PROVIDER_SELECTION
@@ -161,53 +153,7 @@ describe('Workflow Integration Tests', () => {
       });
     });
 
-    it('should update workflow status to completed', async () => {
-      const now = new Date();
-      const sessionId = uuidv4();
-      const workflowId = uuidv4();
-
-      // Create session and workflow
-      await db.insert(schema.sessions).values({
-        id: sessionId,
-        userId: 'test-user',
-        currentWorkflowId: workflowId,
-        createdAt: now,
-        lastActivityAt: now,
-      });
-
-      await db.insert(schema.workflowStates).values({
-        id: workflowId,
-        sessionId,
-        currentState: WorkflowState.BOOKING_CREATED,
-        status: WorkflowStatus.ACTIVE,
-        context: { bookingId: 'booking-123' },
-        createdAt: now,
-        lastUpdated: now,
-        expiresAt: null,
-      });
-
-      // Complete workflow
-      const completedAt = new Date();
-      await db
-        .update(schema.workflowStates)
-        .set({
-          status: WorkflowStatus.COMPLETED,
-          completedAt,
-          lastUpdated: completedAt,
-        })
-        .where(eq(schema.workflowStates.id, workflowId));
-
-      // Verify completion
-      const [workflow] = await db
-        .select()
-        .from(schema.workflowStates)
-        .where(eq(schema.workflowStates.id, workflowId));
-
-      expect(workflow.status).toBe(WorkflowStatus.COMPLETED);
-      expect(workflow.completedAt).toBeDefined();
-    });
-
-    it('should handle multiple workflows replacing previous ones', async () => {
+    it('should handle multiple workflows with session pointing to current', async () => {
       const now = new Date();
       const sessionId = uuidv4();
       const workflowId1 = uuidv4();
@@ -227,11 +173,9 @@ describe('Workflow Integration Tests', () => {
         id: workflowId1,
         sessionId,
         currentState: WorkflowState.PROVIDER_SELECTION,
-        status: WorkflowStatus.ACTIVE,
         context: { serviceType: 'salon' },
         createdAt: now,
         lastUpdated: now,
-        expiresAt: null,
       });
 
       await db
@@ -239,22 +183,14 @@ describe('Workflow Integration Tests', () => {
         .set({ currentWorkflowId: workflowId1 })
         .where(eq(schema.sessions.id, sessionId));
 
-      // Abandon first workflow
-      await db
-        .update(schema.workflowStates)
-        .set({ status: WorkflowStatus.ABANDONED })
-        .where(eq(schema.workflowStates.id, workflowId1));
-
-      // Create second workflow
+      // Create second workflow and update session to point to it
       await db.insert(schema.workflowStates).values({
         id: workflowId2,
         sessionId,
         currentState: WorkflowState.PROVIDER_SEARCH,
-        status: WorkflowStatus.ACTIVE,
         context: { serviceType: 'mechanic' },
         createdAt: now,
         lastUpdated: now,
-        expiresAt: null,
       });
 
       await db
@@ -262,21 +198,18 @@ describe('Workflow Integration Tests', () => {
         .set({ currentWorkflowId: workflowId2 })
         .where(eq(schema.sessions.id, sessionId));
 
-      // Verify first workflow is abandoned
+      // Verify both workflows exist
       const [workflow1] = await db
         .select()
         .from(schema.workflowStates)
         .where(eq(schema.workflowStates.id, workflowId1));
+      expect(workflow1).toBeDefined();
 
-      expect(workflow1.status).toBe(WorkflowStatus.ABANDONED);
-
-      // Verify second workflow is active
       const [workflow2] = await db
         .select()
         .from(schema.workflowStates)
         .where(eq(schema.workflowStates.id, workflowId2));
-
-      expect(workflow2.status).toBe(WorkflowStatus.ACTIVE);
+      expect(workflow2).toBeDefined();
 
       // Verify session points to second workflow
       const [session] = await db
@@ -305,11 +238,9 @@ describe('Workflow Integration Tests', () => {
         id: workflowId,
         sessionId,
         currentState: WorkflowState.TIME_SELECTION,
-        status: WorkflowStatus.ACTIVE,
         context: { serviceType: 'salon', selectedProviderId: 'p1' },
         createdAt: now,
         lastUpdated: now,
-        expiresAt: null,
       });
 
       // Update context

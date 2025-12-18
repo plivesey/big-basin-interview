@@ -57,16 +57,13 @@ beforeAll(async () => {
       id TEXT PRIMARY KEY,
       session_id TEXT NOT NULL REFERENCES sessions(id),
       current_state TEXT NOT NULL,
-      status TEXT NOT NULL DEFAULT 'active',
       context TEXT NOT NULL,
       created_at INTEGER NOT NULL,
       last_updated INTEGER NOT NULL,
-      completed_at INTEGER,
-      expires_at INTEGER
+      completed_at INTEGER
     );
 
     CREATE INDEX IF NOT EXISTS workflow_session_id_idx ON workflow_states(session_id);
-    CREATE INDEX IF NOT EXISTS workflow_status_idx ON workflow_states(status);
 
     CREATE TABLE IF NOT EXISTS messages (
       id TEXT PRIMARY KEY,

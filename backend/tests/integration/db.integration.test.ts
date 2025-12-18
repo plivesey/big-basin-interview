@@ -66,12 +66,10 @@ describe('Database Integration Tests', () => {
         id TEXT PRIMARY KEY,
         session_id TEXT NOT NULL REFERENCES sessions(id),
         current_state TEXT NOT NULL,
-        status TEXT NOT NULL DEFAULT 'active',
         context TEXT NOT NULL,
         created_at INTEGER NOT NULL,
         last_updated INTEGER NOT NULL,
-        completed_at INTEGER,
-        expires_at INTEGER
+        completed_at INTEGER
       );
 
       CREATE TABLE IF NOT EXISTS messages (
@@ -83,7 +81,6 @@ describe('Database Integration Tests', () => {
       );
 
       CREATE INDEX IF NOT EXISTS workflow_session_id_idx ON workflow_states(session_id);
-      CREATE INDEX IF NOT EXISTS workflow_status_idx ON workflow_states(status);
       CREATE INDEX IF NOT EXISTS messages_session_id_idx ON messages(session_id);
     `);
   });
@@ -352,7 +349,6 @@ describe('Database Integration Tests', () => {
 
     it('should transition workflow through complete booking flow', () => {
       const now = new Date();
-      const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000);
       const workflowId = uuidv4();
 
       // Create initial workflow in PROVIDER_SEARCH
@@ -360,11 +356,9 @@ describe('Database Integration Tests', () => {
         id: workflowId,
         sessionId: testSessionId,
         currentState: 'PROVIDER_SEARCH',
-        status: 'active',
         context: { serviceType: 'haircut' },
         createdAt: now,
         lastUpdated: now,
-        expiresAt: expiresAt,
       }).run();
 
       // Transition: PROVIDER_SEARCH -> PROVIDER_SELECTION
@@ -438,7 +432,6 @@ describe('Database Integration Tests', () => {
       db.update(schema.workflowStates)
         .set({
           currentState: 'COMPLETE',
-          status: 'completed',
           completedAt: new Date(),
           lastUpdated: new Date(),
         })
@@ -447,13 +440,11 @@ describe('Database Integration Tests', () => {
 
       workflowResults = db.select().from(schema.workflowStates).where(eq(schema.workflowStates.id, workflowId)).all();
       expect(workflowResults[0]?.currentState).toBe('COMPLETE');
-      expect(workflowResults[0]?.status).toBe('completed');
       expect(workflowResults[0]?.completedAt).toBeDefined();
     });
 
-    it('should support multiple concurrent workflows per session', () => {
+    it('should support multiple workflows per session', () => {
       const now = new Date();
-      const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
       // Create two workflows for the same session
       const workflow1Id = uuidv4();
@@ -463,37 +454,28 @@ describe('Database Integration Tests', () => {
         id: workflow1Id,
         sessionId: testSessionId,
         currentState: 'PROVIDER_SEARCH',
-        status: 'active',
         context: { serviceType: 'haircut' },
         createdAt: now,
         lastUpdated: now,
-        expiresAt: expiresAt,
       }).run();
 
       db.insert(schema.workflowStates).values({
         id: workflow2Id,
         sessionId: testSessionId,
         currentState: 'PROVIDER_SEARCH',
-        status: 'active',
         context: { serviceType: 'oil change' },
         createdAt: now,
         lastUpdated: now,
-        expiresAt: expiresAt,
       }).run();
 
       // Verify both exist and are independent
-      const activeWorkflows = db.select()
+      const workflows = db.select()
         .from(schema.workflowStates)
-        .where(
-          and(
-            eq(schema.workflowStates.sessionId, testSessionId),
-            eq(schema.workflowStates.status, 'active')
-          )
-        )
+        .where(eq(schema.workflowStates.sessionId, testSessionId))
         .all();
 
-      const haircut = activeWorkflows.find(w => w.context.serviceType === 'haircut');
-      const oilChange = activeWorkflows.find(w => w.context.serviceType === 'oil change');
+      const haircut = workflows.find(w => w.context.serviceType === 'haircut');
+      const oilChange = workflows.find(w => w.context.serviceType === 'oil change');
 
       expect(haircut).toBeDefined();
       expect(oilChange).toBeDefined();
@@ -549,40 +531,38 @@ describe('Database Integration Tests', () => {
       expect(elapsed).toBeLessThan(1000); // Should be fast with index
     });
 
-    it('should efficiently query active workflows using index', () => {
+    it('should efficiently query workflows by session_id using index', () => {
       const now = new Date();
-      const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+      const sessionId = uuidv4();
 
-      // Create multiple sessions with workflows
+      // Create session with multiple workflows
+      db.insert(schema.sessions).values({
+        id: sessionId,
+        createdAt: now,
+        lastActivityAt: now,
+      }).run();
+
+      // Insert many workflows for this session
       for (let i = 0; i < 50; i++) {
-        const sessionId = uuidv4();
-        db.insert(schema.sessions).values({
-          id: sessionId,
-          createdAt: now,
-          lastActivityAt: now,
-        }).run();
-
         db.insert(schema.workflowStates).values({
           id: uuidv4(),
           sessionId: sessionId,
           currentState: 'PROVIDER_SEARCH',
-          status: i < 25 ? 'active' : 'completed',
-          context: {},
-          createdAt: now,
-          lastUpdated: now,
-          expiresAt: expiresAt,
+          context: { iteration: i },
+          createdAt: new Date(now.getTime() + i * 100),
+          lastUpdated: new Date(now.getTime() + i * 100),
         }).run();
       }
 
-      // Query active workflows should use status index
+      // Query workflows by session_id should use index
       const start = Date.now();
-      const activeWorkflows = db.select()
+      const workflows = db.select()
         .from(schema.workflowStates)
-        .where(eq(schema.workflowStates.status, 'active'))
+        .where(eq(schema.workflowStates.sessionId, sessionId))
         .all();
       const elapsed = Date.now() - start;
 
-      expect(activeWorkflows.length).toBeGreaterThanOrEqual(25);
+      expect(workflows.length).toBe(50);
       expect(elapsed).toBeLessThan(1000); // Should be fast with index
     });
   });

@@ -5,13 +5,10 @@ import {
   getCurrentWorkflow,
   transitionState,
   updateContext,
-  completeWorkflow,
-  abandonWorkflow,
   deleteWorkflow,
   WorkflowNotFoundError,
   InvalidTransitionError,
   WorkflowState,
-  WorkflowStatus,
 } from '../../src/services/workflow-service';
 import { createSession, deleteSession } from '../../src/services/session-service';
 
@@ -32,7 +29,6 @@ describe('Workflow Service', () => {
       expect(workflow.id).toBeDefined();
       expect(workflow.sessionId).toBe(sessionId);
       expect(workflow.currentState).toBe(WorkflowState.PROVIDER_SEARCH);
-      expect(workflow.status).toBe(WorkflowStatus.ACTIVE);
     });
 
     it('should create workflow with initial context', async () => {
@@ -49,19 +45,20 @@ describe('Workflow Service', () => {
       expect(currentWorkflow?.id).toBe(workflow.id);
     });
 
-    it('should abandon previous workflow when creating new one', async () => {
+    it('should replace previous workflow when creating new one', async () => {
       // Create first workflow
       const firstWorkflow = await createWorkflow(sessionId, { serviceType: 'salon' });
 
       // Create second workflow
       const secondWorkflow = await createWorkflow(sessionId, { serviceType: 'mechanic' });
 
-      // Get first workflow and check it's abandoned
-      const firstUpdated = await getWorkflow(firstWorkflow.id);
-      expect(firstUpdated?.status).toBe(WorkflowStatus.ABANDONED);
+      // First workflow should still exist but not be current
+      const firstRetrieved = await getWorkflow(firstWorkflow.id);
+      expect(firstRetrieved).toBeDefined();
 
-      // Second workflow should be active
-      expect(secondWorkflow.status).toBe(WorkflowStatus.ACTIVE);
+      // Current workflow should be the second one
+      const currentWorkflow = await getCurrentWorkflow(sessionId);
+      expect(currentWorkflow?.id).toBe(secondWorkflow.id);
     });
   });
 
@@ -194,39 +191,6 @@ describe('Workflow Service', () => {
       await expect(
         updateContext('non-existent', { serviceType: 'salon' })
       ).rejects.toThrow(WorkflowNotFoundError);
-    });
-  });
-
-  describe('completeWorkflow', () => {
-    it('should set status to COMPLETED and set completedAt', async () => {
-      const workflow = await createWorkflow(sessionId);
-
-      const completed = await completeWorkflow(workflow.id);
-
-      expect(completed.status).toBe(WorkflowStatus.COMPLETED);
-      expect(completed.completedAt).toBeDefined();
-    });
-
-    it('should throw WorkflowNotFoundError for non-existent workflow', async () => {
-      await expect(completeWorkflow('non-existent')).rejects.toThrow(
-        WorkflowNotFoundError
-      );
-    });
-  });
-
-  describe('abandonWorkflow', () => {
-    it('should set status to ABANDONED', async () => {
-      const workflow = await createWorkflow(sessionId);
-
-      const abandoned = await abandonWorkflow(workflow.id);
-
-      expect(abandoned.status).toBe(WorkflowStatus.ABANDONED);
-    });
-
-    it('should throw WorkflowNotFoundError for non-existent workflow', async () => {
-      await expect(abandonWorkflow('non-existent')).rejects.toThrow(
-        WorkflowNotFoundError
-      );
     });
   });
 
