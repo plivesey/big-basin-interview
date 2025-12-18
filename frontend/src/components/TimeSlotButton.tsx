@@ -20,7 +20,7 @@ function formatTime(isoString: string): string {
 }
 
 /**
- * Individual time slot button with available/selected/disabled states.
+ * Individual time slot button with available/selected/disabled/conflict states.
  */
 export const TimeSlotButton = memo(function TimeSlotButton({
   slot,
@@ -28,7 +28,9 @@ export const TimeSlotButton = memo(function TimeSlotButton({
   onSelect,
 }: TimeSlotButtonProps) {
   const timeDisplay = formatTime(slot.start);
+  const hasConflict = !!slot.conflict;
 
+  // Unavailable slots are disabled
   if (!slot.available) {
     return (
       <button
@@ -42,13 +44,32 @@ export const TimeSlotButton = memo(function TimeSlotButton({
     );
   }
 
+  // Determine class based on selected/conflict state
+  let className: string;
+  if (isSelected) {
+    className = 'time-slot-selected';
+  } else if (hasConflict) {
+    className = 'time-slot-conflict';
+  } else {
+    className = 'time-slot-available';
+  }
+
+  // Build aria-label
+  const ariaLabel = `${timeDisplay}${isSelected ? ' - selected' : ''}${hasConflict ? ' - has calendar conflict' : ''}`;
+
+  // Build tooltip text for conflicts (used as data attribute for CSS tooltip)
+  const tooltipText = hasConflict
+    ? `Conflicts with: ${slot.conflict!.eventTitle}`
+    : undefined;
+
   return (
     <button
       type="button"
       onClick={() => onSelect(slot)}
-      className={isSelected ? 'time-slot-selected' : 'time-slot-available'}
+      className={className}
       aria-pressed={isSelected}
-      aria-label={`${timeDisplay}${isSelected ? ' - selected' : ''}`}
+      aria-label={ariaLabel}
+      data-tooltip={tooltipText}
     >
       {timeDisplay}
     </button>
