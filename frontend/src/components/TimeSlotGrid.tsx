@@ -24,13 +24,13 @@ function formatDateDisplay(dateString: string): string {
 }
 
 /**
- * Get the next 7 days for the date picker
+ * Get the next 28 days for the date picker
  */
 function getDateOptions(): { value: string; label: string }[] {
   const options: { value: string; label: string }[] = [];
   const today = new Date();
 
-  for (let i = 0; i < 7; i++) {
+  for (let i = 0; i < 28; i++) {
     const date = new Date(today);
     date.setDate(today.getDate() + i);
     const value = date.toISOString().split('T')[0];
