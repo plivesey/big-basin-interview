@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { usePanelStore, DisplayProvider } from './panel-store';
+import { usePanelStore } from './panel-store';
+import type { DisplayProvider } from '@asba/shared-types';
 
 describe('panel-store', () => {
   const mockProviders: DisplayProvider[] = [

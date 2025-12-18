@@ -11,12 +11,6 @@ export enum WorkflowState {
   COMPLETE = 'COMPLETE',
 }
 
-export enum WorkflowStatus {
-  ACTIVE = 'active',
-  COMPLETED = 'completed',
-  ABANDONED = 'abandoned',
-}
-
 export interface WorkflowContext {
   serviceType?: string;
   location?: string;
@@ -31,12 +25,10 @@ export interface WorkflowStateRecord {
   id: string; // Unique workflow ID
   sessionId: string; // Session this workflow belongs to
   currentState: WorkflowState; // Current state in the state machine
-  status: WorkflowStatus;
   context: WorkflowContext;
   createdAt: Date;
   lastUpdated: Date;
   completedAt?: Date;
-  expiresAt: Date;
 }
 
 // Valid state transitions

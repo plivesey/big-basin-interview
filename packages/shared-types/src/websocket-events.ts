@@ -23,7 +23,7 @@ export interface DisplayProvider {
  */
 export interface ServerToClientEvents {
   /** Session was created or restored */
-  session_created: (data: { sessionId: string }) => void;
+  session_created: (data: { sessionId: string; currentWorkflowId?: string }) => void;
 
   /** Message history loaded (on connect/reconnect) */
   message_history: (data: { messages: RawChatMessage[] }) => void;
@@ -55,7 +55,7 @@ export interface ServerToClientEvents {
   }) => void;
 
   /** Display providers in side panel */
-  display_providers: (data: { providers: DisplayProvider[] }) => void;
+  display_providers: (data: { providers: DisplayProvider[]; workflowId?: string }) => void;
 
   /** Error occurred */
   error: (data: { error: string; code?: string }) => void;

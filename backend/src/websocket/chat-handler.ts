@@ -1,7 +1,7 @@
 import { Server, Socket } from 'socket.io';
 import { v4 as uuidv4 } from 'uuid';
 import { saveMessage, getMessageHistory } from '../services/message-service';
-import { getOrCreateSession } from '../services/session-service';
+import { getOrCreateSession, getSession } from '../services/session-service';
 import { sendMessage as sendAIMessage, AIError } from '../services/ai-conversation-service';
 import { logger } from '../utils/logger';
 import type { ServerToClientEvents, ClientToServerEvents, ChatMessage, RawChatMessage } from '@asba/shared-types';
@@ -48,8 +48,11 @@ export function initializeChatHandler(io: ChatServer): void {
       // Join session-specific room
       socket.join(session.id);
 
-      // Send session info to client
-      socket.emit('session_created', { sessionId: session.id });
+      // Send session info to client (include currentWorkflowId for session restore)
+      socket.emit('session_created', {
+        sessionId: session.id,
+        currentWorkflowId: session.currentWorkflowId ?? undefined,
+      });
 
       // Load and send message history
       const messageHistory = await getMessageHistory(session.id);
@@ -117,9 +120,9 @@ export function initializeChatHandler(io: ChatServer): void {
             logger.debug('Tool completed', { toolName, toolUseId, success: result.success, sessionId });
             socket.emit('tool_complete', { toolName, toolUseId, success: result.success });
           },
-          onDisplayProviders: (providers) => {
-            logger.debug('Displaying providers', { count: providers.length, sessionId });
-            socket.emit('display_providers', { providers });
+          onDisplayProviders: (providers, workflowId) => {
+            logger.debug('Displaying providers', { count: providers.length, workflowId, sessionId });
+            socket.emit('display_providers', { providers, workflowId });
           },
         });
 

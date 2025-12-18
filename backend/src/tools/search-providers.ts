@@ -1,10 +1,13 @@
 /**
  * search_providers tool - searches for local service providers
+ *
+ * Creates a new workflow when searching, replacing any existing active workflow.
  */
 
 import { z } from 'zod';
 import { RegisteredTool, ToolName, ToolExecutionContext, ToolDefinition } from '../types/tool.types';
 import { searchProviders } from '../services/provider-service';
+import { createWorkflow } from '../services/workflow-service';
 import { logger } from '../utils/logger';
 
 // Input schema (Zod for validation)
@@ -47,6 +50,7 @@ export interface SearchProvidersOutput {
     address: string;
   }>;
   count: number;
+  workflowId: string;
 }
 
 // Handler function
@@ -56,9 +60,23 @@ async function handler(
 ): Promise<SearchProvidersOutput> {
   logger.info('search_providers executing', { input, sessionId: context.sessionId });
 
+  // Create a new workflow for this search (abandons any existing workflow)
+  const workflow = await createWorkflow(context.sessionId, {
+    serviceType: input.query,
+  });
+
+  logger.info('Created workflow for search', {
+    workflowId: workflow.id,
+    sessionId: context.sessionId,
+    serviceType: input.query,
+  });
+
   const providers = await searchProviders(input.query);
 
-  logger.info('search_providers found results', { count: providers.length });
+  logger.info('search_providers found results', {
+    count: providers.length,
+    workflowId: workflow.id,
+  });
 
   return {
     providers: providers.map((p) => ({
@@ -71,6 +89,7 @@ async function handler(
       address: p.address,
     })),
     count: providers.length,
+    workflowId: workflow.id,
   };
 }
 

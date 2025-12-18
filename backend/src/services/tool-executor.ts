@@ -13,7 +13,7 @@ import { logger } from '../utils/logger';
 export interface ToolExecutionCallbacks {
   onToolStart?: (toolName: string, toolUseId: string) => void;
   onToolComplete?: (toolName: string, toolUseId: string, result: ToolResult) => void;
-  onDisplayProviders?: (providers: DisplayProvider[]) => void;
+  onDisplayProviders?: (providers: DisplayProvider[], workflowId?: string) => void;
 }
 
 /**

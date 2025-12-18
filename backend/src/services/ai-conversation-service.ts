@@ -2,6 +2,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { env, requireAnthropicKey } from '../config/env';
 import { getMessageHistory, ChatMessage } from './message-service';
 import { executeTools, ToolExecutionCallbacks } from './tool-executor';
+import { getCurrentWorkflow, WorkflowStateRecord } from './workflow-service';
 import { logger } from '../utils/logger';
 import { ToolUseContent, MessageContent } from '../db/schema';
 import { toolRegistry } from '../tools';
@@ -129,6 +130,35 @@ Tool usage guidelines:
 - If no results are found, try a broader search term (e.g., if "haircut" returns nothing, try "salon")`;
 
 /**
+ * Build workflow context string for system prompt
+ * Returns empty string if no workflow or workflow is in initial state
+ */
+function buildWorkflowContext(workflow: WorkflowStateRecord | null): string {
+  if (!workflow) {
+    return '';
+  }
+
+  const parts: string[] = [];
+  parts.push(`Current workflow state: ${workflow.currentState}`);
+
+  // Add relevant context based on state
+  if (workflow.context.serviceType) {
+    parts.push(`Service type: ${workflow.context.serviceType}`);
+  }
+  if (workflow.context.selectedProviders && workflow.context.selectedProviders.length > 0) {
+    parts.push(`Providers shown: ${workflow.context.selectedProviders.length}`);
+  }
+  if (workflow.context.selectedProviderId) {
+    parts.push(`Selected provider ID: ${workflow.context.selectedProviderId}`);
+  }
+  if (workflow.context.selectedTimeSlot) {
+    parts.push(`Selected time slot: ${workflow.context.selectedTimeSlot}`);
+  }
+
+  return `\n\nCurrent booking workflow:\n${parts.join('\n')}`;
+}
+
+/**
  * Convert database message history to Claude API message format
  * Handles all content types: text, tool_use, and tool_result
  */
@@ -188,11 +218,15 @@ async function sendMessageWithToolLoop(
   sessionId: string,
   messages: Anthropic.MessageParam[],
   callbacks?: StreamCallbacks,
+  workflowContext: string = '',
   maxIterations: number = MAX_TOOL_LOOP_ITERATIONS
 ): Promise<string> {
   const tools = toolRegistry.getToolDefinitions();
   let fullTextResponse = '';
   let iteration = 0;
+
+  // Build full system prompt with workflow context
+  const systemPrompt = SYSTEM_PROMPT + workflowContext;
 
   while (iteration < maxIterations) {
     iteration++;
@@ -202,7 +236,7 @@ async function sendMessageWithToolLoop(
     const stream = getClient().messages.stream({
       model: env.CLAUDE_MODEL,
       max_tokens: env.CLAUDE_MAX_TOKENS,
-      system: SYSTEM_PROMPT,
+      system: systemPrompt,
       messages,
       tools: tools.length > 0 ? tools : undefined,
     });
@@ -324,6 +358,17 @@ export async function sendMessage(
   const history = await getMessageHistory(sessionId);
   logger.debug('Loaded message history', { sessionId, messageCount: history.length });
 
+  // Load current workflow for context
+  const workflow = await getCurrentWorkflow(sessionId);
+  const workflowContext = buildWorkflowContext(workflow);
+  if (workflow) {
+    logger.debug('Workflow context loaded', {
+      sessionId,
+      workflowId: workflow.id,
+      state: workflow.currentState,
+    });
+  }
+
   // Build messages array for Claude API
   const messages = buildMessagesArray(history);
 
@@ -338,7 +383,7 @@ export async function sendMessage(
 
   for (let attempt = 0; attempt <= retryDelays.length; attempt++) {
     try {
-      return await sendMessageWithToolLoop(sessionId, messages, callbacks);
+      return await sendMessageWithToolLoop(sessionId, messages, callbacks, workflowContext);
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
 

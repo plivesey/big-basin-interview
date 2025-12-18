@@ -4,6 +4,9 @@
  * Takes provider IDs as input, looks up full provider data from database,
  * and emits a WebSocket event to display the cards. This prevents AI hallucination
  * of provider details.
+ *
+ * Also transitions the workflow to PROVIDER_SELECTION state and stores
+ * the displayed provider IDs in the workflow context.
  */
 
 import { z } from 'zod';
@@ -15,6 +18,11 @@ import {
   DisplayProvider,
 } from '../types/tool.types';
 import { getProviderById } from '../services/provider-service';
+import {
+  getCurrentWorkflow,
+  transitionState,
+  WorkflowState,
+} from '../services/workflow-service';
 import { logger } from '../utils/logger';
 
 // Input schema (Zod for validation) - IDs only
@@ -51,6 +59,7 @@ export interface DisplayProviderCardsOutput {
   success: boolean;
   displayed: number;
   notFound: string[];
+  workflowId?: string;
 }
 
 // Handler function
@@ -62,6 +71,37 @@ async function handler(
     providerIds: input.providerIds,
     sessionId: context.sessionId,
   });
+
+  // Get the current workflow to transition it
+  const workflow = await getCurrentWorkflow(context.sessionId);
+  let workflowId: string | undefined;
+
+  if (workflow) {
+    try {
+      // Transition to PROVIDER_SELECTION state with the provider IDs
+      const updatedWorkflow = await transitionState(
+        workflow.id,
+        WorkflowState.PROVIDER_SELECTION,
+        { selectedProviders: input.providerIds }
+      );
+      workflowId = updatedWorkflow.id;
+      logger.info('Workflow transitioned to PROVIDER_SELECTION', {
+        workflowId,
+        providerCount: input.providerIds.length,
+      });
+    } catch (error) {
+      // Log but don't fail the tool - workflow transition is not critical for display
+      logger.warn('Failed to transition workflow state', {
+        workflowId: workflow.id,
+        error: String(error),
+      });
+      workflowId = workflow.id;
+    }
+  } else {
+    logger.warn('No current workflow found for session', {
+      sessionId: context.sessionId,
+    });
+  }
 
   // Look up each provider from database
   const providers: DisplayProvider[] = [];
@@ -85,11 +125,12 @@ async function handler(
     }
   }
 
-  // Emit to frontend via context callback
+  // Emit to frontend via context callback (with workflowId)
   if (providers.length > 0 && context.emitDisplayProviders) {
-    context.emitDisplayProviders(providers);
+    context.emitDisplayProviders(providers, workflowId);
     logger.info('display_provider_cards emitted to frontend', {
       count: providers.length,
+      workflowId,
     });
   }
 
@@ -97,6 +138,7 @@ async function handler(
     success: true,
     displayed: providers.length,
     notFound,
+    workflowId,
   };
 }
 

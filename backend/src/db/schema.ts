@@ -48,6 +48,7 @@ export const bookings = sqliteTable('bookings', {
 export const sessions = sqliteTable('sessions', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().default('default_user'), // Static for MVP
+  currentWorkflowId: text('current_workflow_id'), // Currently active workflow (nullable, no FK to avoid circular ref)
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   lastActivityAt: integer('last_activity_at', { mode: 'timestamp' }).notNull(),
 });
@@ -57,16 +58,13 @@ export const workflowStates = sqliteTable('workflow_states', {
   id: text('id').primaryKey(), // Unique workflow ID (supports multiple bookings per session)
   sessionId: text('session_id').notNull().references(() => sessions.id),
   currentState: text('current_state').notNull(), // 'PROVIDER_SEARCH', 'PROVIDER_SELECTION', etc.
-  status: text('status').notNull().default('active'), // 'active', 'completed', 'abandoned'
   // Context stored as JSON: { serviceType, location, selectedProviderId, bookingId, etc. }
   context: text('context', { mode: 'json' }).$type<WorkflowContext>().notNull(),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   lastUpdated: integer('last_updated', { mode: 'timestamp' }).notNull(),
   completedAt: integer('completed_at', { mode: 'timestamp' }),
-  expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
 }, (table) => [
   index('workflow_session_id_idx').on(table.sessionId),
-  index('workflow_status_idx').on(table.status),
 ]);
 
 // Workflow context type for JSON column

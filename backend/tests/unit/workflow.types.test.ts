@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
   WorkflowState,
-  WorkflowStatus,
   canTransition,
   getNextStates,
   VALID_TRANSITIONS,
@@ -16,14 +15,6 @@ describe('Workflow Types', () => {
       expect(WorkflowState.CONFIRMATION).toBe('CONFIRMATION');
       expect(WorkflowState.BOOKING_CREATED).toBe('BOOKING_CREATED');
       expect(WorkflowState.COMPLETE).toBe('COMPLETE');
-    });
-  });
-
-  describe('WorkflowStatus enum', () => {
-    it('should define all workflow statuses', () => {
-      expect(WorkflowStatus.ACTIVE).toBe('active');
-      expect(WorkflowStatus.COMPLETED).toBe('completed');
-      expect(WorkflowStatus.ABANDONED).toBe('abandoned');
     });
   });
 

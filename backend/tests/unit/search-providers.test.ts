@@ -12,6 +12,11 @@ vi.mock('../../src/services/provider-service', () => ({
   searchProviders: vi.fn(),
 }));
 
+// Mock the workflow service
+vi.mock('../../src/services/workflow-service', () => ({
+  createWorkflow: vi.fn(),
+}));
+
 // Mock logger to avoid console output during tests
 vi.mock('../../src/utils/logger', () => ({
   logger: {
@@ -24,7 +29,9 @@ vi.mock('../../src/utils/logger', () => ({
 
 // Import after mocking
 import { searchProviders } from '../../src/services/provider-service';
+import { createWorkflow } from '../../src/services/workflow-service';
 const mockSearchProviders = vi.mocked(searchProviders);
+const mockCreateWorkflow = vi.mocked(createWorkflow);
 
 describe('search_providers tool', () => {
   const mockContext: ToolExecutionContext = {
@@ -48,8 +55,20 @@ describe('search_providers tool', () => {
     updatedAt: new Date(),
   };
 
+  const mockWorkflow = {
+    id: 'workflow-1',
+    sessionId: 'test-session',
+    currentState: 'PROVIDER_SEARCH',
+    context: {},
+    createdAt: new Date(),
+    lastUpdated: new Date(),
+    completedAt: null,
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
+    // Set up default mock for createWorkflow
+    mockCreateWorkflow.mockResolvedValue(mockWorkflow as never);
   });
 
   describe('definition', () => {

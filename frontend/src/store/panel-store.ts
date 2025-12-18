@@ -9,28 +9,32 @@ export interface PanelState {
   // Provider panel state
   isProviderPanelOpen: boolean;
   displayedProviders: DisplayProvider[];
+  activeWorkflowId: string | null;
 
   // Actions
-  openProviderPanel: (providers: DisplayProvider[]) => void;
+  openProviderPanel: (providers: DisplayProvider[], workflowId?: string) => void;
   closeProviderPanel: () => void;
   updateProviders: (providers: DisplayProvider[]) => void;
+  setActiveWorkflowId: (workflowId: string | null) => void;
   reset: () => void;
 }
 
 // Initial state
 const initialState = {
   isProviderPanelOpen: false,
-  displayedProviders: [],
+  displayedProviders: [] as DisplayProvider[],
+  activeWorkflowId: null as string | null,
 };
 
 // Create the store
 export const usePanelStore = create<PanelState>((set) => ({
   ...initialState,
 
-  openProviderPanel: (providers: DisplayProvider[]) =>
+  openProviderPanel: (providers: DisplayProvider[], workflowId?: string) =>
     set({
       isProviderPanelOpen: true,
       displayedProviders: providers,
+      activeWorkflowId: workflowId ?? null,
     }),
 
   closeProviderPanel: () =>
@@ -43,6 +47,11 @@ export const usePanelStore = create<PanelState>((set) => ({
     set({
       displayedProviders: providers,
       isProviderPanelOpen: providers.length > 0,
+    }),
+
+  setActiveWorkflowId: (workflowId: string | null) =>
+    set({
+      activeWorkflowId: workflowId,
     }),
 
   reset: () => set(initialState),
