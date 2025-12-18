@@ -64,7 +64,7 @@ async function handler(
 
     return {
       success: false,
-      error: `"${input.location}" is not a supported location.`,
+      error: `"${input.location}" is not a supported location. Supported locations: ${supportedList.join(', ')}.`,
       supportedLocations: supportedList,
     };
   }
