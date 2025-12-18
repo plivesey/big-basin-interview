@@ -51,7 +51,6 @@ export interface SelectProviderOutput {
   success: boolean;
   providerId: string;
   providerName: string;
-  workflowId: string;
   error?: string;
 }
 
@@ -76,38 +75,7 @@ async function handler(
       success: false,
       providerId: input.providerId,
       providerName: '',
-      workflowId: '',
       error: 'No active booking workflow. Please search for providers first.',
-    };
-  }
-
-  // Validate the provider ID is in the workflow's selected providers
-  const selectedProviders = workflow.context.selectedProviders || [];
-  if (!selectedProviders.includes(input.providerId)) {
-    logger.warn('Provider ID not in selected providers', {
-      providerId: input.providerId,
-      selectedProviders,
-      workflowId: workflow.id,
-    });
-
-    // Build helpful error message with valid provider IDs and names
-    let validProvidersList = '';
-    if (selectedProviders.length > 0) {
-      const providerDetails = await Promise.all(
-        selectedProviders.map(async (id: string) => {
-          const p = await getProviderById(id);
-          return p ? `${id} (${p.name})` : id;
-        })
-      );
-      validProvidersList = `\nValid provider IDs:\n${providerDetails.map((p) => `- ${p}`).join('\n')}`;
-    }
-
-    return {
-      success: false,
-      providerId: input.providerId,
-      providerName: '',
-      workflowId: workflow.id,
-      error: `Provider ID '${input.providerId}' not found in current search results.${validProvidersList}\nUse one of these exact IDs with select_provider.`,
     };
   }
 
@@ -118,12 +86,25 @@ async function handler(
     logger.warn('Provider not found in database', {
       providerId: input.providerId,
     });
+
+    // Build helpful error message with valid provider IDs from recent search
+    const selectedProviders = workflow.context.selectedProviders || [];
+    let validProvidersList = '';
+    if (selectedProviders.length > 0) {
+      const providerDetails = await Promise.all(
+        selectedProviders.map(async (id: string) => {
+          const p = await getProviderById(id);
+          return p ? `${id} (${p.name})` : id;
+        })
+      );
+      validProvidersList = `\nValid provider IDs from recent search:\n${providerDetails.map((p) => `- ${p}`).join('\n')}`;
+    }
+
     return {
       success: false,
       providerId: input.providerId,
       providerName: '',
-      workflowId: workflow.id,
-      error: 'Provider not found.',
+      error: `Provider ID '${input.providerId}' does not exist.${validProvidersList}\nUse one of these exact IDs with select_provider.`,
     };
   }
 
@@ -145,7 +126,6 @@ async function handler(
       success: false,
       providerId: input.providerId,
       providerName: provider.name,
-      workflowId: workflow.id,
       error: 'Failed to update booking workflow.',
     };
   }
@@ -164,7 +144,6 @@ async function handler(
     success: true,
     providerId: provider.id,
     providerName: provider.name,
-    workflowId: workflow.id,
   };
 }
 

@@ -6,7 +6,7 @@ import {
   providerIdSchema,
   availabilityQuerySchema,
 } from '../validation/provider-schemas';
-import { NotFoundError } from '../middleware/error-handler';
+import { NotFoundError, ProviderNotFoundError } from '../middleware/error-handler';
 import { logger } from '../utils/logger';
 
 const router = Router();
@@ -67,8 +67,8 @@ router.get(
       });
     } catch (error) {
       // Handle provider not found
-      if (error instanceof Error && error.message.startsWith('Provider not found')) {
-        return next(new NotFoundError('Provider', req.params.id));
+      if (error instanceof ProviderNotFoundError) {
+        return next(error);
       }
       next(error);
     }

@@ -2,8 +2,7 @@
  * Mock Availability Utility
  *
  * Provides deterministic mock availability patterns for providers.
- * Uses hash-based patterns to simulate realistic availability without
- * storing fake bookings in the database.
+ * Uses hash-based patterns to simulate realistic and consistent availability.
  */
 
 import type { TimeSlot } from '../services/availability-service';

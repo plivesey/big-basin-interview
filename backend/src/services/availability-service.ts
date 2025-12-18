@@ -7,6 +7,13 @@
 
 import { getProviderById } from './provider-service';
 import { getBusyLevel, applyMockPattern } from '../utils/mock-availability';
+import {
+  getLocalDateString,
+  parseTimeToMinutes,
+  formatMinutesToTime,
+  toLocalISOString,
+} from '../utils/date-utils';
+import { ProviderNotFoundError } from '../middleware/error-handler';
 import type { WorkingHours } from '../db/schema';
 
 export interface TimeSlot {
@@ -36,29 +43,13 @@ const DAY_NAMES = [
 ];
 
 /**
- * Parse a time string (HH:MM) to minutes since midnight
- */
-function parseTimeToMinutes(time: string): number {
-  const [hours, minutes] = time.split(':').map(Number);
-  return hours * 60 + minutes;
-}
-
-/**
- * Format minutes since midnight to HH:MM
- */
-function formatMinutesToTime(minutes: number): string {
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
-}
-
-/**
- * Generate time slots for a given provider and date
+ * Generate time slots for a given provider and date based on working hours.
+ * All slots are marked as available - actual availability is applied separately.
  *
  * @param workingHours - Provider's working hours
  * @param date - Date string in YYYY-MM-DD format
  * @param slotDurationMinutes - Duration of each slot in minutes (default 30)
- * @returns Array of time slots
+ * @returns Array of time slots with available: true
  */
 function generateTimeSlots(
   workingHours: WorkingHours,
@@ -92,13 +83,9 @@ function generateTimeSlots(
     const startTime = formatMinutesToTime(startMinutes);
     const endTime = formatMinutesToTime(endMinutes);
 
-    // Create ISO datetime strings (local time, no timezone suffix)
-    const startISO = `${date}T${startTime}:00`;
-    const endISO = `${date}T${endTime}:00`;
-
     slots.push({
-      start: startISO,
-      end: endISO,
+      start: toLocalISOString(date, startTime),
+      end: toLocalISOString(date, endTime),
       available: true, // Will be modified by mock pattern
     });
   }
@@ -122,6 +109,27 @@ function filterPastSlots(slots: TimeSlot[], now: Date = new Date()): TimeSlot[] 
 }
 
 /**
+ * Apply mock availability patterns to slots.
+ * This simulates realistic booking availability for demo purposes.
+ *
+ * NOTE: This is mock functionality. In production, this would be replaced
+ * with real availability data from provider calendars/booking systems.
+ *
+ * @param slots - Time slots to apply mock pattern to
+ * @param providerId - Provider ID (used for deterministic randomness)
+ * @param date - Date string (used for deterministic randomness)
+ * @returns Slots with availability modified by mock pattern
+ */
+function applyMockAvailability(
+  slots: TimeSlot[],
+  providerId: string,
+  date: string
+): TimeSlot[] {
+  const busyLevel = getBusyLevel(providerId, date);
+  return applyMockPattern(slots, busyLevel, providerId, date);
+}
+
+/**
  * Get available time slots for a provider on a specific date
  *
  * @param providerId - The provider ID
@@ -139,12 +147,11 @@ export async function getAvailableSlots(
   const provider = await getProviderById(providerId);
 
   if (!provider) {
-    throw new Error(`Provider not found: ${providerId}`);
+    throw new ProviderNotFoundError(providerId);
   }
 
   // Get today's date in local timezone for comparison
-  const now = new Date();
-  const todayLocal = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const todayLocal = getLocalDateString();
 
   // Generate base time slots from working hours
   let slots = generateTimeSlots(provider.workingHours, date, duration);
@@ -154,32 +161,13 @@ export async function getAvailableSlots(
     slots = filterPastSlots(slots);
   }
 
-  // Apply mock availability pattern
-  // Note: We do NOT filter real bookings - providers can serve multiple customers
-  // at the same time (e.g., nail salons). Mock API is the source of truth.
-  const busyLevel = getBusyLevel(providerId, date);
-  slots = applyMockPattern(slots, busyLevel, providerId, date);
+  // Apply mock availability (in production, replace with real availability data)
+  slots = applyMockAvailability(slots, providerId, date);
 
   return {
     providerId: provider.id,
     providerName: provider.name,
     date,
     slots,
-  };
-}
-
-/**
- * Get only available slots (convenience method)
- */
-export async function getOnlyAvailableSlots(
-  providerId: string,
-  date: string,
-  duration: number
-): Promise<AvailabilityResult> {
-  const result = await getAvailableSlots(providerId, date, duration);
-
-  return {
-    ...result,
-    slots: result.slots.filter((slot) => slot.available),
   };
 }

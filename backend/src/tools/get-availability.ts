@@ -16,6 +16,8 @@ import {
   ToolDefinition,
 } from '../types/tool.types';
 import { getAvailableSlots, TimeSlot } from '../services/availability-service';
+import { getLocalDateString } from '../utils/date-utils';
+import { ProviderNotFoundError } from '../middleware/error-handler';
 import { logger } from '../utils/logger';
 
 // Input schema (Zod for validation)
@@ -87,9 +89,7 @@ async function handler(
 
   try {
     // Default to today's date if not provided
-    const now = new Date();
-    const defaultDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-    const date = input.date || defaultDate;
+    const date = input.date || getLocalDateString();
     const duration = input.duration || 30;
 
     // Get availability from service
@@ -123,16 +123,18 @@ async function handler(
       error: String(error),
     });
 
+    const defaultDate = input.date || getLocalDateString();
+
     // Handle provider not found
-    if (error instanceof Error && error.message.startsWith('Provider not found')) {
+    if (error instanceof ProviderNotFoundError) {
       return {
         success: false,
         providerId: input.providerId,
         providerName: '',
-        date: input.date || new Date().toISOString().split('T')[0],
+        date: defaultDate,
         availableSlots: [],
         totalSlots: 0,
-        error: 'Provider not found.',
+        error: `Provider ID '${input.providerId}' does not exist. Use the search_providers tool first to find valid provider IDs, then use one of those IDs with this tool.`,
       };
     }
 
@@ -140,7 +142,7 @@ async function handler(
       success: false,
       providerId: input.providerId,
       providerName: '',
-      date: input.date || new Date().toISOString().split('T')[0],
+      date: defaultDate,
       availableSlots: [],
       totalSlots: 0,
       error: 'Failed to retrieve availability.',
