@@ -3,7 +3,7 @@ import { env, requireAnthropicKey } from '../config/env';
 import { getMessageHistory, ChatMessage } from './message-service';
 import { executeTools, ToolExecutionCallbacks } from './tool-executor';
 import { logger } from '../utils/logger';
-import { TextContent, ToolUseContent, ToolResultContent, MessageContent } from '../db/schema';
+import { ToolUseContent, MessageContent } from '../db/schema';
 import { toolRegistry } from '../tools';
 
 // Initialize client lazily to allow app to start without API key

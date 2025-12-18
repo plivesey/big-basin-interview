@@ -1,4 +1,4 @@
-import { eq, desc, sql, or, like } from 'drizzle-orm';
+import { eq, desc, sql, or } from 'drizzle-orm';
 import { db, providers, Provider } from '../db';
 import { logger } from '../utils/logger';
 

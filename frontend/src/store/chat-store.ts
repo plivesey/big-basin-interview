@@ -1,12 +1,7 @@
 import { create } from 'zustand';
-import type {
-  ChatMessage,
-  MessageContent,
-  ConnectionStatus,
-} from '@asba/shared-types';
-import { getMessageText, parseMessage } from '@asba/shared-types';
+import type { ChatMessage, ConnectionStatus } from '@asba/shared-types';
 
-// Re-export types from shared package for backward compatibility
+// Re-export types and utilities from shared package for backward compatibility
 export type { ChatMessage, MessageContent, ConnectionStatus } from '@asba/shared-types';
 export { getMessageText, parseMessage } from '@asba/shared-types';
 
