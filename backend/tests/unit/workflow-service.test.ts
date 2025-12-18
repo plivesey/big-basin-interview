@@ -112,7 +112,8 @@ describe('Workflow Service', () => {
 
       const updated = await transitionState(
         workflow.id,
-        WorkflowState.PROVIDER_SELECTION
+        WorkflowState.PROVIDER_SELECTION,
+        { selectedProviderId: 'provider-123' }
       );
 
       expect(updated.currentState).toBe(WorkflowState.PROVIDER_SELECTION);
@@ -125,7 +126,7 @@ describe('Workflow Service', () => {
       const updated = await transitionState(
         workflow.id,
         WorkflowState.PROVIDER_SELECTION,
-        { selectedProviders: ['p1', 'p2'] }
+        { selectedProviderId: 'provider-123', selectedProviders: ['p1', 'p2'] }
       );
 
       expect(updated.context.serviceType).toBe('salon');
@@ -142,32 +143,54 @@ describe('Workflow Service', () => {
 
     it('should throw WorkflowNotFoundError for non-existent workflow', async () => {
       await expect(
-        transitionState('non-existent', WorkflowState.PROVIDER_SELECTION)
+        transitionState('non-existent', WorkflowState.PROVIDER_SELECTION, { selectedProviderId: 'p1' })
       ).rejects.toThrow(WorkflowNotFoundError);
     });
 
     it('should validate required context fields for target state', async () => {
       const workflow = await createWorkflow(sessionId);
-      await transitionState(workflow.id, WorkflowState.PROVIDER_SELECTION);
 
-      // TIME_SELECTION requires selectedProviderId
+      // PROVIDER_SELECTION requires selectedProviderId
       await expect(
-        transitionState(workflow.id, WorkflowState.TIME_SELECTION)
+        transitionState(workflow.id, WorkflowState.PROVIDER_SELECTION)
       ).rejects.toThrow(InvalidTransitionError);
     });
 
     it('should allow transition when required context is provided', async () => {
       const workflow = await createWorkflow(sessionId);
-      await transitionState(workflow.id, WorkflowState.PROVIDER_SELECTION);
 
       const updated = await transitionState(
         workflow.id,
-        WorkflowState.TIME_SELECTION,
+        WorkflowState.PROVIDER_SELECTION,
         { selectedProviderId: 'provider-123' }
       );
 
-      expect(updated.currentState).toBe(WorkflowState.TIME_SELECTION);
+      expect(updated.currentState).toBe(WorkflowState.PROVIDER_SELECTION);
       expect(updated.context.selectedProviderId).toBe('provider-123');
+    });
+
+    it('should validate COMPLETE requires bookingId', async () => {
+      const workflow = await createWorkflow(sessionId);
+      await transitionState(workflow.id, WorkflowState.PROVIDER_SELECTION, { selectedProviderId: 'p1' });
+
+      // COMPLETE requires bookingId
+      await expect(
+        transitionState(workflow.id, WorkflowState.COMPLETE)
+      ).rejects.toThrow(InvalidTransitionError);
+    });
+
+    it('should allow transition to COMPLETE with bookingId', async () => {
+      const workflow = await createWorkflow(sessionId);
+      await transitionState(workflow.id, WorkflowState.PROVIDER_SELECTION, { selectedProviderId: 'p1' });
+
+      const updated = await transitionState(
+        workflow.id,
+        WorkflowState.COMPLETE,
+        { bookingId: 'booking-123' }
+      );
+
+      expect(updated.currentState).toBe(WorkflowState.COMPLETE);
+      expect(updated.context.bookingId).toBe('booking-123');
     });
   });
 

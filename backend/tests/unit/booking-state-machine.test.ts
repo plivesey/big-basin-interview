@@ -17,7 +17,7 @@ describe('Booking State Machine', () => {
       )).toBe(true);
       expect(bookingStateMachine.isValidTransition(
         WorkflowState.PROVIDER_SELECTION,
-        WorkflowState.TIME_SELECTION
+        WorkflowState.COMPLETE
       )).toBe(true);
     });
 
@@ -26,10 +26,20 @@ describe('Booking State Machine', () => {
         WorkflowState.PROVIDER_SEARCH,
         WorkflowState.COMPLETE
       )).toBe(false);
+    });
+
+    it('should return true for valid backward transitions', () => {
       expect(bookingStateMachine.isValidTransition(
-        WorkflowState.PROVIDER_SEARCH,
-        WorkflowState.CONFIRMATION
-      )).toBe(false);
+        WorkflowState.PROVIDER_SELECTION,
+        WorkflowState.PROVIDER_SEARCH
+      )).toBe(true);
+    });
+
+    it('should return true for self-transition in PROVIDER_SELECTION', () => {
+      expect(bookingStateMachine.isValidTransition(
+        WorkflowState.PROVIDER_SELECTION,
+        WorkflowState.PROVIDER_SELECTION
+      )).toBe(true);
     });
   });
 
@@ -39,7 +49,8 @@ describe('Booking State Machine', () => {
         .toEqual([WorkflowState.PROVIDER_SELECTION]);
 
       const fromSelection = bookingStateMachine.getValidTransitions(WorkflowState.PROVIDER_SELECTION);
-      expect(fromSelection).toContain(WorkflowState.TIME_SELECTION);
+      expect(fromSelection).toContain(WorkflowState.PROVIDER_SELECTION);
+      expect(fromSelection).toContain(WorkflowState.COMPLETE);
       expect(fromSelection).toContain(WorkflowState.PROVIDER_SEARCH);
     });
 
@@ -55,29 +66,22 @@ describe('Booking State Machine', () => {
 
     it('should return false for non-terminal states', () => {
       expect(bookingStateMachine.isTerminalState(WorkflowState.PROVIDER_SEARCH)).toBe(false);
-      expect(bookingStateMachine.isTerminalState(WorkflowState.BOOKING_CREATED)).toBe(false);
+      expect(bookingStateMachine.isTerminalState(WorkflowState.PROVIDER_SELECTION)).toBe(false);
     });
   });
 
   describe('getRequiredContext', () => {
-    it('should return empty array for initial states', () => {
+    it('should return empty array for PROVIDER_SEARCH', () => {
       expect(bookingStateMachine.getRequiredContext(WorkflowState.PROVIDER_SEARCH)).toEqual([]);
-      expect(bookingStateMachine.getRequiredContext(WorkflowState.PROVIDER_SELECTION)).toEqual([]);
     });
 
-    it('should return selectedProviderId for TIME_SELECTION', () => {
-      expect(bookingStateMachine.getRequiredContext(WorkflowState.TIME_SELECTION))
+    it('should return selectedProviderId for PROVIDER_SELECTION', () => {
+      expect(bookingStateMachine.getRequiredContext(WorkflowState.PROVIDER_SELECTION))
         .toContain('selectedProviderId');
     });
 
-    it('should return selectedProviderId and selectedTimeSlot for CONFIRMATION', () => {
-      const required = bookingStateMachine.getRequiredContext(WorkflowState.CONFIRMATION);
-      expect(required).toContain('selectedProviderId');
-      expect(required).toContain('selectedTimeSlot');
-    });
-
-    it('should return bookingId for BOOKING_CREATED', () => {
-      const required = bookingStateMachine.getRequiredContext(WorkflowState.BOOKING_CREATED);
+    it('should return bookingId for COMPLETE', () => {
+      const required = bookingStateMachine.getRequiredContext(WorkflowState.COMPLETE);
       expect(required).toContain('bookingId');
     });
   });
@@ -92,10 +96,10 @@ describe('Booking State Machine', () => {
       expect(result.valid).toBe(true);
     });
 
-    it('should fail validation for TIME_SELECTION without selectedProviderId', () => {
+    it('should fail validation for PROVIDER_SELECTION without selectedProviderId', () => {
       const context: WorkflowContext = {};
       const result = bookingStateMachine.validateContextForState(
-        WorkflowState.TIME_SELECTION,
+        WorkflowState.PROVIDER_SELECTION,
         context
       );
       expect(result.valid).toBe(false);
@@ -104,34 +108,34 @@ describe('Booking State Machine', () => {
       }
     });
 
-    it('should pass validation for TIME_SELECTION with selectedProviderId', () => {
+    it('should pass validation for PROVIDER_SELECTION with selectedProviderId', () => {
       const context: WorkflowContext = { selectedProviderId: 'provider-123' };
       const result = bookingStateMachine.validateContextForState(
-        WorkflowState.TIME_SELECTION,
+        WorkflowState.PROVIDER_SELECTION,
         context
       );
       expect(result.valid).toBe(true);
     });
 
-    it('should fail validation for CONFIRMATION without required fields', () => {
+    it('should fail validation for COMPLETE without bookingId', () => {
       const context: WorkflowContext = { selectedProviderId: 'provider-123' };
       const result = bookingStateMachine.validateContextForState(
-        WorkflowState.CONFIRMATION,
+        WorkflowState.COMPLETE,
         context
       );
       expect(result.valid).toBe(false);
       if (!result.valid) {
-        expect(result.missingFields).toContain('selectedTimeSlot');
+        expect(result.missingFields).toContain('bookingId');
       }
     });
 
-    it('should pass validation for CONFIRMATION with all required fields', () => {
+    it('should pass validation for COMPLETE with bookingId', () => {
       const context: WorkflowContext = {
         selectedProviderId: 'provider-123',
-        selectedTimeSlot: '2024-01-15T10:00:00Z',
+        bookingId: 'booking-123',
       };
       const result = bookingStateMachine.validateContextForState(
-        WorkflowState.CONFIRMATION,
+        WorkflowState.COMPLETE,
         context
       );
       expect(result.valid).toBe(true);
@@ -140,10 +144,10 @@ describe('Booking State Machine', () => {
 
   describe('canTransitionWithContext', () => {
     it('should allow transition when state and context are valid', () => {
-      const context: WorkflowContext = { selectedProviderId: 'provider-123' };
+      const context: WorkflowContext = { selectedProviderId: 'provider-123', bookingId: 'booking-123' };
       const result = bookingStateMachine.canTransitionWithContext(
         WorkflowState.PROVIDER_SELECTION,
-        WorkflowState.TIME_SELECTION,
+        WorkflowState.COMPLETE,
         context
       );
       expect(result.canTransition).toBe(true);
@@ -153,7 +157,7 @@ describe('Booking State Machine', () => {
       const context: WorkflowContext = { selectedProviderId: 'provider-123' };
       const result = bookingStateMachine.canTransitionWithContext(
         WorkflowState.PROVIDER_SEARCH,
-        WorkflowState.TIME_SELECTION,
+        WorkflowState.COMPLETE,
         context
       );
       expect(result.canTransition).toBe(false);
@@ -166,7 +170,7 @@ describe('Booking State Machine', () => {
       const context: WorkflowContext = {};
       const result = bookingStateMachine.canTransitionWithContext(
         WorkflowState.PROVIDER_SELECTION,
-        WorkflowState.TIME_SELECTION,
+        WorkflowState.COMPLETE,
         context
       );
       expect(result.canTransition).toBe(false);

@@ -36,7 +36,7 @@ export function ChatContainer() {
   const isConnecting = connectionStatus === 'connecting';
 
   // Toggle button visibility: connected, panel closed, has providers, workflow not complete
-  const isWorkflowComplete = workflowState === 'BOOKING_CREATED' || workflowState === 'COMPLETE';
+  const isWorkflowComplete = workflowState === 'COMPLETE';
   const showToggleButton =
     isConnected &&
     !isProviderPanelOpen &&

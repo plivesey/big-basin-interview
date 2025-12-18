@@ -105,10 +105,10 @@ describe('panel-store', () => {
     });
 
     it('should allow setting workflow state independently', () => {
-      usePanelStore.getState().setWorkflowState('TIME_SELECTION');
+      usePanelStore.getState().setWorkflowState('PROVIDER_SELECTION');
 
       const { workflowState } = usePanelStore.getState();
-      expect(workflowState).toBe('TIME_SELECTION');
+      expect(workflowState).toBe('PROVIDER_SELECTION');
     });
   });
 

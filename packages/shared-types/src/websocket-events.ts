@@ -49,9 +49,6 @@ export interface TimeSlot {
 export type WorkflowState =
   | 'PROVIDER_SEARCH'
   | 'PROVIDER_SELECTION'
-  | 'TIME_SELECTION'
-  | 'CONFIRMATION'
-  | 'BOOKING_CREATED'
   | 'COMPLETE';
 
 /**

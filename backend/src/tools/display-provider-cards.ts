@@ -17,7 +17,7 @@ import {
   DisplayProvider,
 } from '../types/tool.types';
 import { getProviderById } from '../services/provider-service';
-import { getCurrentWorkflow } from '../services/workflow-service';
+import { getCurrentWorkflow, WorkflowState } from '../services/workflow-service';
 import { logger } from '../utils/logger';
 
 // Input schema (Zod for validation) - IDs only

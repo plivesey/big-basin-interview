@@ -71,8 +71,6 @@ export function initializeChatHandler(io: ChatServer): void {
           const activeStates: WorkflowState[] = [
             WorkflowState.PROVIDER_SEARCH,
             WorkflowState.PROVIDER_SELECTION,
-            WorkflowState.TIME_SELECTION,
-            WorkflowState.CONFIRMATION,
           ];
 
           if (
