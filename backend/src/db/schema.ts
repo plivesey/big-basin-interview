@@ -144,3 +144,18 @@ export type NewMessage = typeof messages.$inferInsert;
 
 export type CalendarConnection = typeof calendarConnections.$inferSelect;
 export type NewCalendarConnection = typeof calendarConnections.$inferInsert;
+
+// Memories table - stores user information (location, preferences, etc.)
+export const memories = sqliteTable('memories', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull(),
+  type: text('type').notNull(),  // 'location', 'preference', etc.
+  value: text('value', { mode: 'json' }).$type<Record<string, unknown>>().notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+}, (table) => [
+  index('memories_user_type_idx').on(table.userId, table.type),
+]);
+
+export type Memory = typeof memories.$inferSelect;
+export type NewMemory = typeof memories.$inferInsert;

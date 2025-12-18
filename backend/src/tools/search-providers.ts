@@ -8,6 +8,8 @@ import { z } from 'zod';
 import { RegisteredTool, ToolName, ToolExecutionContext, ToolDefinition } from '../types/tool.types';
 import { searchProviders } from '../services/provider-service';
 import { createWorkflow } from '../services/workflow-service';
+import { getUserLocation } from '../services/memory-service';
+import { PROVIDER_GEO_NAMES } from '../constants/supported-locations';
 import { logger } from '../utils/logger';
 
 // Input schema (Zod for validation)
@@ -50,7 +52,9 @@ export interface SearchProvidersOutput {
     address: string;
   }>;
   count: number;
-  workflowId: string;
+  workflowId?: string;
+  error?: string;
+  supportedLocations?: string[];
 }
 
 // Handler function
@@ -60,15 +64,34 @@ async function handler(
 ): Promise<SearchProvidersOutput> {
   logger.info('search_providers executing', { input, sessionId: context.sessionId });
 
+  // Check if user has set their location
+  const userLocation = await getUserLocation(context.userId);
+  if (!userLocation) {
+    const supportedList = Object.values(PROVIDER_GEO_NAMES);
+    logger.info('search_providers blocked - location not set', {
+      userId: context.userId,
+      sessionId: context.sessionId,
+    });
+
+    return {
+      error: 'Location not set. Please ask the user for their location and use the set_location tool first.',
+      providers: [],
+      count: 0,
+      supportedLocations: supportedList,
+    };
+  }
+
   // Create a new workflow for this search (abandons any existing workflow)
   const workflow = await createWorkflow(context.sessionId, {
     serviceType: input.query,
+    location: userLocation,
   });
 
   logger.info('Created workflow for search', {
     workflowId: workflow.id,
     sessionId: context.sessionId,
     serviceType: input.query,
+    location: userLocation,
   });
 
   const providers = await searchProviders(input.query);
