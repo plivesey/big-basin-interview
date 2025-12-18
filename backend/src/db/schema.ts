@@ -7,6 +7,26 @@ export type { TextContent, ToolUseContent, ToolResultContent, MessageContent } f
 // Working hours type for JSON column
 export type WorkingHours = Record<string, { open: string; close: string } | null>;
 
+// Geographic regions for provider filtering
+export type ProviderGeo =
+  | 'seattle'
+  | 'san_francisco'
+  | 'south_bay'      // Mountain View, Palo Alto, Sunnyvale area
+  | 'princeton'
+  | 'vancouver'
+  | 'toronto'
+  | 'new_york';
+
+export const PROVIDER_GEOS: ProviderGeo[] = [
+  'seattle',
+  'san_francisco',
+  'south_bay',
+  'princeton',
+  'vancouver',
+  'toronto',
+  'new_york'
+];
+
 // Providers table - stores service providers (salons, mechanics, dentists, etc.)
 export const providers = sqliteTable('providers', {
   id: text('id').primaryKey(),
@@ -14,6 +34,7 @@ export const providers = sqliteTable('providers', {
   category: text('category').notNull(), // 'salon', 'mechanic', 'dentist', etc.
   description: text('description'),
   address: text('address').notNull(),
+  geo: text('geo').$type<ProviderGeo>().notNull(), // Geographic region for filtering
   latitude: real('latitude').notNull(),
   longitude: real('longitude').notNull(),
   rating: real('rating').notNull(), // 1-5
@@ -27,7 +48,9 @@ export const providers = sqliteTable('providers', {
   services: text('services', { mode: 'json' }).$type<string[]>().notNull(),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
-});
+}, (table) => [
+  index('provider_geo_idx').on(table.geo),
+]);
 
 // Bookings table - stores user bookings with providers
 export const bookings = sqliteTable('bookings', {
