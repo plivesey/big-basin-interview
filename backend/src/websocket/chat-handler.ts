@@ -62,7 +62,11 @@ export function initializeChatHandler(io: ChatServer): void {
 
       logger.info('Session established', { sessionId: session.id, socketId: socket.id, currentWorkflowId: session.currentWorkflowId });
 
-      // Auto-restore provider panel if workflow is active with providers
+      // Auto-restore provider panel on session reconnect.
+      // When users refresh the page during an active booking workflow, this ensures
+      // they don't lose their provider search results. Only restores for active
+      // workflow states (PROVIDER_SEARCH, PROVIDER_SELECTION), not completed ones.
+      // See: documentation/features/provider-panel-persistence.md
       if (session.currentWorkflowId) {
         try {
           const workflow = await getWorkflow(session.currentWorkflowId);
