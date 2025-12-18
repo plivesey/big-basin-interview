@@ -40,22 +40,34 @@ export const searchProvidersDefinition: ToolDefinition = {
   },
 };
 
-// Output type for the handler
-export interface SearchProvidersOutput {
-  providers: Array<{
-    id: string;
-    name: string;
-    category: string;
-    rating: number;
-    reviewCount: number | null;
-    services: string[];
-    address: string;
-  }>;
-  count: number;
-  workflowId?: string;
-  error?: string;
-  supportedLocations?: string[];
+// Provider data returned in search results
+export interface ProviderResult {
+  id: string;
+  name: string;
+  category: string;
+  rating: number;
+  reviewCount: number | null;
+  services: string[];
+  address: string;
 }
+
+// Success output type
+export interface SearchProvidersSuccess {
+  providers: ProviderResult[];
+  count: number;
+  workflowId: string;
+}
+
+// Error output type (location not set)
+export interface SearchProvidersError {
+  error: string;
+  providers: [];
+  count: 0;
+  supportedLocations: string[];
+}
+
+// Combined output type
+export type SearchProvidersOutput = SearchProvidersSuccess | SearchProvidersError;
 
 // Handler function
 async function handler(
