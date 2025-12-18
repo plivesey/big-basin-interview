@@ -9,7 +9,7 @@ import {
 import { Button } from './Button';
 import { Spinner } from './Spinner';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3002';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
 
 /**
  * Side menu that slides in from the left.

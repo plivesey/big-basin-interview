@@ -130,14 +130,21 @@ export const useBookingStore = create<BookingState>((set, get) => ({
     });
 
     try {
+      const providerUrl = `${BACKEND_URL}/api/providers/${providerId}`;
+      const availabilityUrl = `${BACKEND_URL}/api/providers/${providerId}/availability?date=${getTodayDate()}`;
+
+      logger.debug('Fetching provider details', { providerUrl, availabilityUrl });
+
       // Fetch provider details and availability in parallel
       const [providerResponse, availabilityResponse] = await Promise.all([
-        fetch(`${BACKEND_URL}/api/providers/${providerId}`),
-        fetch(`${BACKEND_URL}/api/providers/${providerId}/availability?date=${getTodayDate()}`),
+        fetch(providerUrl),
+        fetch(availabilityUrl),
       ]);
 
       if (!providerResponse.ok) {
-        throw new Error('Failed to load provider details');
+        const errorData = await providerResponse.json().catch(() => ({}));
+        const errorMessage = errorData?.error?.message || `HTTP ${providerResponse.status}`;
+        throw new Error(`Failed to load provider: ${errorMessage}`);
       }
 
       const providerData = await providerResponse.json();
@@ -150,7 +157,9 @@ export const useBookingStore = create<BookingState>((set, get) => ({
       });
 
       if (!availabilityResponse.ok) {
-        throw new Error('Failed to load availability');
+        const errorData = await availabilityResponse.json().catch(() => ({}));
+        const errorMessage = errorData?.error?.message || `HTTP ${availabilityResponse.status}`;
+        throw new Error(`Failed to load availability: ${errorMessage}`);
       }
 
       const availabilityData = await availabilityResponse.json();
@@ -167,9 +176,14 @@ export const useBookingStore = create<BookingState>((set, get) => ({
         slotsCount: slots.length,
       });
     } catch (error) {
-      logger.error('Failed to open provider modal', { providerId, error: String(error) });
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error('Failed to open provider modal', {
+        providerId,
+        error: errorMessage,
+        backendUrl: BACKEND_URL,
+      });
       set({
-        error: 'Unable to load provider details. Please try again.',
+        error: errorMessage || 'Unable to load provider details. Please try again.',
         isLoadingProvider: false,
         isLoadingSlots: false,
       });
