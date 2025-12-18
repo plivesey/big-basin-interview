@@ -15,6 +15,7 @@ import {
   selectIsLoadingSlots,
   selectIsConfirming,
 } from '../store/booking-store';
+import { useMenuStore, selectCalendarConnected } from '../store/menu-store';
 import { RatingStars } from './RatingStars';
 import { TimeSlotGrid } from './TimeSlotGrid';
 import { ServiceSelector } from './ServiceSelector';
@@ -305,6 +306,11 @@ function SuccessView() {
         <p className="body-small mt-2">
           Your appointment at {bookingResult.providerName} is confirmed.
         </p>
+        {bookingResult.calendarEventAdded && (
+          <p className="body-small mt-2 text-slate-600">
+            I've added it to your Google Calendar.
+          </p>
+        )}
       </div>
 
       {/* Booking Details */}
@@ -338,6 +344,7 @@ export const ProviderDetailModal = memo(function ProviderDetailModal() {
   const selectedService = useBookingStore(selectSelectedService);
   const isConfirming = useBookingStore(selectIsConfirming);
   const error = useBookingStore(selectError);
+  const calendarConnected = useMenuStore(selectCalendarConnected);
   const { confirmBooking, goBackToDetails, closeModal } = useBookingStore();
 
   const handleClose = useCallback(() => {
@@ -379,6 +386,7 @@ export const ProviderDetailModal = memo(function ProviderDetailModal() {
               service={selectedService}
               slot={selectedSlot}
               isConfirming={isConfirming}
+              calendarConnected={calendarConnected}
               onConfirm={confirmBooking}
               onBack={goBackToDetails}
             />

@@ -48,7 +48,7 @@ export const SideMenu = memo(function SideMenu() {
       const response = await fetch(`${BACKEND_URL}/auth/google/status`);
       if (response.ok) {
         const data = await response.json();
-        setCalendarStatus(data.connected, data.email || null);
+        setCalendarStatus(data.data.connected, data.data.email || null);
       } else {
         setCalendarStatus(false, null);
       }
@@ -63,7 +63,7 @@ export const SideMenu = memo(function SideMenu() {
       if (response.ok) {
         const data = await response.json();
         // Redirect to Google OAuth
-        window.location.href = data.url;
+        window.location.href = data.data.url;
       }
     } catch (error) {
       console.error('Failed to get OAuth URL:', error);

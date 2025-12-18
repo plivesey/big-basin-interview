@@ -20,10 +20,7 @@ import {
  */
 const REQUIRED_CONTEXT: Record<WorkflowState, (keyof WorkflowContext)[]> = {
   [WorkflowState.PROVIDER_SEARCH]: [],
-  [WorkflowState.PROVIDER_SELECTION]: [],
-  [WorkflowState.TIME_SELECTION]: ['selectedProviderId'],
-  [WorkflowState.CONFIRMATION]: ['selectedProviderId', 'selectedTimeSlot'],
-  [WorkflowState.BOOKING_CREATED]: ['selectedProviderId', 'selectedTimeSlot', 'bookingId'],
+  [WorkflowState.PROVIDER_SELECTION]: ['selectedProviderId'],
   [WorkflowState.COMPLETE]: ['bookingId'],
 };
 

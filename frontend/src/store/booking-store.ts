@@ -20,6 +20,7 @@ export interface BookingResult {
   scheduledAt: string;
   providerName: string;
   serviceType: string;
+  calendarEventAdded: boolean;
 }
 
 /**
@@ -130,6 +131,21 @@ export const useBookingStore = create<BookingState>((set, get) => ({
     });
 
     try {
+      // Notify backend that user selected this provider (updates workflow state)
+      if (workflowId) {
+        try {
+          await fetch(`${BACKEND_URL}/api/workflows/${workflowId}/select-provider`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ providerId }),
+          });
+          logger.debug('Workflow updated for provider selection', { workflowId, providerId });
+        } catch (workflowError) {
+          // Log but don't fail - workflow update is not critical for modal display
+          logger.warn('Failed to update workflow state', { workflowId, error: String(workflowError) });
+        }
+      }
+
       const providerUrl = `${BACKEND_URL}/api/providers/${providerId}`;
       const availabilityUrl = `${BACKEND_URL}/api/providers/${providerId}/availability?date=${getTodayDate()}`;
 
@@ -303,6 +319,7 @@ export const useBookingStore = create<BookingState>((set, get) => ({
           scheduledAt: selectedSlot.start,
           providerName: selectedProvider.name,
           serviceType: selectedService,
+          calendarEventAdded: !!booking.calendarEventId,
         },
         isConfirming: false,
       });
