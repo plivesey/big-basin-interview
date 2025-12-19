@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
-import { eq } from 'drizzle-orm';
-import { db, sessions, NewSession } from '../db';
+import { eq, desc } from 'drizzle-orm';
+import { db, sessions, workflowStates, bookings, providers, NewSession } from '../db';
 
 export interface ChatSession {
   id: string;
@@ -132,4 +132,84 @@ export async function setCurrentWorkflow(
     .where(eq(sessions.id, sessionId));
 
   return getSession(sessionId);
+}
+
+/**
+ * Session list item for displaying in the sidebar
+ */
+export interface SessionListItem {
+  id: string;
+  title: string;
+  date: string; // ISO format
+}
+
+/**
+ * Get all sessions with computed titles for display in sidebar.
+ * Title priority:
+ * 1. Most recent booking's provider name
+ * 2. Most recent workflow's serviceType
+ * 3. Fallback to "Scout"
+ */
+export async function getSessionsWithTitles(
+  userId: string = 'default_user'
+): Promise<SessionListItem[]> {
+  // Fetch all sessions for user, ordered by last activity
+  const allSessions = await db
+    .select()
+    .from(sessions)
+    .where(eq(sessions.userId, userId))
+    .orderBy(desc(sessions.lastActivityAt));
+
+  const result: SessionListItem[] = [];
+
+  for (const session of allSessions) {
+    let title = 'Scout';
+
+    // Get all workflows for this session to find bookings and serviceType
+    const sessionWorkflows = await db
+      .select({
+        context: workflowStates.context,
+        lastUpdated: workflowStates.lastUpdated,
+      })
+      .from(workflowStates)
+      .where(eq(workflowStates.sessionId, session.id))
+      .orderBy(desc(workflowStates.lastUpdated));
+
+    // Find the most recent booking from workflows with bookingId
+    let foundBookingProvider = false;
+    for (const workflow of sessionWorkflows) {
+      if (workflow.context?.bookingId) {
+        const bookingResult = await db
+          .select({
+            providerName: providers.name,
+          })
+          .from(bookings)
+          .innerJoin(providers, eq(providers.id, bookings.providerId))
+          .where(eq(bookings.id, workflow.context.bookingId))
+          .limit(1);
+
+        if (bookingResult.length > 0 && bookingResult[0].providerName) {
+          title = bookingResult[0].providerName;
+          foundBookingProvider = true;
+          break;
+        }
+      }
+    }
+
+    // If no booking found, try to get serviceType from most recent workflow
+    if (!foundBookingProvider && sessionWorkflows.length > 0) {
+      const latestWorkflow = sessionWorkflows[0];
+      if (latestWorkflow.context?.serviceType) {
+        title = latestWorkflow.context.serviceType;
+      }
+    }
+
+    result.push({
+      id: session.id,
+      title,
+      date: session.lastActivityAt.toISOString(),
+    });
+  }
+
+  return result;
 }

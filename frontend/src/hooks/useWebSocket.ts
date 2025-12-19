@@ -9,6 +9,7 @@ import type {
 } from '@asba/shared-types';
 import { usePanelStore } from '../store/panel-store';
 import { useBookingStore } from '../store/booking-store';
+import { useMenuStore } from '../store/menu-store';
 import { logger } from '../utils/logger';
 import { ERROR_MESSAGES } from '../utils/error-messages';
 
@@ -23,6 +24,8 @@ export interface UseWebSocketReturn {
   disconnect: () => void;
   retryLastMessage: () => void;
   isRetrying: boolean;
+  switchSession: (sessionId: string) => void;
+  createNewSession: () => void;
 }
 
 export function useWebSocket(): UseWebSocketReturn {
@@ -249,6 +252,8 @@ export function useWebSocket(): UseWebSocketReturn {
       logger.info('Session created', { sessionId: data.sessionId, currentWorkflowId: data.currentWorkflowId });
       setSessionId(data.sessionId);
       storeSessionId(data.sessionId);
+      // Update current session ID in menu store for conversation list
+      useMenuStore.getState().setCurrentSessionId(data.sessionId);
       // Restore active workflow ID if present
       if (data.currentWorkflowId) {
         usePanelStore.getState().setActiveWorkflowId(data.currentWorkflowId);
@@ -506,6 +511,60 @@ export function useWebSocket(): UseWebSocketReturn {
     setIsRetrying(false);
   }, [clearMessageError, setMessages, setLastError, sendMessage]);
 
+  // Switch to a different session
+  const switchSession = useCallback((sessionId: string) => {
+    logger.info('Switching session', { sessionId });
+
+    // Disconnect current socket
+    disconnect();
+
+    // Update session storage with new session ID
+    try {
+      sessionStorage.setItem(SESSION_STORAGE_KEY, sessionId);
+    } catch {
+      // Ignore storage errors
+    }
+
+    // Reset all stores
+    useChatStore.getState().reset();
+    usePanelStore.getState().reset();
+    useBookingStore.getState().reset();
+
+    // Update current session ID in menu store
+    useMenuStore.getState().setCurrentSessionId(sessionId);
+
+    // Reconnect with the new session ID
+    reconnectAttempts.current = 0;
+    connect();
+  }, [disconnect, connect]);
+
+  // Create a new session
+  const createNewSession = useCallback(() => {
+    logger.info('Creating new session');
+
+    // Disconnect current socket
+    disconnect();
+
+    // Clear session storage to trigger new session creation on server
+    try {
+      sessionStorage.removeItem(SESSION_STORAGE_KEY);
+    } catch {
+      // Ignore storage errors
+    }
+
+    // Reset all stores
+    useChatStore.getState().reset();
+    usePanelStore.getState().reset();
+    useBookingStore.getState().reset();
+
+    // Clear current session ID (will be set when new session is created)
+    useMenuStore.getState().setCurrentSessionId(null);
+
+    // Reconnect - server will create a new session
+    reconnectAttempts.current = 0;
+    connect();
+  }, [disconnect, connect]);
+
   // Connect on mount, disconnect on unmount
   useEffect(() => {
     connect();
@@ -521,5 +580,7 @@ export function useWebSocket(): UseWebSocketReturn {
     disconnect,
     retryLastMessage,
     isRetrying,
+    switchSession,
+    createNewSession,
   };
 }

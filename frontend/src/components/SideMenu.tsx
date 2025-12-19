@@ -5,24 +5,36 @@ import {
   selectCalendarConnected,
   selectCalendarEmail,
   selectIsLoadingCalendarStatus,
+  selectSessions,
+  selectIsLoadingSessions,
+  selectCurrentSessionId,
 } from '../store/menu-store';
 import { Button } from './Button';
 import { Spinner } from './Spinner';
+import { ConversationListItem } from './ConversationListItem';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
 
+interface SideMenuProps {
+  onSessionSelect: (sessionId: string) => void;
+}
+
 /**
  * Side menu that slides in from the left.
- * Contains calendar settings and connection options.
+ * Contains calendar connection and conversation history.
  */
-export const SideMenu = memo(function SideMenu() {
+export const SideMenu = memo(function SideMenu({ onSessionSelect }: SideMenuProps) {
   const isMenuOpen = useMenuStore(selectIsMenuOpen);
   const calendarConnected = useMenuStore(selectCalendarConnected);
   const calendarEmail = useMenuStore(selectCalendarEmail);
   const isLoadingCalendarStatus = useMenuStore(selectIsLoadingCalendarStatus);
+  const sessions = useMenuStore(selectSessions);
+  const isLoadingSessions = useMenuStore(selectIsLoadingSessions);
+  const currentSessionId = useMenuStore(selectCurrentSessionId);
   const closeMenu = useMenuStore((state) => state.closeMenu);
   const setCalendarStatus = useMenuStore((state) => state.setCalendarStatus);
   const setLoadingCalendarStatus = useMenuStore((state) => state.setLoadingCalendarStatus);
+  const fetchSessions = useMenuStore((state) => state.fetchSessions);
 
   const fetchCalendarStatus = useCallback(async () => {
     setLoadingCalendarStatus(true);
@@ -39,12 +51,22 @@ export const SideMenu = memo(function SideMenu() {
     }
   }, [setCalendarStatus, setLoadingCalendarStatus]);
 
-  // Fetch calendar status on mount and when menu opens
+  // Fetch calendar status and sessions when menu opens
   useEffect(() => {
     if (isMenuOpen) {
       fetchCalendarStatus();
+      fetchSessions();
     }
-  }, [isMenuOpen, fetchCalendarStatus]);
+  }, [isMenuOpen, fetchCalendarStatus, fetchSessions]);
+
+  // Handle session selection
+  const handleSessionClick = useCallback(
+    (sessionId: string) => {
+      onSessionSelect(sessionId);
+      closeMenu();
+    },
+    [onSessionSelect, closeMenu]
+  );
 
   // Close menu on Escape key
   useEffect(() => {
@@ -99,16 +121,15 @@ export const SideMenu = memo(function SideMenu() {
 
       {/* Side menu panel */}
       <div
-        className={`fixed top-0 left-0 h-full w-80 bg-white shadow-xl transform transition-transform duration-300 ease-in-out z-50 ${
+        className={`fixed top-0 left-0 h-full w-80 bg-white shadow-xl transform transition-transform duration-300 ease-in-out z-50 flex flex-col ${
           isMenuOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
         role="dialog"
         aria-modal="true"
         aria-label="Settings menu"
       >
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-slate-200">
-          <h2 className="text-lg font-semibold text-slate-800">Calendar Settings</h2>
+        {/* Header - close button only */}
+        <div className="flex items-center justify-end px-4 pt-2">
           <button
             onClick={closeMenu}
             className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
@@ -130,25 +151,17 @@ export const SideMenu = memo(function SideMenu() {
           </button>
         </div>
 
-        {/* Content */}
+        {/* Calendar connection section */}
         <div className="p-4">
-          {/* Description */}
-          <p className="text-sm text-slate-600 mb-6">
-            Connect your calendar and I'll save your appointments automatically. One less thing to
-            remember.
-          </p>
-
-          {/* Calendar connection status */}
           {isLoadingCalendarStatus ? (
             <div className="flex items-center justify-center py-4">
               <Spinner />
             </div>
           ) : calendarConnected ? (
             <div className="space-y-4">
-              {/* Connected status */}
-              <div className="flex items-center gap-2 p-3 bg-green-50 rounded-lg">
+              <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg">
                 <svg
-                  className="w-5 h-5 text-green-600 flex-shrink-0"
+                  className="w-5 h-5 text-slate-600 flex-shrink-0"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -161,22 +174,55 @@ export const SideMenu = memo(function SideMenu() {
                   />
                 </svg>
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-green-800">Connected</p>
+                  <p className="text-sm font-medium text-slate-800">Calendar connected</p>
                   {calendarEmail && (
-                    <p className="text-xs text-green-600 truncate">{calendarEmail}</p>
+                    <p className="text-xs text-slate-500 truncate">{calendarEmail}</p>
                   )}
                 </div>
               </div>
-
-              {/* Disconnect button */}
               <Button variant="secondary" onClick={handleDisconnect} className="w-full">
                 Disconnect
               </Button>
             </div>
           ) : (
-            <Button variant="primary" onClick={handleConnect} className="w-full">
-              Connect Google Calendar
-            </Button>
+            <>
+              <p className="text-sm text-slate-600 mb-4">
+                Connect your calendar and I'll save your appointments automatically. One less thing
+                to remember.
+              </p>
+              <Button variant="primary" onClick={handleConnect} className="w-full">
+                Connect Google Calendar
+              </Button>
+            </>
+          )}
+        </div>
+
+        {/* Delimiter */}
+        <hr className="border-slate-200 mx-4" />
+
+        {/* Conversation history section */}
+        <div className="p-4 flex-1 overflow-y-auto">
+          <h3 className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-3">
+            Recent
+          </h3>
+
+          {isLoadingSessions ? (
+            <div className="flex items-center justify-center py-4">
+              <Spinner />
+            </div>
+          ) : sessions.length === 0 ? (
+            <p className="text-sm text-slate-400 text-center py-4">No conversations yet</p>
+          ) : (
+            <ul className="space-y-1">
+              {sessions.map((session) => (
+                <ConversationListItem
+                  key={session.id}
+                  session={session}
+                  isActive={session.id === currentSessionId}
+                  onClick={() => handleSessionClick(session.id)}
+                />
+              ))}
+            </ul>
           )}
         </div>
       </div>
