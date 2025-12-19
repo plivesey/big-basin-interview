@@ -168,6 +168,16 @@ cd backend && npm test
 cd frontend && npm test
 ```
 
+### Automated QA Testing with Claude
+
+For automated browser-based testing, install the [Playwright MCP server](https://github.com/anthropics/claude-code/tree/main/mcp-servers/playwright). This enables Claude to perform manual QA testing through browser automation.
+
+```bash
+claude mcp add playwright -- npx @playwright/mcp@latest
+```
+
+Once installed, Claude can use the [QA Testing Agent](.claude/agents/qa-tester.md) to test features, identify bugs, and generate detailed test reports with screenshots. You can also use the [Playwright Testing Skill](.claude/skills/playwright-testing.md) via `/playwright-testing` for quick browser-based tests.
+
 ## Troubleshooting
 
 ### Database Issues
