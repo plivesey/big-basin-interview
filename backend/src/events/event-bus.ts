@@ -31,9 +31,6 @@ export interface BookingConfirmedEvent {
 // Event Map - Add new event types here
 export interface EventMap {
   'booking:confirmed': BookingConfirmedEvent;
-  // Future events:
-  // 'notification:send': NotificationEvent;
-  // 'workflow:updated': WorkflowUpdatedEvent;
 }
 
 export type EventName = keyof EventMap;
