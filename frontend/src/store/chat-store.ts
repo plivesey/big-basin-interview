@@ -10,6 +10,7 @@ export interface ChatState {
   // Session state
   sessionId: string | null;
   connectionStatus: ConnectionStatus;
+  hasConnectedOnce: boolean;
 
   // Messages state
   messages: ChatMessage[];
@@ -25,6 +26,7 @@ export interface ChatState {
   // Actions
   setSessionId: (sessionId: string) => void;
   setConnectionStatus: (status: ConnectionStatus) => void;
+  setHasConnectedOnce: (value: boolean) => void;
   setMessages: (messages: ChatMessage[]) => void;
   addMessage: (message: ChatMessage) => void;
   updateMessage: (messageId: string, updates: Partial<ChatMessage>) => void;
@@ -46,6 +48,7 @@ export interface ChatState {
 const initialState = {
   sessionId: null,
   connectionStatus: 'disconnected' as ConnectionStatus,
+  hasConnectedOnce: false,
   messages: [],
   isLoading: false,
   isAiWorking: false,
@@ -62,6 +65,8 @@ export const useChatStore = create<ChatState>((set) => ({
   setSessionId: (sessionId: string) => set({ sessionId }),
 
   setConnectionStatus: (status: ConnectionStatus) => set({ connectionStatus: status }),
+
+  setHasConnectedOnce: (value: boolean) => set({ hasConnectedOnce: value }),
 
   setMessages: (messages: ChatMessage[]) => set({ messages }),
 
@@ -147,6 +152,7 @@ export const selectMessages = (state: ChatState) => state.messages;
 export const selectIsLoading = (state: ChatState) => state.isLoading;
 export const selectIsAiWorking = (state: ChatState) => state.isAiWorking;
 export const selectConnectionStatus = (state: ChatState) => state.connectionStatus;
+export const selectHasConnectedOnce = (state: ChatState) => state.hasConnectedOnce;
 export const selectSessionId = (state: ChatState) => state.sessionId;
 export const selectStreamingMessageId = (state: ChatState) => state.streamingMessageId;
 
