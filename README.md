@@ -40,7 +40,7 @@ cd ..
 ```bash
 # Backend
 cp backend/.env.example backend/.env
-# Edit backend/.env and add your ANTHROPIC_API_KEY
+# Edit backend/.env and add your ANTHROPIC_API_KEY and GOOGLE_CLIENT_SECRET
 
 # Frontend (optional - defaults work for local development)
 cp frontend/.env.example frontend/.env
