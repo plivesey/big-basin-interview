@@ -160,12 +160,12 @@ function emitBookingConfirmedEvent(
   Promise.all([getWorkflow(workflowId), getProviderById(providerId)])
     .then(([workflow, provider]) => {
       if (!workflow) {
-        logger.warn('Cannot emit booking confirmation - workflow not found', { workflowId });
+        logger.error('Cannot emit booking confirmation - workflow not found', { workflowId });
         return;
       }
 
       if (!provider) {
-        logger.warn('Cannot emit booking confirmation - provider not found', { providerId });
+        logger.error('Cannot emit booking confirmation - provider not found', { providerId });
         return;
       }
 
