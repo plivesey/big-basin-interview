@@ -19,6 +19,10 @@ import { getAvailableSlots, TimeSlot } from '../services/availability-service';
 import { getLocalDateString } from '../utils/date-utils';
 import { ProviderNotFoundError } from '../middleware/error-handler';
 import { logger } from '../utils/logger';
+import {
+  providerNotFoundForAvailability,
+  AVAILABILITY_FETCH_FAILED,
+} from '../prompts';
 
 // Input schema (Zod for validation)
 export const getAvailabilityInputSchema = z.object({
@@ -125,7 +129,7 @@ async function handler(
         date: defaultDate,
         availableSlots: [],
         totalSlots: 0,
-        error: `Provider ID '${input.providerId}' does not exist. Use the search_providers tool first to find valid provider IDs, then use one of those IDs with this tool.`,
+        error: providerNotFoundForAvailability(input.providerId),
       };
     }
 
@@ -136,7 +140,7 @@ async function handler(
       date: defaultDate,
       availableSlots: [],
       totalSlots: 0,
-      error: 'Failed to retrieve availability.',
+      error: AVAILABILITY_FETCH_FAILED,
     };
   }
 }
