@@ -24,24 +24,6 @@ export const SideMenu = memo(function SideMenu() {
   const setCalendarStatus = useMenuStore((state) => state.setCalendarStatus);
   const setLoadingCalendarStatus = useMenuStore((state) => state.setLoadingCalendarStatus);
 
-  // Fetch calendar status on mount and when menu opens
-  useEffect(() => {
-    if (isMenuOpen) {
-      fetchCalendarStatus();
-    }
-  }, [isMenuOpen]);
-
-  // Close menu on Escape key
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isMenuOpen) {
-        closeMenu();
-      }
-    };
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
-  }, [isMenuOpen, closeMenu]);
-
   const fetchCalendarStatus = useCallback(async () => {
     setLoadingCalendarStatus(true);
     try {
@@ -56,6 +38,24 @@ export const SideMenu = memo(function SideMenu() {
       setCalendarStatus(false, null);
     }
   }, [setCalendarStatus, setLoadingCalendarStatus]);
+
+  // Fetch calendar status on mount and when menu opens
+  useEffect(() => {
+    if (isMenuOpen) {
+      fetchCalendarStatus();
+    }
+  }, [isMenuOpen, fetchCalendarStatus]);
+
+  // Close menu on Escape key
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isMenuOpen) {
+        closeMenu();
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isMenuOpen, closeMenu]);
 
   const handleConnect = useCallback(async () => {
     try {

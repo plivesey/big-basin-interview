@@ -620,7 +620,6 @@ function generateEmail(businessName: string): string {
     .replace(/[^a-z0-9\s]/g, '')
     .replace(/\s+/g, '')
     .substring(0, 20);
-  const domains = ['gmail.com', 'yahoo.com', 'outlook.com', 'business.com'];
   return `info@${cleanName}.${randomElement(['com', 'net', 'co'])}`;
 }
 

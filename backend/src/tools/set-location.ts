@@ -5,7 +5,7 @@
 import { z } from 'zod';
 import { RegisteredTool, ToolName, ToolExecutionContext, ToolDefinition } from '../types/tool.types';
 import { setLocationMemory } from '../services/memory-service';
-import { matchProviderGeo, PROVIDER_GEO_NAMES, ProviderGeo } from '../constants/supported-locations';
+import { matchProviderGeo, PROVIDER_GEO_NAMES } from '../constants/supported-locations';
 import { logger } from '../utils/logger';
 
 // Input schema (Zod for validation)

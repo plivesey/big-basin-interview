@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { io } from 'socket.io-client';
 import type { Socket } from 'socket.io-client';
 import { useChatStore, parseMessage } from '../store/chat-store';
@@ -35,8 +35,8 @@ export function useWebSocket(): UseWebSocketReturn {
   const streamingIdRef = useRef<string | null>(null);
   // Track whether the streaming message has been created (on first text_delta)
   const streamingMessageCreatedRef = useRef<boolean>(false);
-  // Track retry state
-  const isRetryingRef = useRef<boolean>(false);
+  // Track retry state (using state since it's returned to consumers)
+  const [isRetrying, setIsRetrying] = useState(false);
   // Track the last user message ID for marking as failed
   const lastUserMessageIdRef = useRef<string | null>(null);
   // Track message timeout
@@ -97,7 +97,7 @@ export function useWebSocket(): UseWebSocketReturn {
     setIsLoading(false);
     setIsAiWorking(false);
     pendingMessageRef.current = false;
-    isRetryingRef.current = false;
+    setIsRetrying(false);
   }, [clearMessageTimeout, markMessageFailed, setMessages, setLastError, setStreamingMessageId, setIsLoading, setIsAiWorking]);
 
   // Get stored session ID
@@ -396,11 +396,11 @@ export function useWebSocket(): UseWebSocketReturn {
 
     // Clear error state
     setLastError(null);
-    isRetryingRef.current = true;
+    setIsRetrying(true);
 
     // Resend the message
     sendMessage(lastMessage);
-    isRetryingRef.current = false;
+    setIsRetrying(false);
   }, [clearMessageError, setMessages, setLastError, sendMessage]);
 
   // Connect on mount, disconnect on unmount
@@ -417,6 +417,6 @@ export function useWebSocket(): UseWebSocketReturn {
     reconnect,
     disconnect,
     retryLastMessage,
-    isRetrying: isRetryingRef.current,
+    isRetrying,
   };
 }

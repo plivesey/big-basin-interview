@@ -314,14 +314,12 @@ async function sendMessageWithToolLoop(
   const tools = toolRegistry.getToolDefinitions();
   let fullTextResponse = '';
   let iteration = 0;
-  let textBlocksInCurrentIteration = 0;
 
   // Build full system prompt with workflow context
   const systemPrompt = SYSTEM_PROMPT + workflowContext;
 
   while (iteration < maxIterations) {
     iteration++;
-    textBlocksInCurrentIteration = 0;
     logger.debug('Tool loop iteration', { iteration, sessionId, totalTools: tools.length });
 
     // Call Claude API with streaming and tools
@@ -359,7 +357,6 @@ async function sendMessageWithToolLoop(
           fullTextResponse += spacing;
           callbacks?.onTextDelta?.(spacing);
         }
-        textBlocksInCurrentIteration++;
       }
     });
 
