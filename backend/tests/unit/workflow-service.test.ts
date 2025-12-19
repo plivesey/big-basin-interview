@@ -10,7 +10,7 @@ import {
   InvalidTransitionError,
   WorkflowState,
 } from '../../src/services/workflow-service';
-import { createSession, deleteSession } from '../../src/services/session-service';
+import { createSession } from '../../src/services/session-service';
 
 describe('Workflow Service', () => {
   let sessionId: string;

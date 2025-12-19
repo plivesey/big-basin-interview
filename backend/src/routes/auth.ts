@@ -51,7 +51,8 @@ router.get('/google/url', async (req: Request, res: Response, next: NextFunction
  * Exchanges the code for tokens and saves them in the database
  * Redirects to frontend after completion
  */
-router.get('/google/callback', async (req: Request, res: Response, next: NextFunction) => {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+router.get('/google/callback', async (req: Request, res: Response, _next: NextFunction) => {
   try {
     const { code, error: oauthError } = req.query;
 

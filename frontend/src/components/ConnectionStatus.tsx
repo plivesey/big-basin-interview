@@ -20,10 +20,13 @@ export const ConnectionStatus = memo(function ConnectionStatus({
 
   useEffect(() => {
     if (status === 'connected') {
+      // Hide the "Ready" badge after 1 second
       const timer = setTimeout(() => setShowReady(false), 1000);
       return () => clearTimeout(timer);
     } else {
-      setShowReady(true);
+      // Reset showReady for next connection (defer to avoid sync setState in effect)
+      const timer = setTimeout(() => setShowReady(true), 0);
+      return () => clearTimeout(timer);
     }
   }, [status]);
 

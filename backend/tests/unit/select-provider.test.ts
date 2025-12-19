@@ -3,7 +3,6 @@ import {
   selectProviderTool,
   selectProviderInputSchema,
   selectProviderDefinition,
-  SelectProviderInput,
 } from '../../src/tools/select-provider';
 import { ToolExecutionContext, ToolName } from '../../src/types/tool.types';
 

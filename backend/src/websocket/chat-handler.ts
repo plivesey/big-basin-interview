@@ -1,7 +1,7 @@
 import { Server, Socket } from 'socket.io';
 import { v4 as uuidv4 } from 'uuid';
 import { saveMessage, getMessageHistory } from '../services/message-service';
-import { getOrCreateSession, getSession } from '../services/session-service';
+import { getOrCreateSession } from '../services/session-service';
 import { getWorkflow, WorkflowState } from '../services/workflow-service';
 import { getProvidersByIds } from '../services/provider-service';
 import { sendMessage as sendAIMessage, AIError } from '../services/ai-conversation-service';
