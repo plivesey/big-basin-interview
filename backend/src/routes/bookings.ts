@@ -1,5 +1,4 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { v4 as uuidv4 } from 'uuid';
 import { createBooking, getBookingById, getBookingsByUser } from '../services/booking-service';
 import {
   createBookingSchema,
@@ -8,9 +7,7 @@ import {
 } from '../validation/booking-schemas';
 import { transitionState, getWorkflow, WorkflowState } from '../services/workflow-service';
 import { getProviderById } from '../services/provider-service';
-import { saveMessage } from '../services/message-service';
-import { sendMessage as sendAIMessage } from '../services/ai-conversation-service';
-import { getSocketInstance } from '../websocket/socket-instance';
+import { eventBus } from '../events/event-bus';
 import { NotFoundError } from '../middleware/error-handler';
 import { logger } from '../utils/logger';
 
@@ -101,15 +98,9 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
         });
       }
 
-      // Trigger AI acknowledgment of the booking (non-blocking)
-      triggerBookingAcknowledgment(workflowId, providerId, serviceType, scheduledAt).catch(
-        (error) => {
-          logger.error('Failed to trigger booking acknowledgment', {
-            workflowId,
-            error: String(error),
-          });
-        }
-      );
+      // Emit booking confirmation event for AI acknowledgment (non-blocking)
+      // The event handler in websocket/event-handlers.ts will stream the response
+      emitBookingConfirmedEvent(workflowId, providerId, serviceType, scheduledAt);
     }
 
     // Return 201 if created, 200 if idempotent return
@@ -156,95 +147,51 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
 });
 
 /**
- * Trigger AI acknowledgment of a successful booking
- * This injects a hidden system notification message and triggers an AI response
- * that the user will see, warmly acknowledging their booking.
+ * Emit booking confirmation event to trigger AI acknowledgment
+ * This is a fire-and-forget operation - errors are logged but don't affect the booking
  */
-async function triggerBookingAcknowledgment(
+function emitBookingConfirmedEvent(
   workflowId: string,
   providerId: string,
   serviceType: string,
   scheduledAt: string
-): Promise<void> {
-  // Get workflow to find the sessionId
-  const workflow = await getWorkflow(workflowId);
-  if (!workflow) {
-    logger.warn('Cannot trigger booking acknowledgment - workflow not found', { workflowId });
-    return;
-  }
+): void {
+  // Fetch workflow and provider async, then emit event
+  Promise.all([getWorkflow(workflowId), getProviderById(providerId)])
+    .then(([workflow, provider]) => {
+      if (!workflow) {
+        logger.warn('Cannot emit booking confirmation - workflow not found', { workflowId });
+        return;
+      }
 
-  const sessionId = workflow.sessionId;
+      if (!provider) {
+        logger.warn('Cannot emit booking confirmation - provider not found', { providerId });
+        return;
+      }
 
-  // Get provider details for the notification
-  const provider = await getProviderById(providerId);
-  if (!provider) {
-    logger.warn('Cannot trigger booking acknowledgment - provider not found', { providerId });
-    return;
-  }
+      // Emit domain event - the WebSocket layer handles the rest
+      eventBus.emit('booking:confirmed', {
+        sessionId: workflow.sessionId,
+        workflowId,
+        providerId,
+        providerName: provider.name,
+        serviceType,
+        scheduledAt,
+      });
 
-  // Format the date/time for the notification
-  const scheduledDate = new Date(scheduledAt);
-  const formattedDateTime = scheduledDate.toLocaleString('en-US', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-  });
-
-  // Create the hidden system notification message
-  const notificationText = `The user has just confirmed their booking. Respond warmly to acknowledge their booking with ${provider.name} for ${serviceType} scheduled for ${formattedDateTime}. Wish them well for their upcoming appointment and ask if there's anything else you can help them find.`;
-
-  // Save the hidden notification as a user message (Claude will see it, user won't)
-  await saveMessage({
-    sessionId,
-    role: 'user',
-    content: [{ type: 'system_notification', text: notificationText }],
-  });
-
-  logger.info('Saved booking notification message', {
-    sessionId,
-    workflowId,
-    providerName: provider.name,
-  });
-
-  // Get socket.io instance to emit events
-  const io = getSocketInstance();
-  if (!io) {
-    logger.warn('Cannot stream booking acknowledgment - socket.io not initialized');
-    return;
-  }
-
-  // Generate message ID for streaming
-  const assistantMessageId = uuidv4();
-
-  // Emit message start to the session room
-  io.to(sessionId).emit('message_start', { messageId: assistantMessageId });
-
-  // Call AI service with streaming callbacks
-  // We pass an empty string for userMessage since the notification is already saved
-  const aiResponse = await sendAIMessage(sessionId, '', {
-    onTextDelta: (text) => {
-      io.to(sessionId).emit('text_delta', { text });
-    },
-  });
-
-  // Save the assistant's response
-  await saveMessage({
-    id: assistantMessageId,
-    sessionId,
-    role: 'assistant',
-    content: aiResponse,
-  });
-
-  // Emit message complete
-  io.to(sessionId).emit('message_complete', { messageId: assistantMessageId });
-
-  logger.info('Booking acknowledgment sent', {
-    sessionId,
-    messageId: assistantMessageId,
-  });
+      logger.debug('Emitted booking:confirmed event', {
+        sessionId: workflow.sessionId,
+        workflowId,
+        providerName: provider.name,
+      });
+    })
+    .catch((error) => {
+      logger.error('Failed to emit booking confirmation event', {
+        workflowId,
+        providerId,
+        error: String(error),
+      });
+    });
 }
 
 export default router;
