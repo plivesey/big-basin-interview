@@ -210,5 +210,103 @@ describe('Mock Availability', () => {
       const availableCount = result.filter((s) => s.available).length;
       expect(availableCount).toBeGreaterThanOrEqual(1);
     });
+
+    describe('termination guarantees (no infinite loops)', () => {
+      // This test specifically guards against the LCG cycle bug where
+      // certain hash/totalSlots combinations could cause infinite loops
+
+      it('should always terminate for power-of-2 slot counts (1-64)', () => {
+        const powerOf2Counts = [1, 2, 4, 8, 16, 32, 64];
+
+        for (const slotCount of powerOf2Counts) {
+          const slots = createTestSlots(slotCount);
+
+          // Test multiple busy levels
+          for (const level of [0, 1, 2, 3] as const) {
+            // Test many different providers to get varied hashes
+            for (let p = 0; p < 50; p++) {
+              const result = applyMockPattern(
+                slots,
+                level,
+                `provider-pow2-${slotCount}-${p}`,
+                '2025-06-15'
+              );
+              expect(result).toHaveLength(slotCount);
+            }
+          }
+        }
+      });
+
+      it('should always terminate for slot count 16 with many hash variations', () => {
+        // 16 slots was the problematic case - the LCG with modulo 16 could cycle
+        const slots = createTestSlots(16);
+
+        // Test 200 different providers/dates to cover many hash values
+        for (let i = 0; i < 200; i++) {
+          for (const level of [1, 2, 3] as const) {
+            const result = applyMockPattern(
+              slots,
+              level,
+              `test-provider-${i}`,
+              `2025-${String(1 + (i % 12)).padStart(2, '0')}-${String(1 + (i % 28)).padStart(2, '0')}`
+            );
+            expect(result).toHaveLength(16);
+          }
+        }
+      });
+
+      it('should always terminate for various slot counts (1-100)', () => {
+        for (let slotCount = 1; slotCount <= 100; slotCount++) {
+          const slots = createTestSlots(slotCount);
+
+          for (const level of [1, 2, 3] as const) {
+            const result = applyMockPattern(
+              slots,
+              level,
+              `provider-count-${slotCount}`,
+              '2025-06-15'
+            );
+            expect(result).toHaveLength(slotCount);
+          }
+        }
+      });
+
+      it('should always terminate with edge case hashes (0, 1, max values)', () => {
+        const slots = createTestSlots(16);
+
+        // These provider IDs will produce specific hash values
+        const edgeCaseProviders = [
+          '', // Empty string
+          'a', // Single char
+          '0', // Zero-like
+          '1', // One-like
+          'provider-with-very-long-name-that-produces-large-hash',
+          'zzzzzzzzzzzzzzzzzzzzz', // High char values
+          '00000000000000000000', // All zeros
+        ];
+
+        for (const provider of edgeCaseProviders) {
+          for (const level of [1, 2, 3] as const) {
+            const result = applyMockPattern(slots, level, provider, '2025-06-15');
+            expect(result).toHaveLength(16);
+          }
+        }
+      });
+
+      it('should complete within reasonable time for all busy levels', () => {
+        const slots = createTestSlots(32);
+        const startTime = Date.now();
+
+        // Run 1000 iterations - should complete in < 1 second
+        for (let i = 0; i < 1000; i++) {
+          for (const level of [0, 1, 2, 3] as const) {
+            applyMockPattern(slots, level, `perf-test-${i}`, '2025-06-15');
+          }
+        }
+
+        const elapsed = Date.now() - startTime;
+        expect(elapsed).toBeLessThan(5000); // Should complete well under 5 seconds
+      });
+    });
   });
 });
