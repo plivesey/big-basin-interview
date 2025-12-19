@@ -62,13 +62,25 @@ class TypedEventBus {
     handler: (payload: EventMap[K]) => void | Promise<void>
   ): void {
     this.emitter.on(event, (payload) => {
-      // Wrap async handlers to catch and log errors
-      Promise.resolve(handler(payload)).catch((error) => {
+      // Wrap handlers to catch and log both sync and async errors
+      try {
+        const result = handler(payload);
+        // Handle async handlers
+        if (result instanceof Promise) {
+          result.catch((error) => {
+            logger.error('Event handler error', {
+              event,
+              error: String(error),
+            });
+          });
+        }
+      } catch (error) {
+        // Handle sync errors
         logger.error('Event handler error', {
           event,
           error: String(error),
         });
-      });
+      }
     });
   }
 
@@ -90,12 +102,25 @@ class TypedEventBus {
     handler: (payload: EventMap[K]) => void | Promise<void>
   ): void {
     this.emitter.once(event, (payload) => {
-      Promise.resolve(handler(payload)).catch((error) => {
+      // Wrap handlers to catch and log both sync and async errors
+      try {
+        const result = handler(payload);
+        // Handle async handlers
+        if (result instanceof Promise) {
+          result.catch((error) => {
+            logger.error('Event handler error', {
+              event,
+              error: String(error),
+            });
+          });
+        }
+      } catch (error) {
+        // Handle sync errors
         logger.error('Event handler error', {
           event,
           error: String(error),
         });
-      });
+      }
     });
   }
 }
