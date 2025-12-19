@@ -240,7 +240,7 @@ const categoryTemplates: CategoryTemplate[] = [
       'Award-winning salon delivering exceptional cuts and treatments.',
       'Family-friendly salon with experienced stylists for all ages.'
     ],
-    services: ['haircut', 'coloring', 'highlights', 'balayage', 'blowout', 'styling', 'treatment', 'beard trim', 'hot towel shave', 'hair extensions', 'keratin treatment', 'perm', 'updo', 'men\'s cut', 'women\'s cut', 'kids cut'],
+    services: ['Haircut', 'Coloring', 'Highlights', 'Balayage', 'Blowout', 'Styling', 'Treatment', 'Beard Trim', 'Hot Towel Shave', 'Hair Extensions', 'Keratin Treatment', 'Perm', 'Updo', 'Men\'s Cut', 'Women\'s Cut', 'Kids Cut'],
     targetCount: 10
   },
   {
@@ -258,7 +258,7 @@ const categoryTemplates: CategoryTemplate[] = [
       'Modern nail bar with skilled technicians and sanitary practices.',
       'Boutique nail salon known for creative designs and quality service.'
     ],
-    services: ['manicure', 'pedicure', 'gel nails', 'acrylic nails', 'nail art', 'dip powder', 'shellac', 'paraffin treatment', 'nail repair', 'french manicure', 'spa pedicure', 'nail extensions'],
+    services: ['Manicure', 'Pedicure', 'Gel Nails', 'Acrylic Nails', 'Nail Art', 'Dip Powder', 'Shellac', 'Paraffin Treatment', 'Nail Repair', 'French Manicure', 'Spa Pedicure', 'Nail Extensions'],
     targetCount: 6
   },
   {
@@ -279,7 +279,7 @@ const categoryTemplates: CategoryTemplate[] = [
       'Professional mechanics offering comprehensive vehicle care.',
       'Specialty auto repair with expertise in foreign and domestic vehicles.'
     ],
-    services: ['oil change', 'brake repair', 'tire rotation', 'engine diagnostic', 'transmission repair', 'AC repair', 'battery replacement', 'alignment', 'tune-up', 'exhaust repair', 'suspension', 'electrical repair', 'smog check', 'fluid flush', 'timing belt', 'clutch repair'],
+    services: ['Oil Change', 'Brake Repair', 'Tire Rotation', 'Engine Diagnostic', 'Transmission Repair', 'AC Repair', 'Battery Replacement', 'Alignment', 'Tune-Up', 'Exhaust Repair', 'Suspension', 'Electrical Repair', 'Smog Check', 'Fluid Flush', 'Timing Belt', 'Clutch Repair'],
     targetCount: 10
   },
   {
@@ -298,7 +298,7 @@ const categoryTemplates: CategoryTemplate[] = [
       'Full-service dentistry from cleanings to complex procedures.',
       'Caring dental professionals using the latest techniques.'
     ],
-    services: ['cleaning', 'checkup', 'fillings', 'root canal', 'crowns', 'teeth whitening', 'braces', 'Invisalign', 'extractions', 'implants', 'veneers', 'emergency care', 'periodontal care', 'pediatric dentistry', 'dentures', 'night guards'],
+    services: ['Cleaning', 'Checkup', 'Fillings', 'Root Canal', 'Crowns', 'Teeth Whitening', 'Braces', 'Invisalign', 'Extractions', 'Implants', 'Veneers', 'Emergency Care', 'Periodontal Care', 'Pediatric Dentistry', 'Dentures', 'Night Guards'],
     targetCount: 8
   },
   {
@@ -316,7 +316,7 @@ const categoryTemplates: CategoryTemplate[] = [
       'Full-service spa featuring therapeutic treatments and aromatherapy.',
       'Peaceful retreat offering customized wellness experiences.'
     ],
-    services: ['swedish massage', 'deep tissue massage', 'hot stone massage', 'facial', 'body wrap', 'aromatherapy', 'reflexology', 'couples massage', 'prenatal massage', 'sports massage', 'lymphatic drainage', 'microdermabrasion', 'chemical peel', 'hydrotherapy'],
+    services: ['Swedish Massage', 'Deep Tissue Massage', 'Hot Stone Massage', 'Facial', 'Body Wrap', 'Aromatherapy', 'Reflexology', 'Couples Massage', 'Prenatal Massage', 'Sports Massage', 'Lymphatic Drainage', 'Microdermabrasion', 'Chemical Peel', 'Hydrotherapy'],
     targetCount: 7
   },
   {
@@ -334,7 +334,7 @@ const categoryTemplates: CategoryTemplate[] = [
       'Full-service pet salon with gentle handling techniques.',
       'Quality pet grooming in a calm, clean environment.'
     ],
-    services: ['bath', 'haircut', 'nail trim', 'ear cleaning', 'teeth brushing', 'flea treatment', 'de-shedding', 'breed-specific cut', 'puppy grooming', 'cat grooming', 'sanitary trim', 'paw pad trim', 'cologne spray', 'medicated bath'],
+    services: ['Bath', 'Haircut', 'Nail Trim', 'Ear Cleaning', 'Teeth Brushing', 'Flea Treatment', 'De-Shedding', 'Breed-Specific Cut', 'Puppy Grooming', 'Cat Grooming', 'Sanitary Trim', 'Paw Pad Trim', 'Cologne Spray', 'Medicated Bath'],
     targetCount: 5
   },
   {
@@ -350,7 +350,7 @@ const categoryTemplates: CategoryTemplate[] = [
       'Full-service vet clinic offering preventive and emergency care.',
       'Compassionate pet healthcare with modern facilities.'
     ],
-    services: ['wellness exam', 'vaccinations', 'spay/neuter', 'dental cleaning', 'surgery', 'x-rays', 'blood work', 'microchipping', 'flea prevention', 'heartworm prevention', 'emergency care', 'senior pet care', 'nutrition counseling'],
+    services: ['Wellness Exam', 'Vaccinations', 'Spay/Neuter', 'Dental Cleaning', 'Surgery', 'X-Rays', 'Blood Work', 'Microchipping', 'Flea Prevention', 'Heartworm Prevention', 'Emergency Care', 'Senior Pet Care', 'Nutrition Counseling'],
     targetCount: 4
   },
   {
@@ -368,7 +368,7 @@ const categoryTemplates: CategoryTemplate[] = [
       'Community-focused gym offering diverse workout options.',
       'Elite training facility for all fitness levels.'
     ],
-    services: ['personal training', 'group classes', 'weight training', 'cardio', 'HIIT', 'spinning', 'CrossFit', 'boxing', 'kickboxing', 'Pilates', 'circuit training', 'nutrition coaching', 'body composition', 'strength training'],
+    services: ['Personal Training', 'Group Classes', 'Weight Training', 'Cardio', 'HIIT', 'Spinning', 'CrossFit', 'Boxing', 'Kickboxing', 'Pilates', 'Circuit Training', 'Nutrition Coaching', 'Body Composition', 'Strength Training'],
     targetCount: 6
   },
   {
@@ -386,7 +386,7 @@ const categoryTemplates: CategoryTemplate[] = [
       'Full-service yoga center with diverse class offerings.',
       'Community yoga studio promoting wellness and balance.'
     ],
-    services: ['vinyasa', 'hot yoga', 'yin yoga', 'restorative yoga', 'power yoga', 'beginner yoga', 'prenatal yoga', 'meditation', 'breathwork', 'yoga therapy', 'private sessions', 'workshops', 'teacher training'],
+    services: ['Vinyasa', 'Hot Yoga', 'Yin Yoga', 'Restorative Yoga', 'Power Yoga', 'Beginner Yoga', 'Prenatal Yoga', 'Meditation', 'Breathwork', 'Yoga Therapy', 'Private Sessions', 'Workshops', 'Teacher Training'],
     targetCount: 5
   },
   {
@@ -402,7 +402,7 @@ const categoryTemplates: CategoryTemplate[] = [
       'Holistic chiropractic office focused on whole-body wellness.',
       'Modern chiropractic clinic using evidence-based techniques.'
     ],
-    services: ['spinal adjustment', 'neck adjustment', 'back pain treatment', 'sciatica treatment', 'posture correction', 'sports injury', 'headache relief', 'prenatal chiropractic', 'pediatric chiropractic', 'massage therapy', 'rehabilitation'],
+    services: ['Spinal Adjustment', 'Neck Adjustment', 'Back Pain Treatment', 'Sciatica Treatment', 'Posture Correction', 'Sports Injury', 'Headache Relief', 'Prenatal Chiropractic', 'Pediatric Chiropractic', 'Massage Therapy', 'Rehabilitation'],
     targetCount: 4
   },
   {
@@ -418,7 +418,7 @@ const categoryTemplates: CategoryTemplate[] = [
       'Sports-focused physical therapy for athletes of all levels.',
       'Patient-centered PT clinic with individualized treatment plans.'
     ],
-    services: ['injury rehabilitation', 'post-surgery recovery', 'sports therapy', 'manual therapy', 'dry needling', 'cupping', 'electrical stimulation', 'ultrasound therapy', 'exercise prescription', 'balance training', 'gait analysis'],
+    services: ['Injury Rehabilitation', 'Post-Surgery Recovery', 'Sports Therapy', 'Manual Therapy', 'Dry Needling', 'Cupping', 'Electrical Stimulation', 'Ultrasound Therapy', 'Exercise Prescription', 'Balance Training', 'Gait Analysis'],
     targetCount: 3
   },
   {
@@ -434,7 +434,7 @@ const categoryTemplates: CategoryTemplate[] = [
       'Family eye care with stylish frames and contact lenses.',
       'Expert vision care from experienced optometrists.'
     ],
-    services: ['eye exam', 'contact lens fitting', 'glasses prescription', 'glaucoma screening', 'diabetic eye exam', 'dry eye treatment', 'pediatric eye care', 'LASIK consultation', 'designer frames', 'sunglasses'],
+    services: ['Eye Exam', 'Contact Lens Fitting', 'Glasses Prescription', 'Glaucoma Screening', 'Diabetic Eye Exam', 'Dry Eye Treatment', 'Pediatric Eye Care', 'LASIK Consultation', 'Designer Frames', 'Sunglasses'],
     targetCount: 4
   },
   {
@@ -450,7 +450,7 @@ const categoryTemplates: CategoryTemplate[] = [
       'Comprehensive skin care from board-certified dermatologists.',
       'Specialized dermatology for all ages and skin types.'
     ],
-    services: ['skin exam', 'acne treatment', 'eczema treatment', 'psoriasis treatment', 'mole removal', 'skin cancer screening', 'Botox', 'fillers', 'laser treatment', 'chemical peel', 'microneedling', 'rosacea treatment'],
+    services: ['Skin Exam', 'Acne Treatment', 'Eczema Treatment', 'Psoriasis Treatment', 'Mole Removal', 'Skin Cancer Screening', 'Botox', 'Fillers', 'Laser Treatment', 'Chemical Peel', 'Microneedling', 'Rosacea Treatment'],
     targetCount: 3
   },
   {
@@ -466,7 +466,7 @@ const categoryTemplates: CategoryTemplate[] = [
       '24/7 emergency plumbing with honest pricing.',
       'Expert plumbing solutions for any problem.'
     ],
-    services: ['drain cleaning', 'leak repair', 'pipe repair', 'water heater installation', 'toilet repair', 'faucet installation', 'garbage disposal', 'sump pump', 'water line repair', 'sewer line', 'bathroom remodel', 'emergency service'],
+    services: ['Drain Cleaning', 'Leak Repair', 'Pipe Repair', 'Water Heater Installation', 'Toilet Repair', 'Faucet Installation', 'Garbage Disposal', 'Sump Pump', 'Water Line Repair', 'Sewer Line', 'Bathroom Remodel', 'Emergency Service'],
     targetCount: 5
   },
   {
@@ -482,7 +482,7 @@ const categoryTemplates: CategoryTemplate[] = [
       'Safe, reliable electrical services with quality workmanship.',
       'Full-service electrical contractor for all your needs.'
     ],
-    services: ['electrical repair', 'panel upgrade', 'outlet installation', 'lighting installation', 'ceiling fan installation', 'EV charger installation', 'generator installation', 'rewiring', 'code compliance', 'electrical inspection', 'smart home wiring'],
+    services: ['Electrical Repair', 'Panel Upgrade', 'Outlet Installation', 'Lighting Installation', 'Ceiling Fan Installation', 'EV Charger Installation', 'Generator Installation', 'Rewiring', 'Code Compliance', 'Electrical Inspection', 'Smart Home Wiring'],
     targetCount: 5
   },
   {
@@ -498,7 +498,7 @@ const categoryTemplates: CategoryTemplate[] = [
       'Full-service climate control for home and business.',
       'Energy-efficient HVAC solutions and repairs.'
     ],
-    services: ['AC repair', 'furnace repair', 'AC installation', 'furnace installation', 'duct cleaning', 'thermostat installation', 'heat pump service', 'maintenance plan', 'air quality testing', 'ductwork', 'emergency service'],
+    services: ['AC Repair', 'Furnace Repair', 'AC Installation', 'Furnace Installation', 'Duct Cleaning', 'Thermostat Installation', 'Heat Pump Service', 'Maintenance Plan', 'Air Quality Testing', 'Ductwork', 'Emergency Service'],
     targetCount: 4
   },
   {
@@ -514,7 +514,7 @@ const categoryTemplates: CategoryTemplate[] = [
       'Eco-friendly cleaning with attention to detail.',
       'Customized cleaning services for your home or office.'
     ],
-    services: ['house cleaning', 'deep cleaning', 'move-in cleaning', 'move-out cleaning', 'office cleaning', 'carpet cleaning', 'window cleaning', 'laundry service', 'organizing', 'post-construction cleaning', 'recurring cleaning'],
+    services: ['House Cleaning', 'Deep Cleaning', 'Move-In Cleaning', 'Move-Out Cleaning', 'Office Cleaning', 'Carpet Cleaning', 'Window Cleaning', 'Laundry Service', 'Organizing', 'Post-Construction Cleaning', 'Recurring Cleaning'],
     targetCount: 5
   },
   {
@@ -530,7 +530,7 @@ const categoryTemplates: CategoryTemplate[] = [
       'Experienced tutors helping students achieve their goals.',
       'One-on-one and group tutoring for academic success.'
     ],
-    services: ['math tutoring', 'science tutoring', 'English tutoring', 'SAT prep', 'ACT prep', 'college counseling', 'homework help', 'study skills', 'writing coaching', 'reading comprehension', 'foreign language', 'AP courses'],
+    services: ['Math Tutoring', 'Science Tutoring', 'English Tutoring', 'SAT Prep', 'ACT Prep', 'College Counseling', 'Homework Help', 'Study Skills', 'Writing Coaching', 'Reading Comprehension', 'Foreign Language', 'AP Courses'],
     targetCount: 4
   },
   {
@@ -546,7 +546,7 @@ const categoryTemplates: CategoryTemplate[] = [
       'Expert photographer specializing in weddings and portraits.',
       'High-quality photography with artistic vision.'
     ],
-    services: ['portrait photography', 'wedding photography', 'event photography', 'headshots', 'family portraits', 'newborn photography', 'product photography', 'real estate photography', 'photo editing', 'prints', 'photo books'],
+    services: ['Portrait Photography', 'Wedding Photography', 'Event Photography', 'Headshots', 'Family Portraits', 'Newborn Photography', 'Product Photography', 'Real Estate Photography', 'Photo Editing', 'Prints', 'Photo Books'],
     targetCount: 4
   },
   {
@@ -562,7 +562,7 @@ const categoryTemplates: CategoryTemplate[] = [
       'Award-winning tattoo artists specializing in all styles.',
       'Quality tattoo work from skilled professionals.'
     ],
-    services: ['custom tattoo', 'cover-up tattoo', 'fine line tattoo', 'traditional tattoo', 'realism tattoo', 'watercolor tattoo', 'geometric tattoo', 'portrait tattoo', 'touch-up', 'piercing', 'consultation'],
+    services: ['Custom Tattoo', 'Cover-Up Tattoo', 'Fine Line Tattoo', 'Traditional Tattoo', 'Realism Tattoo', 'Watercolor Tattoo', 'Geometric Tattoo', 'Portrait Tattoo', 'Touch-Up', 'Piercing', 'Consultation'],
     targetCount: 4
   }
 ];

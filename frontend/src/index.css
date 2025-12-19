@@ -229,4 +229,16 @@
   .spinner-small {
     @apply w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin;
   }
+
+  /* Date Picker Calendar Styles - customize colors via CSS variables */
+  .date-picker-calendar {
+    --rdp-accent-color: theme('colors.indigo.600');
+    --rdp-accent-background-color: theme('colors.indigo.50');
+    font-family: inherit;
+    margin: 0;
+  }
+
+  .date-picker-calendar .rdp-months {
+    margin: 0;
+  }
 }
