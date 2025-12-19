@@ -222,7 +222,7 @@ interface CategoryTemplate {
 
 const categoryTemplates: CategoryTemplate[] = [
   {
-    category: 'salon',
+    category: 'Salon',
     namePatterns: [
       '{adj} Hair Studio', '{adj} Salon', '{adj} Cuts', '{name}\'s Hair Studio', '{name}\'s Barbershop',
       'The {adj} Chair', '{neighborhood} Hair Co', '{adj} Style Lounge', '{name} & Co Hair',
@@ -244,7 +244,7 @@ const categoryTemplates: CategoryTemplate[] = [
     targetCount: 10
   },
   {
-    category: 'nail_salon',
+    category: 'Nail Salon',
     namePatterns: [
       '{adj} Nails', '{adj} Nail Bar', '{name}\'s Nails & Spa', '{neighborhood} Nail Studio',
       'The {adj} Polish', '{adj} Nail Lounge', 'Nail {adj}', '{name} Nails',
@@ -262,7 +262,7 @@ const categoryTemplates: CategoryTemplate[] = [
     targetCount: 6
   },
   {
-    category: 'mechanic',
+    category: 'Mechanic',
     namePatterns: [
       '{adj} Auto Repair', '{name}\'s Garage', '{neighborhood} Auto Service', '{adj} Motors',
       'Auto {adj}', '{name} Automotive', '{adj} Car Care', 'The {adj} Mechanic',
@@ -283,7 +283,7 @@ const categoryTemplates: CategoryTemplate[] = [
     targetCount: 10
   },
   {
-    category: 'dentist',
+    category: 'Dentist',
     namePatterns: [
       '{adj} Dental Care', '{neighborhood} Dental', 'Dr. {name} DDS', '{adj} Smiles',
       '{neighborhood} Family Dentistry', '{adj} Dental Group', 'Smile {adj}', '{name} Dental Associates',
@@ -302,7 +302,7 @@ const categoryTemplates: CategoryTemplate[] = [
     targetCount: 8
   },
   {
-    category: 'spa',
+    category: 'Spa',
     namePatterns: [
       '{adj} Spa', '{adj} Wellness', '{name}\'s Day Spa', '{neighborhood} Spa & Wellness',
       'The {adj} Retreat', '{adj} Relaxation', 'Serenity {adj}', '{adj} Healing Arts',
@@ -320,7 +320,7 @@ const categoryTemplates: CategoryTemplate[] = [
     targetCount: 7
   },
   {
-    category: 'pet_grooming',
+    category: 'Pet Grooming',
     namePatterns: [
       '{adj} Pet Grooming', '{name}\'s Pet Spa', 'Paws & {adj}', '{neighborhood} Pet Salon',
       'The {adj} Groomer', '{adj} Paws', 'Fur {adj}', '{name}\'s Dog Grooming',
@@ -338,7 +338,7 @@ const categoryTemplates: CategoryTemplate[] = [
     targetCount: 5
   },
   {
-    category: 'veterinarian',
+    category: 'Veterinarian',
     namePatterns: [
       '{adj} Veterinary Clinic', '{neighborhood} Animal Hospital', '{name} Vet Care',
       '{adj} Pet Hospital', 'The {adj} Vet', '{neighborhood} Veterinary', '{adj} Animal Care',
@@ -354,7 +354,7 @@ const categoryTemplates: CategoryTemplate[] = [
     targetCount: 4
   },
   {
-    category: 'fitness',
+    category: 'Fitness',
     namePatterns: [
       '{adj} Fitness', '{adj} Gym', '{neighborhood} CrossFit', '{name}\'s Training',
       'The {adj} Gym', '{adj} Strength', 'Fit {adj}', '{neighborhood} Fitness Center',
@@ -372,7 +372,7 @@ const categoryTemplates: CategoryTemplate[] = [
     targetCount: 6
   },
   {
-    category: 'yoga',
+    category: 'Yoga',
     namePatterns: [
       '{adj} Yoga', '{adj} Yoga Studio', '{neighborhood} Yoga', '{name}\'s Yoga',
       'The {adj} Mat', '{adj} Flow', 'Zen {adj} Yoga', '{adj} Yoga Center',
@@ -390,7 +390,7 @@ const categoryTemplates: CategoryTemplate[] = [
     targetCount: 5
   },
   {
-    category: 'chiropractor',
+    category: 'Chiropractor',
     namePatterns: [
       '{adj} Chiropractic', '{neighborhood} Chiropractic', 'Dr. {name} Chiropractic',
       '{adj} Spine Center', '{adj} Back & Neck', '{name} Chiropractic Care',
@@ -406,7 +406,7 @@ const categoryTemplates: CategoryTemplate[] = [
     targetCount: 4
   },
   {
-    category: 'physical_therapy',
+    category: 'Physical Therapy',
     namePatterns: [
       '{adj} Physical Therapy', '{neighborhood} PT', '{name} Rehabilitation',
       '{adj} Rehab Center', 'Motion {adj}', '{adj} Sports PT', '{name} PT & Wellness',
@@ -422,7 +422,7 @@ const categoryTemplates: CategoryTemplate[] = [
     targetCount: 3
   },
   {
-    category: 'optometrist',
+    category: 'Optometrist',
     namePatterns: [
       '{adj} Eye Care', '{neighborhood} Vision', 'Dr. {name} Optometry', '{adj} Eyewear',
       '{neighborhood} Eye Center', '{adj} Vision Care', 'Clear {adj} Optometry',
@@ -438,7 +438,7 @@ const categoryTemplates: CategoryTemplate[] = [
     targetCount: 4
   },
   {
-    category: 'dermatologist',
+    category: 'Dermatologist',
     namePatterns: [
       '{adj} Dermatology', '{neighborhood} Skin Care', 'Dr. {name} Dermatology',
       '{adj} Skin Center', '{name} Skin & Laser', '{adj} Skin Clinic',
@@ -454,7 +454,7 @@ const categoryTemplates: CategoryTemplate[] = [
     targetCount: 3
   },
   {
-    category: 'plumber',
+    category: 'Plumber',
     namePatterns: [
       '{adj} Plumbing', '{name}\'s Plumbing', '{neighborhood} Plumbing Co', '{adj} Pipe',
       '{name} & Sons Plumbing', 'Reliable {adj} Plumbing', '{adj} Drain Services',
@@ -470,7 +470,7 @@ const categoryTemplates: CategoryTemplate[] = [
     targetCount: 5
   },
   {
-    category: 'electrician',
+    category: 'Electrician',
     namePatterns: [
       '{adj} Electric', '{name}\'s Electrical', '{neighborhood} Electric Co', '{adj} Power',
       '{name} Electrical Services', 'Bright {adj}', '{adj} Wiring', '{neighborhood} Electricians',
@@ -486,7 +486,7 @@ const categoryTemplates: CategoryTemplate[] = [
     targetCount: 5
   },
   {
-    category: 'hvac',
+    category: 'HVAC',
     namePatterns: [
       '{adj} Heating & Cooling', '{name}\'s HVAC', '{neighborhood} Climate Control',
       '{adj} Air', '{name} Heating', 'Comfort {adj}', '{adj} Temperature',
@@ -502,7 +502,7 @@ const categoryTemplates: CategoryTemplate[] = [
     targetCount: 4
   },
   {
-    category: 'cleaning',
+    category: 'Cleaning',
     namePatterns: [
       '{adj} Cleaning', '{name}\'s Cleaning Service', '{neighborhood} Cleaners', 'Sparkling {adj}',
       '{adj} Maids', 'Pristine {adj}', '{name} House Cleaning', '{adj} Home Care',
@@ -518,7 +518,7 @@ const categoryTemplates: CategoryTemplate[] = [
     targetCount: 5
   },
   {
-    category: 'tutor',
+    category: 'Tutor',
     namePatterns: [
       '{adj} Tutoring', '{name}\'s Learning Center', '{neighborhood} Academy', '{adj} Education',
       '{name} Test Prep', 'Bright {adj} Tutoring', '{adj} Scholars', '{neighborhood} Learning',
@@ -534,7 +534,7 @@ const categoryTemplates: CategoryTemplate[] = [
     targetCount: 4
   },
   {
-    category: 'photography',
+    category: 'Photography',
     namePatterns: [
       '{adj} Photography', '{name} Studios', '{neighborhood} Photo', 'Capture {adj}',
       '{name}\'s Photography', '{adj} Images', 'Moments by {name}', '{adj} Lens',
@@ -550,7 +550,7 @@ const categoryTemplates: CategoryTemplate[] = [
     targetCount: 4
   },
   {
-    category: 'tattoo',
+    category: 'Tattoo',
     namePatterns: [
       '{adj} Tattoo', '{name}\'s Ink', '{neighborhood} Tattoo Parlor', 'Ink {adj}',
       '{adj} Body Art', 'Black {adj} Tattoo', '{name} Tattoo Studio', 'Sacred {adj}',
