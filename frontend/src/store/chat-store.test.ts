@@ -14,6 +14,7 @@ describe('chat-store', () => {
 
       expect(state.sessionId).toBeNull();
       expect(state.connectionStatus).toBe('disconnected');
+      expect(state.hasConnectedOnce).toBe(false);
       expect(state.messages).toEqual([]);
       expect(state.isLoading).toBe(false);
       expect(state.isAiWorking).toBe(false);
@@ -45,6 +46,21 @@ describe('chat-store', () => {
       useChatStore.getState().setConnectionStatus('error');
 
       expect(useChatStore.getState().connectionStatus).toBe('error');
+    });
+  });
+
+  describe('setHasConnectedOnce', () => {
+    it('should update hasConnectedOnce to true', () => {
+      useChatStore.getState().setHasConnectedOnce(true);
+
+      expect(useChatStore.getState().hasConnectedOnce).toBe(true);
+    });
+
+    it('should update hasConnectedOnce to false', () => {
+      useChatStore.getState().setHasConnectedOnce(true);
+      useChatStore.getState().setHasConnectedOnce(false);
+
+      expect(useChatStore.getState().hasConnectedOnce).toBe(false);
     });
   });
 
@@ -213,6 +229,7 @@ describe('chat-store', () => {
       // Set some state
       useChatStore.getState().setSessionId('session-123');
       useChatStore.getState().setConnectionStatus('connected');
+      useChatStore.getState().setHasConnectedOnce(true);
       useChatStore.getState().addMessage({
         id: '1',
         sessionId: 'session-123',
@@ -230,6 +247,7 @@ describe('chat-store', () => {
       const state = useChatStore.getState();
       expect(state.sessionId).toBeNull();
       expect(state.connectionStatus).toBe('disconnected');
+      expect(state.hasConnectedOnce).toBe(false);
       expect(state.messages).toEqual([]);
       expect(state.isLoading).toBe(false);
       expect(state.isAiWorking).toBe(false);

@@ -43,10 +43,18 @@ export function useWebSocket(): UseWebSocketReturn {
   const messageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Track if we're waiting for a response
   const pendingMessageRef = useRef<boolean>(false);
+  // Message queue for messages sent before connection is established
+  const messageQueueRef = useRef<string[]>([]);
+  // Track queued message IDs for error handling
+  const queuedMessageIdsRef = useRef<string[]>([]);
+  // Timeout for initial connection failure (when messages are queued)
+  const initialConnectionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const INITIAL_CONNECTION_TIMEOUT = 10000; // 10 seconds
 
   const {
     setSessionId,
     setConnectionStatus,
+    setHasConnectedOnce,
     setMessages,
     addMessage,
     updateMessage,
@@ -100,6 +108,48 @@ export function useWebSocket(): UseWebSocketReturn {
     setIsRetrying(false);
   }, [clearMessageTimeout, markMessageFailed, setMessages, setLastError, setStreamingMessageId, setIsLoading, setIsAiWorking]);
 
+  // Helper to clear initial connection timeout
+  const clearInitialConnectionTimeout = useCallback(() => {
+    if (initialConnectionTimeoutRef.current) {
+      clearTimeout(initialConnectionTimeoutRef.current);
+      initialConnectionTimeoutRef.current = null;
+    }
+  }, []);
+
+  // Flush queued messages when connection is established
+  const flushMessageQueue = useCallback(() => {
+    const socket = socketRef.current;
+    if (!socket?.connected) return;
+
+    const queuedMessages = [...messageQueueRef.current];
+    messageQueueRef.current = [];
+    queuedMessageIdsRef.current = [];
+
+    if (queuedMessages.length === 0) return;
+
+    logger.debug('Flushing queued messages', { count: queuedMessages.length });
+
+    // Send each queued message
+    queuedMessages.forEach((message) => {
+      // Clear any previous timeout
+      clearMessageTimeout();
+
+      // Track for retry
+      setLastAttemptedMessage(message);
+
+      // Set a timeout for message acknowledgment
+      messageTimeoutRef.current = setTimeout(() => {
+        if (pendingMessageRef.current) {
+          logger.warn('Message timeout - no response received');
+          handleMessageFailure(ERROR_MESSAGES.AI_TIMEOUT);
+        }
+      }, 30000);
+
+      // Send to server
+      socket.emit('user_message', { message });
+    });
+  }, [clearMessageTimeout, setLastAttemptedMessage, handleMessageFailure]);
+
   // Get stored session ID
   const getStoredSessionId = useCallback((): string | null => {
     try {
@@ -139,11 +189,40 @@ export function useWebSocket(): UseWebSocketReturn {
 
     socketRef.current = socket;
 
+    // Set timeout for initial connection - if we have queued messages and can't connect
+    initialConnectionTimeoutRef.current = setTimeout(() => {
+      const hasConnected = useChatStore.getState().hasConnectedOnce;
+      if (!hasConnected && messageQueueRef.current.length > 0) {
+        logger.warn('Initial connection timeout with queued messages');
+        setLastError(ERROR_MESSAGES.CONNECTION_FAILED);
+        setConnectionStatus('error');
+        setHasConnectedOnce(true); // Show the error badge now
+
+        // Mark all queued messages as failed
+        queuedMessageIdsRef.current.forEach((msgId) => {
+          markMessageFailed(msgId, ERROR_MESSAGES.CONNECTION_FAILED);
+        });
+
+        // Clear the queue
+        messageQueueRef.current = [];
+        queuedMessageIdsRef.current = [];
+        pendingMessageRef.current = false;
+        setIsLoading(false);
+      }
+    }, INITIAL_CONNECTION_TIMEOUT);
+
     // Connection events
     socket.on('connect', () => {
       logger.info('WebSocket connected');
       setConnectionStatus('connected');
+      setHasConnectedOnce(true);
       reconnectAttempts.current = 0;
+
+      // Clear initial connection timeout since we're now connected
+      clearInitialConnectionTimeout();
+
+      // Flush any messages that were queued before connection
+      flushMessageQueue();
     });
 
     socket.on('disconnect', (reason) => {
@@ -180,7 +259,18 @@ export function useWebSocket(): UseWebSocketReturn {
     socket.on('message_history', (data) => {
       logger.debug('Received message history', { count: data.messages.length });
       const parsedMessages = data.messages.map((msg) => parseMessage(msg));
-      setMessages(parsedMessages);
+
+      // Preserve any optimistically-added messages (queued before connection)
+      // These have IDs starting with 'temp-'
+      const currentMessages = useChatStore.getState().messages;
+      const optimisticMessages = currentMessages.filter((msg) => msg.id.startsWith('temp-'));
+
+      if (optimisticMessages.length > 0) {
+        logger.debug('Preserving optimistic messages', { count: optimisticMessages.length });
+        setMessages([...parsedMessages, ...optimisticMessages]);
+      } else {
+        setMessages(parsedMessages);
+      }
     });
 
     // Incoming messages - streaming support
@@ -297,12 +387,20 @@ export function useWebSocket(): UseWebSocketReturn {
     storeSessionId,
     handleMessageFailure,
     clearMessageTimeout,
+    clearInitialConnectionTimeout,
+    flushMessageQueue,
+    setHasConnectedOnce,
+    setLastError,
+    markMessageFailed,
   ]);
 
   // Disconnect from WebSocket server
   const disconnect = useCallback(() => {
     // Clear message timeout to prevent memory leaks
     clearMessageTimeout();
+
+    // Clear initial connection timeout
+    clearInitialConnectionTimeout();
 
     if (socketRef.current) {
       // Remove all listeners to prevent memory leaks
@@ -314,7 +412,11 @@ export function useWebSocket(): UseWebSocketReturn {
     streamingIdRef.current = null;
     streamingMessageCreatedRef.current = false;
     pendingMessageRef.current = false;
-  }, [clearMessageTimeout]);
+
+    // Clear message queue on intentional disconnect
+    messageQueueRef.current = [];
+    queuedMessageIdsRef.current = [];
+  }, [clearMessageTimeout, clearInitialConnectionTimeout]);
 
   // Reconnect to WebSocket server
   const reconnect = useCallback(() => {
@@ -328,24 +430,11 @@ export function useWebSocket(): UseWebSocketReturn {
     const socket = socketRef.current;
     const sessionId = useChatStore.getState().sessionId;
 
-    if (!socket?.connected) {
-      logger.warn('Cannot send message: not connected');
-      setLastError(ERROR_MESSAGES.CONNECTION_FAILED);
-      return;
-    }
-
     if (!message.trim()) {
       return;
     }
 
     const trimmedMessage = message.trim();
-
-    // Track the message for potential retry
-    setLastAttemptedMessage(trimmedMessage);
-    // Clear any previous error state
-    setLastError(null);
-    // Clear any previous timeout
-    clearMessageTimeout();
 
     // Add user message to store immediately (optimistic update)
     const messageId = `temp-${Date.now()}`;
@@ -362,6 +451,20 @@ export function useWebSocket(): UseWebSocketReturn {
     // Track the user message ID for error handling
     lastUserMessageIdRef.current = messageId;
     pendingMessageRef.current = true;
+
+    // If not connected, queue the message for later
+    if (!socket?.connected) {
+      logger.debug('Queueing message - not connected yet', { message: trimmedMessage.substring(0, 50) });
+      messageQueueRef.current.push(trimmedMessage);
+      queuedMessageIdsRef.current.push(messageId);
+      setLastAttemptedMessage(trimmedMessage);
+      return;
+    }
+
+    // Connected - send immediately
+    setLastAttemptedMessage(trimmedMessage);
+    setLastError(null);
+    clearMessageTimeout();
 
     // Set a timeout for message acknowledgment (30 seconds)
     messageTimeoutRef.current = setTimeout(() => {

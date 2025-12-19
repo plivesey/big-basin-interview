@@ -3,6 +3,7 @@ import {
   selectMessages,
   selectIsLoading,
   selectConnectionStatus,
+  selectHasConnectedOnce,
 } from '../store/chat-store';
 import { useBookingStore, selectIsChatDisabled } from '../store/booking-store';
 import { usePanelStore } from '../store/panel-store';
@@ -22,6 +23,7 @@ export function ChatContainer() {
   const messages = useChatStore(selectMessages);
   const isLoading = useChatStore(selectIsLoading);
   const connectionStatus = useChatStore(selectConnectionStatus);
+  const hasConnectedOnce = useChatStore(selectHasConnectedOnce);
   const isModalOpen = useBookingStore(selectIsChatDisabled);
 
   // Panel state for toggle button
@@ -33,7 +35,6 @@ export function ChatContainer() {
   const { sendMessage, reconnect, retryLastMessage, isRetrying } = useWebSocket();
 
   const isConnected = connectionStatus === 'connected';
-  const isConnecting = connectionStatus === 'connecting';
 
   // Toggle button visibility: connected, panel closed, has providers, workflow not complete
   const isWorkflowComplete = workflowState === 'COMPLETE';
@@ -63,6 +64,7 @@ export function ChatContainer() {
           />
           <ConnectionStatus
             status={connectionStatus}
+            hasConnectedOnce={hasConnectedOnce}
             onReconnect={reconnect}
           />
         </div>
@@ -79,15 +81,13 @@ export function ChatContainer() {
       {/* Input */}
       <ChatInput
         onSendMessage={sendMessage}
-        disabled={!isConnected || isLoading || isModalOpen}
+        disabled={isLoading || isModalOpen}
         placeholder={
           isModalOpen
             ? 'Complete or close the booking to continue chatting'
-            : isConnecting
-              ? 'Getting ready...'
-              : !isConnected
-                ? 'Connection lost. Click above to reconnect.'
-                : 'What can I help you find today?'
+            : !isConnected && hasConnectedOnce
+              ? 'Connection lost. Click above to reconnect.'
+              : 'What can I help you find today?'
         }
       />
     </div>
