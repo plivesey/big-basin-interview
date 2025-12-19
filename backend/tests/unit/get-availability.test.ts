@@ -73,18 +73,17 @@ describe('get_availability tool', () => {
   });
 
   describe('inputSchema', () => {
-    it('should accept providerId only (date/duration optional)', () => {
+    it('should accept providerId only (date is optional)', () => {
       const result = getAvailabilityInputSchema.safeParse({
         providerId: 'provider-1',
       });
       expect(result.success).toBe(true);
     });
 
-    it('should accept all parameters', () => {
+    it('should accept providerId and date', () => {
       const result = getAvailabilityInputSchema.safeParse({
         providerId: 'provider-1',
         date: '2025-06-16',
-        duration: 60,
       });
       expect(result.success).toBe(true);
     });
@@ -95,20 +94,6 @@ describe('get_availability tool', () => {
         date: '06-16-2025', // Wrong format
       });
       expect(result.success).toBe(false);
-    });
-
-    it('should reject duration out of range', () => {
-      const tooShort = getAvailabilityInputSchema.safeParse({
-        providerId: 'provider-1',
-        duration: 10, // Less than 15
-      });
-      expect(tooShort.success).toBe(false);
-
-      const tooLong = getAvailabilityInputSchema.safeParse({
-        providerId: 'provider-1',
-        duration: 500, // Greater than 480
-      });
-      expect(tooLong.success).toBe(false);
     });
   });
 
@@ -122,11 +107,11 @@ describe('get_availability tool', () => {
       expect(mockGetAvailableSlots).toHaveBeenCalledWith(
         'provider-1',
         '2025-06-16', // Today's date from mock
-        30 // Default duration
+        30 // Fixed slot duration
       );
     });
 
-    it('should default duration to 30 minutes when not provided', async () => {
+    it('should always use 30 minute slots', async () => {
       mockGetAvailableSlots.mockResolvedValue(mockAvailabilityResult);
 
       const input: GetAvailabilityInput = {

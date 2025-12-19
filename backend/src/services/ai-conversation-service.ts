@@ -315,8 +315,14 @@ async function sendMessageWithToolLoop(
   let fullTextResponse = '';
   let iteration = 0;
 
-  // Build full system prompt with workflow context
-  const systemPrompt = SYSTEM_PROMPT + workflowContext;
+  // Build full system prompt with current date and workflow context
+  const currentDate = new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+  const systemPrompt = SYSTEM_PROMPT + `\n\nCurrent date: ${currentDate}` + workflowContext;
 
   while (iteration < maxIterations) {
     iteration++;
