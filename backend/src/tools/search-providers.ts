@@ -11,6 +11,7 @@ import { createWorkflow } from '../services/workflow-service';
 import { getUserLocation } from '../services/memory-service';
 import { PROVIDER_GEO_NAMES } from '../constants/supported-locations';
 import { logger } from '../utils/logger';
+import { LOCATION_NOT_SET } from '../prompts';
 
 // Input schema (Zod for validation)
 export const searchProvidersInputSchema = z.object({
@@ -86,7 +87,7 @@ async function handler(
     });
 
     return {
-      error: 'Location not set. Please ask the user for their location and use the set_location tool first.',
+      error: LOCATION_NOT_SET,
       providers: [],
       count: 0,
       supportedLocations: supportedList,
