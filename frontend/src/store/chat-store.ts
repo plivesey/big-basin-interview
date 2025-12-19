@@ -17,6 +17,11 @@ export interface ChatState {
   isAiWorking: boolean;
   streamingMessageId: string | null;
 
+  // Error state
+  failedMessageIds: Set<string>;
+  lastError: string | null;
+  lastAttemptedMessage: string | null;
+
   // Actions
   setSessionId: (sessionId: string) => void;
   setConnectionStatus: (status: ConnectionStatus) => void;
@@ -29,6 +34,12 @@ export interface ChatState {
   setIsLoading: (isLoading: boolean) => void;
   setIsAiWorking: (isAiWorking: boolean) => void;
   reset: () => void;
+
+  // Error actions
+  markMessageFailed: (messageId: string, error: string) => void;
+  clearMessageError: (messageId: string) => void;
+  setLastError: (error: string | null) => void;
+  setLastAttemptedMessage: (message: string | null) => void;
 }
 
 // Initial state
@@ -39,6 +50,9 @@ const initialState = {
   isLoading: false,
   isAiWorking: false,
   streamingMessageId: null,
+  failedMessageIds: new Set<string>(),
+  lastError: null,
+  lastAttemptedMessage: null,
 };
 
 // Create the store
@@ -93,7 +107,38 @@ export const useChatStore = create<ChatState>((set) => ({
 
   setIsAiWorking: (isAiWorking: boolean) => set({ isAiWorking }),
 
-  reset: () => set(initialState),
+  reset: () =>
+    set({
+      ...initialState,
+      // Create fresh Set instance to avoid shared state
+      failedMessageIds: new Set<string>(),
+    }),
+
+  // Error actions
+  markMessageFailed: (messageId: string, error: string) =>
+    set((state) => {
+      const newFailedIds = new Set(state.failedMessageIds);
+      newFailedIds.add(messageId);
+      return {
+        failedMessageIds: newFailedIds,
+        lastError: error,
+      };
+    }),
+
+  clearMessageError: (messageId: string) =>
+    set((state) => {
+      const newFailedIds = new Set(state.failedMessageIds);
+      newFailedIds.delete(messageId);
+      return {
+        failedMessageIds: newFailedIds,
+        // Clear lastError if no more failed messages
+        lastError: newFailedIds.size === 0 ? null : state.lastError,
+      };
+    }),
+
+  setLastError: (error: string | null) => set({ lastError: error }),
+
+  setLastAttemptedMessage: (message: string | null) => set({ lastAttemptedMessage: message }),
 }));
 
 // Selectors - use these to subscribe to specific pieces of state
@@ -104,3 +149,15 @@ export const selectIsAiWorking = (state: ChatState) => state.isAiWorking;
 export const selectConnectionStatus = (state: ChatState) => state.connectionStatus;
 export const selectSessionId = (state: ChatState) => state.sessionId;
 export const selectStreamingMessageId = (state: ChatState) => state.streamingMessageId;
+
+// Error selectors
+export const selectFailedMessageIds = (state: ChatState) => state.failedMessageIds;
+export const selectLastError = (state: ChatState) => state.lastError;
+export const selectLastAttemptedMessage = (state: ChatState) => state.lastAttemptedMessage;
+
+/**
+ * Create a selector to check if a specific message failed.
+ * Usage: useChatStore(selectIsMessageFailed(messageId))
+ */
+export const selectIsMessageFailed = (messageId: string) => (state: ChatState) =>
+  state.failedMessageIds.has(messageId);

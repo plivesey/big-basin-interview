@@ -1,18 +1,33 @@
 import { useEffect, useRef } from 'react';
 import { ChatMessage as ChatMessageComponent } from './ChatMessage';
-import { useChatStore, getMessageText, selectStreamingMessageId, selectIsAiWorking } from '../store/chat-store';
+import { ChatErrorMessage } from './ChatErrorMessage';
+import {
+  useChatStore,
+  getMessageText,
+  selectStreamingMessageId,
+  selectIsAiWorking,
+  selectLastError,
+} from '../store/chat-store';
 import type { ChatMessage } from '../store/chat-store';
 
 interface MessageListProps {
   messages: ChatMessage[];
   isLoading: boolean;
+  onRetryMessage?: () => void;
+  isRetrying?: boolean;
 }
 
-export function MessageList({ messages, isLoading }: MessageListProps) {
+export function MessageList({
+  messages,
+  isLoading,
+  onRetryMessage,
+  isRetrying = false,
+}: MessageListProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const streamingMessageId = useChatStore(selectStreamingMessageId);
   const isAiWorking = useChatStore(selectIsAiWorking);
+  const lastError = useChatStore(selectLastError);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -63,6 +78,15 @@ export function MessageList({ messages, isLoading }: MessageListProps) {
           {getMessageText(message)}
         </ChatMessageComponent>
       ))}
+
+      {/* Show error message if there's a last error */}
+      {lastError && (
+        <ChatErrorMessage
+          message={lastError}
+          onRetry={onRetryMessage}
+          isRetrying={isRetrying}
+        />
+      )}
 
       <div ref={messagesEndRef} />
     </div>

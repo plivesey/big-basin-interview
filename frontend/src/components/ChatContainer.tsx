@@ -30,7 +30,7 @@ export function ChatContainer() {
   const workflowState = usePanelStore((state) => state.workflowState);
   const reopenProviderPanel = usePanelStore((state) => state.reopenProviderPanel);
 
-  const { sendMessage, reconnect } = useWebSocket();
+  const { sendMessage, reconnect, retryLastMessage, isRetrying } = useWebSocket();
 
   const isConnected = connectionStatus === 'connected';
   const isConnecting = connectionStatus === 'connecting';
@@ -69,7 +69,12 @@ export function ChatContainer() {
       </div>
 
       {/* Messages */}
-      <MessageList messages={messages} isLoading={isLoading} />
+      <MessageList
+        messages={messages}
+        isLoading={isLoading}
+        onRetryMessage={retryLastMessage}
+        isRetrying={isRetrying}
+      />
 
       {/* Input */}
       <ChatInput

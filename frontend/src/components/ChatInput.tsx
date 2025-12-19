@@ -8,6 +8,9 @@ interface ChatInputProps {
   placeholder?: string;
 }
 
+// Note: `disabled` only affects the send button, not the textarea.
+// Users can always type, but sending is blocked when disabled.
+
 export function ChatInput({
   onSendMessage,
   disabled = false,
@@ -33,10 +36,10 @@ export function ChatInput({
 
   // Focus textarea on mount
   useEffect(() => {
-    if (textareaRef.current && !disabled) {
+    if (textareaRef.current) {
       textareaRef.current.focus();
     }
-  }, [disabled]);
+  }, []);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -67,7 +70,6 @@ export function ChatInput({
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          disabled={disabled}
           rows={1}
           className="textarea flex-1 min-h-[44px] py-2.5 overflow-hidden"
           aria-label="Message input"

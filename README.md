@@ -151,18 +151,176 @@ See `backend/.env.example` for all options.
 |----------|----------|---------|-------------|
 | `VITE_BACKEND_URL` | No | http://localhost:3001 | Backend API URL |
 
+## API Endpoints
+
+### Providers
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/providers` | List providers. Query params: `serviceType`, `geo` |
+| GET | `/api/providers/:id` | Get provider details |
+| GET | `/api/providers/:id/availability?date=YYYY-MM-DD` | Get available time slots |
+
+**Example: Search providers**
+```bash
+curl "http://localhost:3001/api/providers?serviceType=haircut"
+```
+
+**Example: Get availability**
+```bash
+curl "http://localhost:3001/api/providers/provider-1/availability?date=2025-01-15"
+```
+
+### Bookings
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/bookings` | List all bookings |
+| POST | `/api/bookings` | Create a booking |
+| GET | `/api/bookings/:id` | Get booking details |
+
+**Example: Create booking**
+```bash
+curl -X POST "http://localhost:3001/api/bookings" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "providerId": "provider-1",
+    "serviceType": "haircut",
+    "scheduledAt": "2025-01-15T10:00:00Z",
+    "duration": 30,
+    "idempotencyKey": "unique-key-123"
+  }'
+```
+
+### Sessions
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/sessions/:id` | Get session details and message history |
+
+### Google Calendar (Optional)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/auth/google` | Start OAuth flow |
+| GET | `/api/auth/google/callback` | OAuth callback |
+| GET | `/api/auth/status` | Check auth status |
+
 ## Testing
 
+### Unit Tests
+
+Unit tests cover individual functions and components in isolation:
+
 ```bash
-# Run all backend tests
+# Backend unit tests
 cd backend && npm test
 
-# Run all frontend tests
+# Frontend unit tests
 cd frontend && npm test
 
 # Run with coverage
 npm run test:coverage
 ```
+
+### Integration Tests
+
+Integration tests verify components work together correctly:
+
+```bash
+# Run integration tests
+cd backend && npm run test:integration
+```
+
+### Manual Testing
+
+For manual QA, use the following checklist:
+
+1. **Chat Flow**: Send messages and verify AI responses stream correctly
+2. **Provider Search**: Ask for services and verify provider panel opens
+3. **Booking Flow**: Complete a booking through the modal
+4. **Error Handling**: Stop the backend and verify error messages display
+5. **Reconnection**: Disconnect and verify reconnection works
+
+## Troubleshooting
+
+### Database Issues
+
+**Error: SQLITE_CANTOPEN**
+```
+Error: SQLITE_CANTOPEN: unable to open database file
+```
+**Solution**: Ensure the `data/` directory exists and has write permissions:
+```bash
+mkdir -p backend/data
+chmod 755 backend/data
+```
+
+**Error: Migration failed**
+```
+Error: table already exists
+```
+**Solution**: Reset the database:
+```bash
+cd backend && npm run db:reset
+```
+
+### API Key Issues
+
+**Error: ANTHROPIC_API_KEY is required**
+```
+Error: ANTHROPIC_API_KEY is required for AI features
+```
+**Solution**: Ensure your `.env` file contains a valid API key:
+```bash
+# backend/.env
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+**Error: 401 Unauthorized from Claude API**
+**Solution**: Verify your API key is valid and has not expired. Check your Anthropic console for key status.
+
+### WebSocket Connection Issues
+
+**Symptom: "Connecting..." status never changes**
+**Solution**:
+1. Verify backend is running on port 3001
+2. Check browser console for connection errors
+3. Ensure no firewall is blocking WebSocket connections
+
+**Symptom: Frequent disconnections**
+**Solution**: Check network stability. The client automatically reconnects with exponential backoff (up to 5 attempts).
+
+### Port Conflicts
+
+**Error: EADDRINUSE: address already in use**
+```
+Error: listen EADDRINUSE: address already in use :::3001
+```
+**Solution**: Find and kill the process using the port:
+```bash
+# Find process using port 3001
+lsof -i :3001
+
+# Kill the process
+kill -9 <PID>
+```
+
+Or use a different port:
+```bash
+PORT=3002 npm run dev
+```
+
+### CORS Errors
+
+**Error: Cross-Origin Request Blocked**
+**Solution**: Ensure `FRONTEND_URL` in backend `.env` matches your frontend URL:
+```bash
+# backend/.env
+FRONTEND_URL=http://localhost:5173
+```
+
+For development, CORS is configured to allow all origins. In production, set specific allowed origins.
 
 ## Documentation
 

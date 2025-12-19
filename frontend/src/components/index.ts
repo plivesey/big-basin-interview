@@ -12,6 +12,9 @@ export { Spinner } from './Spinner';
 export { ConnectionStatus } from './ConnectionStatus';
 export { ErrorBoundary } from './ErrorBoundary';
 
+// Error UI components
+export { ChatErrorMessage } from './ChatErrorMessage';
+
 // Booking flow components
 export { TimeSlotButton } from './TimeSlotButton';
 export { TimeSlotGrid } from './TimeSlotGrid';
