@@ -11,17 +11,13 @@ describe('ConversationListItem', () => {
 
   describe('rendering', () => {
     it('should display the session title', () => {
-      render(
-        <ConversationListItem session={mockSession} isActive={false} onClick={() => {}} />
-      );
+      render(<ConversationListItem session={mockSession} isActive={false} onClick={() => {}} />);
 
       expect(screen.getByText("Miguel's Barber Shop")).toBeInTheDocument();
     });
 
     it('should display the formatted date', () => {
-      render(
-        <ConversationListItem session={mockSession} isActive={false} onClick={() => {}} />
-      );
+      render(<ConversationListItem session={mockSession} isActive={false} onClick={() => {}} />);
 
       // Date should be formatted as "19 DEC"
       expect(screen.getByText('19 DEC')).toBeInTheDocument();
@@ -47,9 +43,7 @@ describe('ConversationListItem', () => {
 
   describe('active state', () => {
     it('should apply active styling when isActive is true', () => {
-      render(
-        <ConversationListItem session={mockSession} isActive={true} onClick={() => {}} />
-      );
+      render(<ConversationListItem session={mockSession} isActive={true} onClick={() => {}} />);
 
       const listItem = screen.getByRole('listitem');
       expect(listItem).toHaveClass('bg-indigo-50');
@@ -57,9 +51,7 @@ describe('ConversationListItem', () => {
     });
 
     it('should apply default styling when isActive is false', () => {
-      render(
-        <ConversationListItem session={mockSession} isActive={false} onClick={() => {}} />
-      );
+      render(<ConversationListItem session={mockSession} isActive={false} onClick={() => {}} />);
 
       const listItem = screen.getByRole('listitem');
       expect(listItem).not.toHaveClass('bg-indigo-50');
@@ -67,9 +59,7 @@ describe('ConversationListItem', () => {
     });
 
     it('should apply active text color when isActive is true', () => {
-      render(
-        <ConversationListItem session={mockSession} isActive={true} onClick={() => {}} />
-      );
+      render(<ConversationListItem session={mockSession} isActive={true} onClick={() => {}} />);
 
       const title = screen.getByText("Miguel's Barber Shop");
       expect(title).toHaveClass('text-indigo-700');
@@ -79,9 +69,7 @@ describe('ConversationListItem', () => {
   describe('interaction', () => {
     it('should call onClick when clicked', () => {
       const onClick = vi.fn();
-      render(
-        <ConversationListItem session={mockSession} isActive={false} onClick={onClick} />
-      );
+      render(<ConversationListItem session={mockSession} isActive={false} onClick={onClick} />);
 
       const listItem = screen.getByRole('listitem');
       fireEvent.click(listItem);
@@ -90,9 +78,7 @@ describe('ConversationListItem', () => {
     });
 
     it('should have cursor-pointer class for clickability', () => {
-      render(
-        <ConversationListItem session={mockSession} isActive={false} onClick={() => {}} />
-      );
+      render(<ConversationListItem session={mockSession} isActive={false} onClick={() => {}} />);
 
       const listItem = screen.getByRole('listitem');
       expect(listItem).toHaveClass('cursor-pointer');

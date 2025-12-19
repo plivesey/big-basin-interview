@@ -150,10 +150,7 @@ export const TimeSlotGrid = memo(function TimeSlotGrid({
   const availableCount = slots.filter((s) => s.available).length;
 
   // Parse selected date for DayPicker
-  const selectedDateObj = useMemo(
-    () => new Date(selectedDate + 'T00:00:00'),
-    [selectedDate]
-  );
+  const selectedDateObj = useMemo(() => new Date(selectedDate + 'T00:00:00'), [selectedDate]);
 
   // Today for disabling past dates
   const today = useMemo(() => new Date(), []);

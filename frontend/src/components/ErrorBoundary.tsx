@@ -61,9 +61,8 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
           <div className="max-w-md w-full">
             <StatusMessage variant="error" title="Something went wrong">
               <p className="text-sm text-slate-600 mb-4">
-                We encountered an unexpected error. You can try to recover by
-                clicking the button below, or refresh the page if the problem
-                persists.
+                We encountered an unexpected error. You can try to recover by clicking the button
+                below, or refresh the page if the problem persists.
               </p>
               {process.env.NODE_ENV === 'development' && this.state.error && (
                 <pre className="mt-2 p-2 bg-slate-100 rounded text-xs text-slate-700 overflow-auto max-h-32">

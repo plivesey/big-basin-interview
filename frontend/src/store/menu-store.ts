@@ -58,8 +58,7 @@ export const useMenuStore = create<MenuState>((set) => ({
       isLoadingCalendarStatus: false,
     }),
 
-  setLoadingCalendarStatus: (loading: boolean) =>
-    set({ isLoadingCalendarStatus: loading }),
+  setLoadingCalendarStatus: (loading: boolean) => set({ isLoadingCalendarStatus: loading }),
 
   fetchSessions: async () => {
     set({ isLoadingSessions: true });
@@ -76,8 +75,7 @@ export const useMenuStore = create<MenuState>((set) => ({
     }
   },
 
-  setCurrentSessionId: (id: string | null) =>
-    set({ currentSessionId: id }),
+  setCurrentSessionId: (id: string | null) => set({ currentSessionId: id }),
 
   addSession: (session: SessionListItem) =>
     set((state) => ({

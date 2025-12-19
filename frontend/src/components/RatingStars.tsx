@@ -27,10 +27,7 @@ export function RatingStars({ rating, reviewCount }: RatingStarsProps) {
 
         {/* Half star */}
         {hasHalfStar && (
-          <svg
-            className="h-4 w-4 text-amber-500"
-            viewBox="0 0 20 20"
-          >
+          <svg className="h-4 w-4 text-amber-500" viewBox="0 0 20 20">
             <defs>
               <linearGradient id="half-star-gradient">
                 <stop offset="50%" stopColor="currentColor" />

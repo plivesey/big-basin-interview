@@ -7,7 +7,7 @@ import {
   deleteSession,
   getSessionsWithTitles,
 } from '../../src/services/session-service';
-import { createWorkflow, updateContext } from '../../src/services/workflow-service';
+import { createWorkflow } from '../../src/services/workflow-service';
 
 describe('session-service', () => {
   describe('createSession', () => {

@@ -127,7 +127,6 @@ npm run test         # Run tests
 npm run lint         # Run ESLint
 npm run lint:fix     # Fix ESLint issues
 npm run format       # Format with Prettier
-npm run preview      # Preview production build
 ```
 
 ## Environment Variables
@@ -142,6 +141,10 @@ npm run preview      # Preview production build
 | `CLAUDE_MODEL` | No | claude-sonnet-4-5 | Claude model to use |
 | `FRONTEND_URL` | No | http://localhost:5173 | Frontend URL for CORS |
 | `LOG_LEVEL` | No | info | Logging level |
+| `GOOGLE_CLIENT_ID` | Yes* | (see .env.example) | Google OAuth client ID (*required if using Calendar) |
+| `GOOGLE_CLIENT_SECRET` | Yes* | - | Google OAuth client secret (*required if using Calendar) |
+| `GOOGLE_REDIRECT_URI` | No | http://localhost:3001/auth/google/callback | OAuth callback URL |
+| `GOOGLE_CALENDAR_ID` | No | primary | Google Calendar ID to use |
 
 See `backend/.env.example` for all options.
 
@@ -150,61 +153,6 @@ See `backend/.env.example` for all options.
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
 | `VITE_BACKEND_URL` | No | http://localhost:3001 | Backend API URL |
-
-## API Endpoints
-
-### Providers
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/providers` | List providers. Query params: `serviceType`, `geo` |
-| GET | `/api/providers/:id` | Get provider details |
-| GET | `/api/providers/:id/availability?date=YYYY-MM-DD` | Get available time slots |
-
-**Example: Search providers**
-```bash
-curl "http://localhost:3001/api/providers?serviceType=haircut"
-```
-
-**Example: Get availability**
-```bash
-curl "http://localhost:3001/api/providers/provider-1/availability?date=2025-01-15"
-```
-
-### Bookings
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/bookings` | List all bookings |
-| POST | `/api/bookings` | Create a booking |
-| GET | `/api/bookings/:id` | Get booking details |
-
-**Example: Create booking**
-```bash
-curl -X POST "http://localhost:3001/api/bookings" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "providerId": "provider-1",
-    "serviceType": "haircut",
-    "scheduledAt": "2025-01-15T10:00:00Z",
-    "duration": 30,
-    "idempotencyKey": "unique-key-123"
-  }'
-```
-
-### Sessions
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/sessions/:id` | Get session details and message history |
-
-### Google Calendar (Optional)
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/auth/google` | Start OAuth flow |
-| GET | `/api/auth/google/callback` | OAuth callback |
-| GET | `/api/auth/status` | Check auth status |
 
 ## Testing
 
@@ -218,29 +166,7 @@ cd backend && npm test
 
 # Frontend unit tests
 cd frontend && npm test
-
-# Run with coverage
-npm run test:coverage
 ```
-
-### Integration Tests
-
-Integration tests verify components work together correctly:
-
-```bash
-# Run integration tests
-cd backend && npm run test:integration
-```
-
-### Manual Testing
-
-For manual QA, use the following checklist:
-
-1. **Chat Flow**: Send messages and verify AI responses stream correctly
-2. **Provider Search**: Ask for services and verify provider panel opens
-3. **Booking Flow**: Complete a booking through the modal
-4. **Error Handling**: Stop the backend and verify error messages display
-5. **Reconnection**: Disconnect and verify reconnection works
 
 ## Troubleshooting
 

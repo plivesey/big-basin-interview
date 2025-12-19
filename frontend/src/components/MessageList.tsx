@@ -52,7 +52,8 @@ export function MessageList({
             I'm Scout, your guide to local services
           </h3>
           <p className="text-slate-500 max-w-sm">
-            Tell me what you need, and I'll help you find and book the perfect service provider. Need a haircut? A plumber? House cleaning? Just describe it in your own words.
+            Tell me what you need, and I'll help you find and book the perfect service provider.
+            Need a haircut? A plumber? House cleaning? Just describe it in your own words.
           </p>
         </div>
       </div>
@@ -60,19 +61,14 @@ export function MessageList({
   }
 
   return (
-    <div
-      ref={containerRef}
-      className="flex-1 overflow-y-auto p-4 space-y-2"
-    >
+    <div ref={containerRef} className="flex-1 overflow-y-auto p-4 space-y-2">
       {messages.map((message) => (
         <ChatMessageComponent
           key={message.id}
           role={message.role}
           timestamp={formatTimestamp(message.createdAt)}
           showTypingIndicator={
-            message.role === 'assistant' &&
-            message.id === streamingMessageId &&
-            isAiWorking
+            message.role === 'assistant' && message.id === streamingMessageId && isAiWorking
           }
         >
           {getMessageText(message)}
@@ -81,11 +77,7 @@ export function MessageList({
 
       {/* Show error message if there's a last error */}
       {lastError && (
-        <ChatErrorMessage
-          message={lastError}
-          onRetry={onRetryMessage}
-          isRetrying={isRetrying}
-        />
+        <ChatErrorMessage message={lastError} onRetry={onRetryMessage} isRetrying={isRetrying} />
       )}
 
       <div ref={messagesEndRef} />
