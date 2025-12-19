@@ -50,8 +50,12 @@ cp frontend/.env.example frontend/.env
 
 ```bash
 cd backend
-npm run db:push    # Create tables
-npm run db:seed    # Add sample providers
+
+# Create tables
+npm run db:push
+
+# Add sample providers
+npm run db:seed
 ```
 
 4. **Start development servers:**
