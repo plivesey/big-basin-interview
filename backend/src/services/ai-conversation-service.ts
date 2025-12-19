@@ -5,7 +5,7 @@ import { executeTools, ToolExecutionCallbacks } from './tool-executor';
 import { getCurrentWorkflow, WorkflowStateRecord } from './workflow-service';
 import { getProviderById } from './provider-service';
 import { logger } from '../utils/logger';
-import { ToolUseContent, MessageContent } from '../db/schema';
+import { ToolUseContent, TextContent } from '../db/schema';
 import { toolRegistry } from '../tools';
 
 // Initialize client lazily to allow app to start without API key
@@ -184,7 +184,8 @@ async function buildWorkflowContext(workflow: WorkflowStateRecord | null): Promi
 
 /**
  * Convert database message history to Claude API message format
- * Handles all content types: text, tool_use, and tool_result
+ * Handles all content types: text, tool_use, tool_result, and system_notification
+ * System notifications are converted to text blocks so Claude can see them
  */
 export function buildMessagesArray(history: ChatMessage[]): Anthropic.MessageParam[] {
   return history.map((msg) => ({
@@ -208,6 +209,10 @@ export function buildMessagesArray(history: ChatMessage[]): Anthropic.MessagePar
             tool_use_id: block.tool_use_id,
             content: block.content,
           };
+        }
+        if (block.type === 'system_notification') {
+          // Convert system notification to text for Claude to see
+          return { type: 'text' as const, text: block.text };
         }
         // Unknown type - should not happen
         return null;
@@ -316,7 +321,8 @@ async function sendMessageWithToolLoop(
       });
 
       // Add assistant message to conversation (with all content blocks)
-      const assistantContent: MessageContent[] = finalMessage.content
+      // Use specific types (not MessageContent) since Claude API doesn't accept system_notification
+      const assistantContent: (TextContent | ToolUseContent)[] = finalMessage.content
         .filter((b): b is Anthropic.TextBlock | Anthropic.ToolUseBlock =>
           b.type === 'text' || b.type === 'tool_use'
         )
@@ -396,8 +402,11 @@ export async function sendMessage(
   // Build messages array for Claude API
   const messages = buildMessagesArray(history);
 
-  // Add the new user message
-  messages.push({ role: 'user', content: userMessage });
+  // Add the new user message (if non-empty)
+  // Empty userMessage is used when triggering a response to existing history (e.g., booking notifications)
+  if (userMessage) {
+    messages.push({ role: 'user', content: userMessage });
+  }
 
   logger.debug('Calling Claude API with tool support', { totalMessages: messages.length });
 

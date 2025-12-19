@@ -8,6 +8,7 @@ export type {
   TextContent,
   ToolUseContent,
   ToolResultContent,
+  SystemNotificationContent,
   MessageContent,
   MessageRole,
   ChatMessage,
@@ -18,6 +19,7 @@ export {
   isTextContent,
   isToolUseContent,
   isToolResultContent,
+  isSystemNotificationContent,
   getMessageText,
   parseMessage,
 } from './messages';

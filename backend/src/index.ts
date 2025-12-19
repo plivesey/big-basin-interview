@@ -5,6 +5,7 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { logger } from './utils/logger';
 import { initializeChatHandler, ChatServer } from './websocket/chat-handler';
+import { setSocketInstance } from './websocket/socket-instance';
 import { createApp } from './app';
 
 // Log successful environment validation
@@ -30,6 +31,9 @@ const io: ChatServer = new Server(httpServer, {
     origin: '*',
   },
 });
+
+// Store socket instance for use by other modules (e.g., booking routes)
+setSocketInstance(io);
 
 // Initialize WebSocket chat handler
 initializeChatHandler(io);
