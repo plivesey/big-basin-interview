@@ -48,11 +48,14 @@ function getUnavailableIndices(
 
   // Use hash to seed the selection
   let seed = hash;
+  const maxIterations = count * 10;
+  let iterations = 0;
 
-  while (indices.size < count && indices.size < totalSlots) {
+  while (indices.size < count && indices.size < totalSlots && iterations < maxIterations) {
     seed = (seed * 1103515245 + 12345) % 2147483648;
     const index = seed % totalSlots;
     indices.add(index);
+    iterations++;
   }
 
   return indices;
