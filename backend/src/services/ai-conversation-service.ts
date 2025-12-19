@@ -271,12 +271,14 @@ async function sendMessageWithToolLoop(
   const tools = toolRegistry.getToolDefinitions();
   let fullTextResponse = '';
   let iteration = 0;
+  let textBlocksInCurrentIteration = 0;
 
   // Build full system prompt with workflow context
   const systemPrompt = SYSTEM_PROMPT + workflowContext;
 
   while (iteration < maxIterations) {
     iteration++;
+    textBlocksInCurrentIteration = 0;
     logger.debug('Tool loop iteration', { iteration, sessionId, totalTools: tools.length });
 
     // Call Claude API with streaming and tools
@@ -292,6 +294,20 @@ async function sendMessageWithToolLoop(
     stream.on('text', (text) => {
       fullTextResponse += text;
       callbacks?.onTextDelta?.(text);
+    });
+
+    // Add spacing between text blocks when tool calls interrupt the text
+    // This handles both: text blocks within a single response AND text across tool loop iterations
+    stream.on('streamEvent', (event) => {
+      if (event.type === 'content_block_start' && event.content_block.type === 'text') {
+        // Add spacing if we already have text and it doesn't end with whitespace
+        if (fullTextResponse.length > 0 && !fullTextResponse.endsWith('\n')) {
+          const spacing = '\n\n';
+          fullTextResponse += spacing;
+          callbacks?.onTextDelta?.(spacing);
+        }
+        textBlocksInCurrentIteration++;
+      }
     });
 
     // Create timeout promise
