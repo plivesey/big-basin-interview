@@ -7,17 +7,28 @@ import {
 } from '../store/chat-store';
 import { useBookingStore, selectIsChatDisabled } from '../store/booking-store';
 import { usePanelStore } from '../store/panel-store';
-import { useWebSocket } from '../hooks/useWebSocket';
 import { MessageList } from './MessageList';
 import { ChatInput } from './ChatInput';
 import { ConnectionStatus } from './ConnectionStatus';
 import { PanelToggleButton } from './PanelToggleButton';
 
+interface ChatContainerProps {
+  sendMessage: (message: string) => void;
+  reconnect: () => void;
+  retryLastMessage: () => void;
+  isRetrying: boolean;
+}
+
 /**
  * Main chat container component.
  * Uses Zustand selectors to only re-render when specific state changes.
  */
-export function ChatContainer() {
+export function ChatContainer({
+  sendMessage,
+  reconnect,
+  retryLastMessage,
+  isRetrying,
+}: ChatContainerProps) {
   // Use selectors to subscribe to specific pieces of state
   // This prevents re-renders when unrelated state changes
   const messages = useChatStore(selectMessages);
@@ -31,8 +42,6 @@ export function ChatContainer() {
   const displayedProviders = usePanelStore((state) => state.displayedProviders);
   const workflowState = usePanelStore((state) => state.workflowState);
   const reopenProviderPanel = usePanelStore((state) => state.reopenProviderPanel);
-
-  const { sendMessage, reconnect, retryLastMessage, isRetrying } = useWebSocket();
 
   const isConnected = connectionStatus === 'connected';
 

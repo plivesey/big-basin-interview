@@ -35,3 +35,10 @@ export type {
   WorkingHours,
   WorkflowState,
 } from './websocket-events';
+
+// Session types for conversation history
+export interface SessionListItem {
+  id: string;
+  title: string;
+  date: string; // ISO format
+}

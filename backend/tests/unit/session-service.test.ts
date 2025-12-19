@@ -5,7 +5,9 @@ import {
   updateSessionActivity,
   getOrCreateSession,
   deleteSession,
+  getSessionsWithTitles,
 } from '../../src/services/session-service';
+import { createWorkflow, updateContext } from '../../src/services/workflow-service';
 
 describe('session-service', () => {
   describe('createSession', () => {
@@ -124,6 +126,70 @@ describe('session-service', () => {
     it('should return false for empty session ID', async () => {
       const deleted = await deleteSession('');
       expect(deleted).toBe(false);
+    });
+  });
+
+  describe('getSessionsWithTitles', () => {
+    it('should return empty array when no sessions exist for user', async () => {
+      const sessions = await getSessionsWithTitles('non_existent_user');
+      expect(sessions).toEqual([]);
+    });
+
+    it('should return sessions with "Scout" title when no workflow exists', async () => {
+      const session = await createSession();
+      const sessions = await getSessionsWithTitles();
+
+      const found = sessions.find((s) => s.id === session.id);
+      expect(found).toBeDefined();
+      expect(found?.title).toBe('Scout');
+      expect(found?.date).toBeDefined();
+    });
+
+    it('should use serviceType from workflow as title when no booking exists', async () => {
+      const session = await createSession();
+      await createWorkflow(session.id, { serviceType: 'Haircut' });
+
+      const sessions = await getSessionsWithTitles();
+
+      const found = sessions.find((s) => s.id === session.id);
+      expect(found).toBeDefined();
+      expect(found?.title).toBe('Haircut');
+    });
+
+    it('should return sessions ordered by lastActivityAt descending', async () => {
+      // Create sessions with slight delay to ensure different timestamps
+      const session1 = await createSession();
+      const session2 = await createSession();
+
+      // Update session1 activity to make it more recent
+      await updateSessionActivity(session1.id);
+
+      const sessions = await getSessionsWithTitles();
+
+      // Find positions of our sessions
+      const pos1 = sessions.findIndex((s) => s.id === session1.id);
+      const pos2 = sessions.findIndex((s) => s.id === session2.id);
+
+      // session1 should come before session2 (more recent activity)
+      expect(pos1).toBeLessThan(pos2);
+    });
+
+    it('should return date in ISO format', async () => {
+      const session = await createSession();
+      const sessions = await getSessionsWithTitles();
+
+      const found = sessions.find((s) => s.id === session.id);
+      expect(found?.date).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
+    });
+
+    it('should fall back to Scout when workflow has no serviceType', async () => {
+      const session = await createSession();
+      await createWorkflow(session.id, {}); // Empty context
+
+      const sessions = await getSessionsWithTitles();
+
+      const found = sessions.find((s) => s.id === session.id);
+      expect(found?.title).toBe('Scout');
     });
   });
 });
