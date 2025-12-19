@@ -1,6 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import Anthropic from '@anthropic-ai/sdk';
-import { buildMessagesArray, AIError, isRetryableError, getRetryDelays } from '../../src/services/ai-conversation-service';
+import {
+  buildMessagesArray,
+  AIError,
+  isRetryableError,
+  getRetryDelays,
+  shouldAddSpacingBeforeTextBlock,
+} from '../../src/services/ai-conversation-service';
 import type { ChatMessage } from '../../src/services/message-service';
 
 describe('ai-conversation-service', () => {
@@ -337,6 +343,71 @@ describe('ai-conversation-service', () => {
       expect(delays[3]).toBe(1000 * Math.pow(2, 3)); // 8000
       expect(delays[4]).toBe(1000 * Math.pow(2, 4)); // 16000
       expect(delays[5]).toBe(1000 * Math.pow(2, 5)); // 32000
+    });
+  });
+
+  describe('shouldAddSpacingBeforeTextBlock', () => {
+    describe('returns false (no spacing needed)', () => {
+      it('should return false for empty accumulated text (first text block)', () => {
+        expect(shouldAddSpacingBeforeTextBlock('')).toBe(false);
+      });
+
+      it('should return false when text ends with newline', () => {
+        expect(shouldAddSpacingBeforeTextBlock('Hello world\n')).toBe(false);
+      });
+
+      it('should return false when text ends with multiple newlines', () => {
+        expect(shouldAddSpacingBeforeTextBlock('Hello world\n\n')).toBe(false);
+      });
+
+      it('should return false when text ends with carriage return and newline', () => {
+        expect(shouldAddSpacingBeforeTextBlock('Hello world\r\n')).toBe(false);
+      });
+    });
+
+    describe('returns true (spacing needed)', () => {
+      it('should return true when text exists and ends without newline', () => {
+        expect(shouldAddSpacingBeforeTextBlock('Hello world')).toBe(true);
+      });
+
+      it('should return true when text ends with period', () => {
+        expect(shouldAddSpacingBeforeTextBlock('Let me search for that.')).toBe(true);
+      });
+
+      it('should return true when text ends with question mark', () => {
+        expect(shouldAddSpacingBeforeTextBlock('Would you like me to help?')).toBe(true);
+      });
+
+      it('should return true when text ends with space', () => {
+        // Space at the end still needs paragraph break for readability
+        expect(shouldAddSpacingBeforeTextBlock('Hello world ')).toBe(true);
+      });
+
+      it('should return true for single character', () => {
+        expect(shouldAddSpacingBeforeTextBlock('a')).toBe(true);
+      });
+    });
+
+    describe('real-world scenarios', () => {
+      it('should handle tool call interruption scenario', () => {
+        // Simulates: Claude says "Let me search" → calls search tool → says "Here are results"
+        const afterFirstTextBlock = 'Let me search for salons in your area.';
+        expect(shouldAddSpacingBeforeTextBlock(afterFirstTextBlock)).toBe(true);
+        // After adding spacing: "Let me search for salons in your area.\n\n"
+        // Then "Here are the results:" gets appended
+      });
+
+      it('should handle multiple tool calls scenario', () => {
+        // Simulates: text → tool → text → tool → text
+        const afterSecondTextBlock = 'Let me search for salons in your area.\n\nI found 3 providers.';
+        expect(shouldAddSpacingBeforeTextBlock(afterSecondTextBlock)).toBe(true);
+      });
+
+      it('should handle model that adds its own newlines', () => {
+        // If Claude already adds newlines in its response, we don\'t add more
+        const textWithNewline = 'Here are your options:\n';
+        expect(shouldAddSpacingBeforeTextBlock(textWithNewline)).toBe(false);
+      });
     });
   });
 });
