@@ -21,6 +21,15 @@ function toRawMessage(message: ChatMessage): RawChatMessage {
   };
 }
 
+/**
+ * Check if a message has any displayable text content
+ * Messages with only system_notification or tool blocks have no displayable content
+ * and should not be sent to the frontend
+ */
+export function hasDisplayableContent(message: ChatMessage): boolean {
+  return message.content.some((block) => block.type === 'text');
+}
+
 export interface InterServerEvents {
   ping: () => void;
 }
@@ -56,9 +65,10 @@ export function initializeChatHandler(io: ChatServer): void {
         currentWorkflowId: session.currentWorkflowId ?? undefined,
       });
 
-      // Load and send message history
+      // Load and send message history (filter out internal-only messages like system_notification)
       const messageHistory = await getMessageHistory(session.id);
-      socket.emit('message_history', { messages: messageHistory.map(toRawMessage) });
+      const displayableMessages = messageHistory.filter(hasDisplayableContent);
+      socket.emit('message_history', { messages: displayableMessages.map(toRawMessage) });
 
       logger.info('Session established', { sessionId: session.id, socketId: socket.id, currentWorkflowId: session.currentWorkflowId });
 
@@ -258,7 +268,8 @@ export function initializeChatHandler(io: ChatServer): void {
 
       try {
         const messageHistory = await getMessageHistory(sessionId);
-        socket.emit('message_history', { messages: messageHistory.map(toRawMessage) });
+        const displayableMessages = messageHistory.filter(hasDisplayableContent);
+        socket.emit('message_history', { messages: displayableMessages.map(toRawMessage) });
       } catch (error) {
         logger.error('Error during sync', { error: String(error), sessionId });
         socket.emit('error', {
