@@ -176,7 +176,7 @@ For automated browser-based testing, install the [Playwright MCP server](https:/
 claude mcp add playwright -- npx @playwright/mcp@latest
 ```
 
-Once installed, Claude can use the [QA Testing Agent](.claude/agents/qa-tester.md) to test features, identify bugs, and generate detailed test reports with screenshots.
+Once installed, Claude can use the [QA Testing Agent](.claude/agents/qa-tester.md) to test features, identify bugs, and generate detailed test reports with screenshots. You can also use the [Playwright Testing Skill](.claude/skills/playwright-testing.md) via `/playwright-testing` for quick browser-based tests.
 
 ## Troubleshooting
 
