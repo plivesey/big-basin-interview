@@ -39,6 +39,10 @@ export function useWebSocket(): UseWebSocketReturn {
   const isRetryingRef = useRef<boolean>(false);
   // Track the last user message ID for marking as failed
   const lastUserMessageIdRef = useRef<string | null>(null);
+  // Track message timeout
+  const messageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Track if we're waiting for a response
+  const pendingMessageRef = useRef<boolean>(false);
 
   const {
     setSessionId,
@@ -55,6 +59,46 @@ export function useWebSocket(): UseWebSocketReturn {
     setLastError,
     setLastAttemptedMessage,
   } = useChatStore();
+
+  // Helper to clear message timeout
+  const clearMessageTimeout = useCallback(() => {
+    if (messageTimeoutRef.current) {
+      clearTimeout(messageTimeoutRef.current);
+      messageTimeoutRef.current = null;
+    }
+  }, []);
+
+  // Helper to handle message failure (used by timeout, disconnect, and error handlers)
+  const handleMessageFailure = useCallback((errorMessage: string) => {
+    // Clear timeout if any
+    clearMessageTimeout();
+
+    // Mark last user message as failed if we have one
+    const lastUserMsgId = lastUserMessageIdRef.current;
+    if (lastUserMsgId && pendingMessageRef.current) {
+      markMessageFailed(lastUserMsgId, errorMessage);
+    }
+
+    // Remove any incomplete streaming message
+    const streamingId = streamingIdRef.current;
+    if (streamingId && streamingMessageCreatedRef.current) {
+      const messages = useChatStore.getState().messages;
+      const filteredMessages = messages.filter((msg) => msg.id !== streamingId);
+      setMessages(filteredMessages);
+    }
+
+    // Set the last error for display
+    setLastError(errorMessage);
+
+    // Clear streaming state
+    streamingIdRef.current = null;
+    streamingMessageCreatedRef.current = false;
+    setStreamingMessageId(null);
+    setIsLoading(false);
+    setIsAiWorking(false);
+    pendingMessageRef.current = false;
+    isRetryingRef.current = false;
+  }, [clearMessageTimeout, markMessageFailed, setMessages, setLastError, setStreamingMessageId, setIsLoading, setIsAiWorking]);
 
   // Get stored session ID
   const getStoredSessionId = useCallback((): string | null => {
@@ -105,6 +149,11 @@ export function useWebSocket(): UseWebSocketReturn {
     socket.on('disconnect', (reason) => {
       logger.info('WebSocket disconnected', { reason });
       setConnectionStatus('disconnected');
+
+      // If we have a pending message, mark it as failed
+      if (pendingMessageRef.current) {
+        handleMessageFailure(ERROR_MESSAGES.CONNECTION_LOST);
+      }
     });
 
     socket.on('connect_error', (error) => {
@@ -180,6 +229,9 @@ export function useWebSocket(): UseWebSocketReturn {
 
     socket.on('message_complete', (data) => {
       logger.debug('Message completed', { messageId: data.messageId });
+      // Clear the timeout since we got a response
+      clearMessageTimeout();
+
       // Use ref for consistency with text_delta handler
       const streamingId = streamingIdRef.current;
       if (streamingId && streamingMessageCreatedRef.current) {
@@ -190,6 +242,7 @@ export function useWebSocket(): UseWebSocketReturn {
       // Clear all streaming state
       streamingIdRef.current = null;
       streamingMessageCreatedRef.current = false;
+      pendingMessageRef.current = false;
       setStreamingMessageId(null);
       setIsLoading(false);
       setIsAiWorking(false);
@@ -198,32 +251,7 @@ export function useWebSocket(): UseWebSocketReturn {
     // Error handling
     socket.on('error', (data) => {
       logger.error('WebSocket error', { error: data.error, code: data.code });
-
-      // Mark last user message as failed if we have one
-      const lastUserMsgId = lastUserMessageIdRef.current;
-      if (lastUserMsgId) {
-        markMessageFailed(lastUserMsgId, ERROR_MESSAGES.AI_REQUEST_FAILED);
-      }
-
-      // Remove any incomplete streaming message
-      const streamingId = streamingIdRef.current;
-      if (streamingId && streamingMessageCreatedRef.current) {
-        // Remove the streaming message from the store
-        const messages = useChatStore.getState().messages;
-        const filteredMessages = messages.filter((msg) => msg.id !== streamingId);
-        setMessages(filteredMessages);
-      }
-
-      // Set the last error for display
-      setLastError(ERROR_MESSAGES.AI_REQUEST_FAILED);
-
-      // Clear streaming state
-      streamingIdRef.current = null;
-      streamingMessageCreatedRef.current = false;
-      setStreamingMessageId(null);
-      setIsLoading(false);
-      setIsAiWorking(false);
-      isRetryingRef.current = false;
+      handleMessageFailure(ERROR_MESSAGES.AI_REQUEST_FAILED);
     });
 
     // Provider display events
@@ -265,14 +293,17 @@ export function useWebSocket(): UseWebSocketReturn {
     setStreamingMessageId,
     setIsLoading,
     setIsAiWorking,
-    markMessageFailed,
-    setLastError,
     getStoredSessionId,
     storeSessionId,
+    handleMessageFailure,
+    clearMessageTimeout,
   ]);
 
   // Disconnect from WebSocket server
   const disconnect = useCallback(() => {
+    // Clear message timeout to prevent memory leaks
+    clearMessageTimeout();
+
     if (socketRef.current) {
       // Remove all listeners to prevent memory leaks
       socketRef.current.removeAllListeners();
@@ -282,7 +313,8 @@ export function useWebSocket(): UseWebSocketReturn {
     // Clear streaming refs on disconnect
     streamingIdRef.current = null;
     streamingMessageCreatedRef.current = false;
-  }, []);
+    pendingMessageRef.current = false;
+  }, [clearMessageTimeout]);
 
   // Reconnect to WebSocket server
   const reconnect = useCallback(() => {
@@ -312,6 +344,8 @@ export function useWebSocket(): UseWebSocketReturn {
     setLastAttemptedMessage(trimmedMessage);
     // Clear any previous error state
     setLastError(null);
+    // Clear any previous timeout
+    clearMessageTimeout();
 
     // Add user message to store immediately (optimistic update)
     const messageId = `temp-${Date.now()}`;
@@ -327,10 +361,19 @@ export function useWebSocket(): UseWebSocketReturn {
 
     // Track the user message ID for error handling
     lastUserMessageIdRef.current = messageId;
+    pendingMessageRef.current = true;
+
+    // Set a timeout for message acknowledgment (30 seconds)
+    messageTimeoutRef.current = setTimeout(() => {
+      if (pendingMessageRef.current) {
+        logger.warn('Message timeout - no response received');
+        handleMessageFailure(ERROR_MESSAGES.AI_TIMEOUT);
+      }
+    }, 30000);
 
     // Send to server
     socket.emit('user_message', { message: trimmedMessage });
-  }, [addMessage, setIsLoading, setLastAttemptedMessage, setLastError]);
+  }, [addMessage, setIsLoading, setLastAttemptedMessage, setLastError, clearMessageTimeout, handleMessageFailure]);
 
   // Retry the last failed message
   const retryLastMessage = useCallback(() => {

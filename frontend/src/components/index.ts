@@ -14,7 +14,6 @@ export { ErrorBoundary } from './ErrorBoundary';
 
 // Error UI components
 export { ChatErrorMessage } from './ChatErrorMessage';
-export { FailedMessageBubble } from './FailedMessageBubble';
 
 // Booking flow components
 export { TimeSlotButton } from './TimeSlotButton';
