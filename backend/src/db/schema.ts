@@ -2,7 +2,7 @@ import { sqliteTable, text, integer, real, index } from 'drizzle-orm/sqlite-core
 import type { MessageContent } from '@asba/shared-types';
 
 // Re-export message content types from shared package
-export type { TextContent, ToolUseContent, ToolResultContent, MessageContent } from '@asba/shared-types';
+export type { TextContent, ToolUseContent, ToolResultContent, SystemNotificationContent, MessageContent } from '@asba/shared-types';
 
 // Working hours type for JSON column
 export type WorkingHours = Record<string, { open: string; close: string } | null>;

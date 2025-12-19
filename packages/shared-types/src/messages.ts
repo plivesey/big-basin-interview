@@ -31,9 +31,18 @@ export interface ToolResultContent {
 }
 
 /**
+ * System notification content block - hidden from user but visible to AI
+ * Used for internal notifications like booking confirmations
+ */
+export interface SystemNotificationContent {
+  type: 'system_notification';
+  text: string;
+}
+
+/**
  * Union type for all message content block types
  */
-export type MessageContent = TextContent | ToolUseContent | ToolResultContent;
+export type MessageContent = TextContent | ToolUseContent | ToolResultContent | SystemNotificationContent;
 
 /**
  * Chat message role - who sent the message
@@ -82,6 +91,13 @@ export function isToolUseContent(content: MessageContent): content is ToolUseCon
  */
 export function isToolResultContent(content: MessageContent): content is ToolResultContent {
   return content.type === 'tool_result';
+}
+
+/**
+ * Helper type guard to check if content is system notification
+ */
+export function isSystemNotificationContent(content: MessageContent): content is SystemNotificationContent {
+  return content.type === 'system_notification';
 }
 
 /**
