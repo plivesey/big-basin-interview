@@ -258,6 +258,44 @@ export interface StreamCallbacks extends ToolExecutionCallbacks {
 const MAX_TOOL_LOOP_ITERATIONS = 10;
 
 /**
+ * Determines if spacing should be added before a new text block.
+ *
+ * ## Problem This Solves
+ * When Claude responds with text, calls a tool, then continues with more text,
+ * the Anthropic SDK streams these as separate text blocks. Without intervention,
+ * they get concatenated without any spacing:
+ *   "Let me search for that.Here are the results."
+ *
+ * ## When Spacing Is Needed
+ * Spacing should be added when:
+ * 1. There's already accumulated text (not the first text block)
+ * 2. The existing text doesn't already end with a newline
+ *
+ * ## When This Function Is Called
+ * This is called when we receive a `content_block_start` event with type `text`
+ * from the Anthropic streaming API. This event fires BEFORE any text deltas
+ * for that block, so we can prepend spacing before the new text arrives.
+ *
+ * @param accumulatedText - The text accumulated so far from previous blocks/iterations
+ * @returns true if spacing (\n\n) should be prepended before the next text block
+ */
+export function shouldAddSpacingBeforeTextBlock(accumulatedText: string): boolean {
+  // No spacing needed if this is the first text (nothing accumulated yet)
+  if (accumulatedText.length === 0) {
+    return false;
+  }
+
+  // No spacing needed if the text already ends with a newline
+  // (the model may have already added appropriate line breaks)
+  if (accumulatedText.endsWith('\n')) {
+    return false;
+  }
+
+  // Spacing is needed - we have text that doesn't end with whitespace
+  return true;
+}
+
+/**
  * Send a message with tool support and handle the tool execution loop
  * Continues calling Claude until it returns stop_reason === 'end_turn'
  */
@@ -290,18 +328,28 @@ async function sendMessageWithToolLoop(
       tools: tools.length > 0 ? tools : undefined,
     });
 
-    // Accumulate text during streaming
+    // Accumulate text during streaming.
+    // The 'text' event fires for each chunk of text received from Claude.
     stream.on('text', (text) => {
       fullTextResponse += text;
       callbacks?.onTextDelta?.(text);
     });
 
-    // Add spacing between text blocks when tool calls interrupt the text
-    // This handles both: text blocks within a single response AND text across tool loop iterations
+    // Handle spacing between text blocks separated by tool calls.
+    //
+    // The Anthropic API sends responses as a sequence of content blocks:
+    //   TextBlock("Let me search") → ToolUseBlock(search) → TextBlock("Here are results")
+    //
+    // The 'content_block_start' event fires BEFORE any text deltas for each block.
+    // We use this to detect when a new text block is starting and prepend spacing
+    // if there's already text accumulated (from previous blocks or iterations).
+    //
+    // This handles two scenarios:
+    // 1. Multiple text blocks in ONE response: text → tool_use → text (within same API call)
+    // 2. Text across MULTIPLE iterations: iteration 1 text → tool executed → iteration 2 text
     stream.on('streamEvent', (event) => {
       if (event.type === 'content_block_start' && event.content_block.type === 'text') {
-        // Add spacing if we already have text and it doesn't end with whitespace
-        if (fullTextResponse.length > 0 && !fullTextResponse.endsWith('\n')) {
+        if (shouldAddSpacingBeforeTextBlock(fullTextResponse)) {
           const spacing = '\n\n';
           fullTextResponse += spacing;
           callbacks?.onTextDelta?.(spacing);
