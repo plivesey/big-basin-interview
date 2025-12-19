@@ -33,9 +33,7 @@ export function Badge({
 
   return (
     <span className={`${variantClasses[variant]} ${className}`}>
-      {showDot && (
-        <div className={`w-1.5 h-1.5 rounded-full ${dotColors[variant]} mr-1.5`} />
-      )}
+      {showDot && <div className={`w-1.5 h-1.5 rounded-full ${dotColors[variant]} mr-1.5`} />}
       {children}
     </span>
   );

@@ -81,12 +81,7 @@ export const BookingConfirmation = memo(function BookingConfirmation({
 
       {/* Actions */}
       <div className="flex flex-col-reverse sm:flex-row gap-3">
-        <Button
-          variant="secondary"
-          onClick={onBack}
-          disabled={isConfirming}
-          className="flex-1"
-        >
+        <Button variant="secondary" onClick={onBack} disabled={isConfirming} className="flex-1">
           Back
         </Button>
         <Button

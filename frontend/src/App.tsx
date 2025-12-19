@@ -15,14 +15,8 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
 function App() {
   const isProviderPanelOpen = usePanelStore((state) => state.isProviderPanelOpen);
   const setCalendarStatus = useMenuStore((state) => state.setCalendarStatus);
-  const {
-    sendMessage,
-    reconnect,
-    retryLastMessage,
-    isRetrying,
-    switchSession,
-    createNewSession,
-  } = useWebSocket();
+  const { sendMessage, reconnect, retryLastMessage, isRetrying, switchSession, createNewSession } =
+    useWebSocket();
 
   // Handle calendar OAuth redirect
   useEffect(() => {
@@ -86,9 +80,7 @@ function App() {
           {/* Provider panel - animates in/out */}
           <div
             className={`overflow-hidden transition-all duration-300 ease-in-out ${
-              isProviderPanelOpen
-                ? 'w-80 opacity-100'
-                : 'w-0 opacity-0'
+              isProviderPanelOpen ? 'w-80 opacity-100' : 'w-0 opacity-0'
             }`}
           >
             <div className="w-80 h-full">

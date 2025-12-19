@@ -77,9 +77,7 @@ export const useChatStore = create<ChatState>((set) => ({
 
   updateMessage: (messageId: string, updates: Partial<ChatMessage>) =>
     set((state) => ({
-      messages: state.messages.map((msg) =>
-        msg.id === messageId ? { ...msg, ...updates } : msg
-      ),
+      messages: state.messages.map((msg) => (msg.id === messageId ? { ...msg, ...updates } : msg)),
     })),
 
   appendTextToMessage: (messageId: string, text: string) =>

@@ -143,7 +143,10 @@ export const useBookingStore = create<BookingState>((set, get) => ({
           logger.debug('Workflow updated for provider selection', { workflowId, providerId });
         } catch (workflowError) {
           // Log but don't fail - workflow update is not critical for modal display
-          logger.warn('Failed to update workflow state', { workflowId, error: String(workflowError) });
+          logger.warn('Failed to update workflow state', {
+            workflowId,
+            error: String(workflowError),
+          });
         }
       }
 

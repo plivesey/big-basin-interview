@@ -7,12 +7,7 @@ interface CardProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
 }
 
-export function Card({
-  variant = 'default',
-  children,
-  className = '',
-  ...props
-}: CardProps) {
+export function Card({ variant = 'default', children, className = '', ...props }: CardProps) {
   const variantClasses: Record<CardVariant, string> = {
     default: 'card',
     hover: 'card-hover',
