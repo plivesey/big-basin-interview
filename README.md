@@ -158,6 +158,21 @@ See `backend/.env.example` for all options.
 |----------|----------|---------|-------------|
 | `VITE_BACKEND_URL` | No | http://localhost:3001 | Backend API URL |
 
+## Prompt Design Choices
+
+For my prompt design, I started by writing (with Claude) a brand strategy document (which you can see in documentation). Included in this are the voice and tone guidelines for the application. I turned this into an agent, which wrote the copy based off these brand strategy guidelines. This was also the basis for the prompts as I wanted the agent to have a similar voice and tone to the copy used in the application. As well as this, I made sure to include in the prompt concise instructions on how to use all tools, including examples.
+
+The biggest breakthrough I had in improving how the agent worked was actually in the error responses for the tools. So I noticed that sometimes it would try searching for providers before a location had been set (which isn't helpful as we don't know which geo to search yet). And in this case, the agent would just respond with something like, "Oops! Something went wrong. Sorry about that." So, to fix this, in the error response from the tool, I now return specific instructions on what to do differently. So the error reads something like: "Please ask the user for their location and call the set location tool first." You can actually see an unintentional example of this in the video where it tries to set Saratoga as a location but then automatically corrects itself to set the South Bay instead.
+
+Another simple improvement was simply to give it the date. I realized that when I was asking it to find availability for a provider on Monday, it would just return incorrect results. I realized this is because it thought the date was January 9th 2025. The simple fix is just to tell it exactly what the date is.
+
+## Future Improvements
+
+- When the agent calls a tool incorrectly, it often tells the user this and says sorry, something went wrong there, let me try again. But I wish it wouldn't do this, and I think I could improve the prompts to tell it to not admit mistakes unless it's completely blocked. This would just improve the user experience, as there's nothing the user can do in this circumstance.
+- I would like to expand on memories. I added a table for memories to the application to store location data, since this is something I want to persist across sessions. But I think one of the big benefits and powers of applications like this is when it can remember things across sessions. So I would love to add things like asking the user after their booking is complete: "How was your haircut?" And based off this, it could know whether to recommend that provider again. So, I'd love to expand the memories feature of this application.
+- There is some time zone support in the application, but it's not as robust as I'd like it to be. For instance, if I'm in Seattle and I tell it I'm going to New York to make a trip, then it will give me time slots in local New York time, which is correct. However, when it adds it to my calendar, it adds it in Seattle time, which is incorrect. So there are a few rough edges around time zone support where it sort of assumes that you are in the local time zone, which I would like to fix.
+- My database has addresses for each provider, and really, I want to book a haircut that's close to me. The geos are large areas and doing geocoding to understand the distances between providers and home addresses would be a great enhancement.
+
 ## Testing
 
 ### Unit Tests
