@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import {
   hashProviderDate,
-  getBusyLevel,
-  applyMockPattern,
-} from '../../src/utils/mock-availability';
+  fetchProviderAvailability,
+  reconcileAvailability,
+} from '../../src/utils/provider-availability';
 import type { TimeSlot } from '../../src/services/availability-service';
 
-describe('Mock Availability', () => {
+describe('Provider Availability', () => {
   // Helper to create test slots
   function createTestSlots(count: number): TimeSlot[] {
     return Array.from({ length: count }, (_, i) => ({
@@ -61,7 +61,7 @@ describe('Mock Availability', () => {
     });
   });
 
-  describe('getBusyLevel', () => {
+  describe('fetchProviderAvailability', () => {
     it('should return value 0-3 for any input', () => {
       const testCases = [
         ['provider-1', '2025-06-15'],
@@ -71,7 +71,7 @@ describe('Mock Availability', () => {
       ];
 
       for (const [providerId, date] of testCases) {
-        const level = getBusyLevel(providerId, date);
+        const level = fetchProviderAvailability(providerId, date);
         expect(level).toBeGreaterThanOrEqual(0);
         expect(level).toBeLessThanOrEqual(3);
         expect([0, 1, 2, 3]).toContain(level);
@@ -79,9 +79,9 @@ describe('Mock Availability', () => {
     });
 
     it('should be deterministic (same input = same output)', () => {
-      const level1 = getBusyLevel('test-provider', '2025-06-15');
-      const level2 = getBusyLevel('test-provider', '2025-06-15');
-      const level3 = getBusyLevel('test-provider', '2025-06-15');
+      const level1 = fetchProviderAvailability('test-provider', '2025-06-15');
+      const level2 = fetchProviderAvailability('test-provider', '2025-06-15');
+      const level3 = fetchProviderAvailability('test-provider', '2025-06-15');
 
       expect(level1).toBe(level2);
       expect(level2).toBe(level3);
@@ -91,7 +91,7 @@ describe('Mock Availability', () => {
       // Test multiple providers - at least some should have different levels
       const levels = new Set<number>();
       for (let i = 0; i < 20; i++) {
-        levels.add(getBusyLevel(`provider-${i}`, '2025-06-15'));
+        levels.add(fetchProviderAvailability(`provider-${i}`, '2025-06-15'));
       }
 
       // Should have at least 2 different levels across 20 providers
@@ -103,7 +103,7 @@ describe('Mock Availability', () => {
       const levels = new Set<number>();
       for (let day = 1; day <= 20; day++) {
         const date = `2025-06-${String(day).padStart(2, '0')}`;
-        levels.add(getBusyLevel('test-provider', date));
+        levels.add(fetchProviderAvailability('test-provider', date));
       }
 
       // Should have at least 2 different levels across 20 dates
@@ -111,10 +111,10 @@ describe('Mock Availability', () => {
     });
   });
 
-  describe('applyMockPattern', () => {
+  describe('reconcileAvailability', () => {
     it('should return slots unchanged for level 0 (fully available)', () => {
       const slots = createTestSlots(10);
-      const result = applyMockPattern(slots, 0, 'provider-1', '2025-06-15');
+      const result = reconcileAvailability(slots, 0, 'provider-1', '2025-06-15');
 
       expect(result).toHaveLength(10);
       expect(result.every((slot) => slot.available === true)).toBe(true);
@@ -122,7 +122,7 @@ describe('Mock Availability', () => {
 
     it('should mark 2-3 slots unavailable for level 1 (light busy)', () => {
       const slots = createTestSlots(10);
-      const result = applyMockPattern(slots, 1, 'provider-1', '2025-06-15');
+      const result = reconcileAvailability(slots, 1, 'provider-1', '2025-06-15');
 
       const unavailableCount = result.filter((slot) => !slot.available).length;
 
@@ -132,7 +132,7 @@ describe('Mock Availability', () => {
 
     it('should mark ~50% slots unavailable for level 2 (moderate busy)', () => {
       const slots = createTestSlots(10);
-      const result = applyMockPattern(slots, 2, 'provider-1', '2025-06-15');
+      const result = reconcileAvailability(slots, 2, 'provider-1', '2025-06-15');
 
       const unavailableCount = result.filter((slot) => !slot.available).length;
 
@@ -142,7 +142,7 @@ describe('Mock Availability', () => {
 
     it('should mark all but 2-3 slots unavailable for level 3 (heavy busy)', () => {
       const slots = createTestSlots(10);
-      const result = applyMockPattern(slots, 3, 'provider-1', '2025-06-15');
+      const result = reconcileAvailability(slots, 3, 'provider-1', '2025-06-15');
 
       const availableCount = result.filter((slot) => slot.available).length;
 
@@ -151,10 +151,10 @@ describe('Mock Availability', () => {
     });
 
     it('should handle empty slot arrays gracefully', () => {
-      const result0 = applyMockPattern([], 0, 'provider-1', '2025-06-15');
-      const result1 = applyMockPattern([], 1, 'provider-1', '2025-06-15');
-      const result2 = applyMockPattern([], 2, 'provider-1', '2025-06-15');
-      const result3 = applyMockPattern([], 3, 'provider-1', '2025-06-15');
+      const result0 = reconcileAvailability([], 0, 'provider-1', '2025-06-15');
+      const result1 = reconcileAvailability([], 1, 'provider-1', '2025-06-15');
+      const result2 = reconcileAvailability([], 2, 'provider-1', '2025-06-15');
+      const result3 = reconcileAvailability([], 3, 'provider-1', '2025-06-15');
 
       expect(result0).toEqual([]);
       expect(result1).toEqual([]);
@@ -168,7 +168,7 @@ describe('Mock Availability', () => {
         { start: '2025-06-15T09:30:00', end: '2025-06-15T10:00:00', available: true },
       ];
 
-      const result = applyMockPattern(slots, 1, 'provider-1', '2025-06-15');
+      const result = reconcileAvailability(slots, 1, 'provider-1', '2025-06-15');
 
       expect(result[0].start).toBe('2025-06-15T09:00:00');
       expect(result[0].end).toBe('2025-06-15T09:30:00');
@@ -179,8 +179,8 @@ describe('Mock Availability', () => {
     it('should be deterministic (same inputs = same output)', () => {
       const slots = createTestSlots(10);
 
-      const result1 = applyMockPattern(slots, 2, 'provider-1', '2025-06-15');
-      const result2 = applyMockPattern(slots, 2, 'provider-1', '2025-06-15');
+      const result1 = reconcileAvailability(slots, 2, 'provider-1', '2025-06-15');
+      const result2 = reconcileAvailability(slots, 2, 'provider-1', '2025-06-15');
 
       expect(result1).toEqual(result2);
     });
@@ -188,8 +188,8 @@ describe('Mock Availability', () => {
     it('should produce different patterns for different providers', () => {
       const slots = createTestSlots(10);
 
-      const result1 = applyMockPattern(slots, 2, 'provider-aaa', '2025-06-15');
-      const result2 = applyMockPattern(slots, 2, 'provider-bbb', '2025-06-15');
+      const result1 = reconcileAvailability(slots, 2, 'provider-aaa', '2025-06-15');
+      const result2 = reconcileAvailability(slots, 2, 'provider-bbb', '2025-06-15');
 
       // Get indices of unavailable slots
       const unavailable1 = result1.map((s, i) => (s.available ? -1 : i)).filter((i) => i >= 0);
@@ -203,7 +203,7 @@ describe('Mock Availability', () => {
       const slots = createTestSlots(2);
 
       // Level 3 should still work with only 2 slots
-      const result = applyMockPattern(slots, 3, 'provider-1', '2025-06-15');
+      const result = reconcileAvailability(slots, 3, 'provider-1', '2025-06-15');
 
       expect(result).toHaveLength(2);
       // At least some should be available (2-3, but only 2 slots exist)
@@ -225,7 +225,7 @@ describe('Mock Availability', () => {
           for (const level of [0, 1, 2, 3] as const) {
             // Test many different providers to get varied hashes
             for (let p = 0; p < 50; p++) {
-              const result = applyMockPattern(
+              const result = reconcileAvailability(
                 slots,
                 level,
                 `provider-pow2-${slotCount}-${p}`,
@@ -244,7 +244,7 @@ describe('Mock Availability', () => {
         // Test 200 different providers/dates to cover many hash values
         for (let i = 0; i < 200; i++) {
           for (const level of [1, 2, 3] as const) {
-            const result = applyMockPattern(
+            const result = reconcileAvailability(
               slots,
               level,
               `test-provider-${i}`,
@@ -260,7 +260,7 @@ describe('Mock Availability', () => {
           const slots = createTestSlots(slotCount);
 
           for (const level of [1, 2, 3] as const) {
-            const result = applyMockPattern(
+            const result = reconcileAvailability(
               slots,
               level,
               `provider-count-${slotCount}`,
@@ -287,7 +287,7 @@ describe('Mock Availability', () => {
 
         for (const provider of edgeCaseProviders) {
           for (const level of [1, 2, 3] as const) {
-            const result = applyMockPattern(slots, level, provider, '2025-06-15');
+            const result = reconcileAvailability(slots, level, provider, '2025-06-15');
             expect(result).toHaveLength(16);
           }
         }
@@ -300,7 +300,7 @@ describe('Mock Availability', () => {
         // Run 1000 iterations - should complete in < 1 second
         for (let i = 0; i < 1000; i++) {
           for (const level of [0, 1, 2, 3] as const) {
-            applyMockPattern(slots, level, `perf-test-${i}`, '2025-06-15');
+            reconcileAvailability(slots, level, `perf-test-${i}`, '2025-06-15');
           }
         }
 

@@ -1,8 +1,8 @@
 /**
- * Mock Availability Utility
+ * Provider Availability Utility
  *
- * Provides deterministic mock availability patterns for providers.
- * Uses hash-based patterns to simulate realistic and consistent availability.
+ * Provides deterministic provider availability patterns.
+ * Uses hash-based patterns to produce consistent availability per provider/date.
  */
 
 import type { TimeSlot } from '../services/availability-service';
@@ -23,14 +23,14 @@ export function hashProviderDate(providerId: string, date: string): number {
 }
 
 /**
- * Get the busy level (0-3) for a provider on a specific date.
+ * Fetch the busy level (0-3) for a provider on a specific date.
  *
  * - Level 0: Fully available (no changes)
  * - Level 1: Light busy (2-3 slots unavailable)
  * - Level 2: Moderate busy (~50% unavailable)
  * - Level 3: Heavy busy (only 2-3 slots available)
  */
-export function getBusyLevel(providerId: string, date: string): 0 | 1 | 2 | 3 {
+export function fetchProviderAvailability(providerId: string, date: string): 0 | 1 | 2 | 3 {
   const hash = hashProviderDate(providerId, date);
   return (hash % 4) as 0 | 1 | 2 | 3;
 }
@@ -62,7 +62,7 @@ function getUnavailableIndices(
 }
 
 /**
- * Apply a mock availability pattern to a set of time slots.
+ * Reconcile a set of time slots with the provider's availability pattern.
  *
  * @param slots - The time slots to modify
  * @param busyLevel - The busy level (0-3)
@@ -70,7 +70,7 @@ function getUnavailableIndices(
  * @param date - Date string for hash seed
  * @returns Modified slots with availability applied
  */
-export function applyMockPattern(
+export function reconcileAvailability(
   slots: TimeSlot[],
   busyLevel: 0 | 1 | 2 | 3,
   providerId: string,
