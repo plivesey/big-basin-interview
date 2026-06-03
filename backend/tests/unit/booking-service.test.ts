@@ -115,16 +115,26 @@ describe('booking-service', () => {
 
     it('should generate unique booking ID', async () => {
       const providerId = insertTestProvider();
-      const data: CreateBookingData = {
-        userId: 'test_user',
-        providerId,
-        serviceType: 'haircut',
-        scheduledAt: new Date('2025-12-20T10:00:00Z'),
-        duration: 60,
-      };
-
-      const result1 = await createBooking(data, uuidv4());
-      const result2 = await createBooking(data, uuidv4());
+      const result1 = await createBooking(
+        {
+          userId: 'test_user',
+          providerId,
+          serviceType: 'haircut',
+          scheduledAt: new Date('2025-12-20T10:00:00Z'),
+          duration: 60,
+        },
+        uuidv4()
+      );
+      const result2 = await createBooking(
+        {
+          userId: 'test_user',
+          providerId,
+          serviceType: 'haircut',
+          scheduledAt: new Date('2025-12-20T15:00:00Z'),
+          duration: 60,
+        },
+        uuidv4()
+      );
 
       expect(result1.booking.id).not.toBe(result2.booking.id);
     });
@@ -185,16 +195,27 @@ describe('booking-service', () => {
 
     it('should create new booking for different idempotencyKey', async () => {
       const providerId = insertTestProvider();
-      const data: CreateBookingData = {
-        userId: 'test_user',
-        providerId,
-        serviceType: 'haircut',
-        scheduledAt: new Date('2025-12-20T10:00:00Z'),
-        duration: 60,
-      };
 
-      const result1 = await createBooking(data, uuidv4());
-      const result2 = await createBooking(data, uuidv4());
+      const result1 = await createBooking(
+        {
+          userId: 'test_user',
+          providerId,
+          serviceType: 'haircut',
+          scheduledAt: new Date('2025-12-20T10:00:00Z'),
+          duration: 60,
+        },
+        uuidv4()
+      );
+      const result2 = await createBooking(
+        {
+          userId: 'test_user',
+          providerId,
+          serviceType: 'haircut',
+          scheduledAt: new Date('2025-12-20T15:00:00Z'),
+          duration: 60,
+        },
+        uuidv4()
+      );
 
       expect(result1.created).toBe(true);
       expect(result2.created).toBe(true);
@@ -212,6 +233,133 @@ describe('booking-service', () => {
 
       await expect(createBooking(data, uuidv4())).rejects.toThrow(ApiError);
       await expect(createBooking(data, uuidv4())).rejects.toThrow(/not found/);
+    });
+  });
+
+  describe('slot conflict prevention', () => {
+    it('should reject a booking for a slot that is already taken', async () => {
+      const providerId = insertTestProvider();
+      const scheduledAt = new Date('2025-12-20T10:00:00Z');
+
+      // First booking succeeds
+      const first = await createBooking(
+        {
+          userId: 'test_user',
+          providerId,
+          serviceType: 'haircut',
+          scheduledAt,
+          duration: 60,
+        },
+        uuidv4()
+      );
+      expect(first.created).toBe(true);
+
+      // Second booking for the same provider and time is rejected
+      await expect(
+        createBooking(
+          {
+            userId: 'other_user',
+            providerId,
+            serviceType: 'haircut',
+            scheduledAt,
+            duration: 60,
+          },
+          uuidv4()
+        )
+      ).rejects.toThrow(ApiError);
+    });
+
+    it('should reject with a 409 SLOT_UNAVAILABLE error', async () => {
+      const providerId = insertTestProvider();
+      const scheduledAt = new Date('2025-12-20T14:00:00Z');
+
+      await createBooking(
+        {
+          userId: 'test_user',
+          providerId,
+          serviceType: 'haircut',
+          scheduledAt,
+          duration: 60,
+        },
+        uuidv4()
+      );
+
+      try {
+        await createBooking(
+          {
+            userId: 'other_user',
+            providerId,
+            serviceType: 'haircut',
+            scheduledAt,
+            duration: 60,
+          },
+          uuidv4()
+        );
+        throw new Error('Expected booking to be rejected');
+      } catch (err) {
+        expect(err).toBeInstanceOf(ApiError);
+        expect((err as ApiError).statusCode).toBe(409);
+        expect((err as ApiError).code).toBe('SLOT_UNAVAILABLE');
+      }
+    });
+
+    it('should allow a booking at a different time for the same provider', async () => {
+      const providerId = insertTestProvider();
+
+      const first = await createBooking(
+        {
+          userId: 'test_user',
+          providerId,
+          serviceType: 'haircut',
+          scheduledAt: new Date('2025-12-20T10:00:00Z'),
+          duration: 60,
+        },
+        uuidv4()
+      );
+      expect(first.created).toBe(true);
+
+      // A clearly separate time later that day
+      const second = await createBooking(
+        {
+          userId: 'test_user',
+          providerId,
+          serviceType: 'haircut',
+          scheduledAt: new Date('2025-12-20T15:00:00Z'),
+          duration: 60,
+        },
+        uuidv4()
+      );
+      expect(second.created).toBe(true);
+    });
+
+    it('should allow the same time slot for a different provider', async () => {
+      const providerA = insertTestProvider();
+      const providerB = insertTestProvider();
+      const scheduledAt = new Date('2025-12-20T10:00:00Z');
+
+      const first = await createBooking(
+        {
+          userId: 'test_user',
+          providerId: providerA,
+          serviceType: 'haircut',
+          scheduledAt,
+          duration: 60,
+        },
+        uuidv4()
+      );
+      expect(first.created).toBe(true);
+
+      const second = await createBooking(
+        {
+          userId: 'test_user',
+          providerId: providerB,
+          serviceType: 'haircut',
+          scheduledAt,
+          duration: 60,
+        },
+        uuidv4()
+      );
+      expect(second.created).toBe(true);
     });
   });
 
