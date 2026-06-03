@@ -15,7 +15,11 @@ import {
   ToolExecutionContext,
   ToolDefinition,
 } from '../types/tool.types';
-import { getAvailableSlots, TimeSlot } from '../services/availability-service';
+import {
+  getAvailableSlots,
+  availabilityCache,
+  TimeSlot,
+} from '../services/availability-service';
 import { getLocalDateString } from '../utils/date-utils';
 import { ProviderNotFoundError } from '../middleware/error-handler';
 import { logger } from '../utils/logger';
@@ -93,6 +97,10 @@ async function handler(
       date,
       SLOT_DURATION_MINUTES
     );
+
+    // Populate the availability cache for subsequent reads.
+    const cacheKey = `${input.providerId}:${SLOT_DURATION_MINUTES}`;
+    availabilityCache.set(cacheKey, result);
 
     // Filter to only available slots for the response
     const availableSlots = result.slots.filter((slot) => slot.available);
