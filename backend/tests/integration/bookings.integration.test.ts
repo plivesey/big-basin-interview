@@ -377,6 +377,64 @@ describe('Booking API Integration Tests', () => {
     });
   });
 
+  describe('POST /api/bookings/:id/cancel', () => {
+    it('should cancel a booking and return 200', async () => {
+      const provider = insertTestProvider();
+      const booking = insertTestBooking({ providerId: provider.id });
+      const sessionId = insertTestSession();
+      const workflowId = insertTestWorkflow(sessionId);
+
+      const response = await request(app)
+        .post(`/api/bookings/${booking.id}/cancel`)
+        .send({ workflowId });
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.booking.id).toBe(booking.id);
+      expect(response.body.data.booking.status).toBe('cancelled');
+    });
+
+    it('should persist the cancelled status', async () => {
+      const provider = insertTestProvider();
+      const booking = insertTestBooking({ providerId: provider.id });
+      const sessionId = insertTestSession();
+      const workflowId = insertTestWorkflow(sessionId);
+
+      await request(app)
+        .post(`/api/bookings/${booking.id}/cancel`)
+        .send({ workflowId });
+
+      const getResponse = await request(app).get(`/api/bookings/${booking.id}`);
+      expect(getResponse.body.data.booking.status).toBe('cancelled');
+    });
+
+    it('should return 400 for invalid booking ID format', async () => {
+      const sessionId = insertTestSession();
+      const workflowId = insertTestWorkflow(sessionId);
+
+      const response = await request(app)
+        .post('/api/bookings/not-a-uuid/cancel')
+        .send({ workflowId });
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('VALIDATION_ERROR');
+    });
+
+    it('should return 400 when workflowId is missing', async () => {
+      const provider = insertTestProvider();
+      const booking = insertTestBooking({ providerId: provider.id });
+
+      const response = await request(app)
+        .post(`/api/bookings/${booking.id}/cancel`)
+        .send({});
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('VALIDATION_ERROR');
+    });
+  });
+
   describe('GET /api/sessions/:id', () => {
     it('should return session when found', async () => {
       const sessionId = insertTestSession();

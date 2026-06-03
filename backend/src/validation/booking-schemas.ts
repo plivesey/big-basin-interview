@@ -33,6 +33,16 @@ export const bookingQuerySchema = z.object({
 export type BookingQuery = z.infer<typeof bookingQuerySchema>;
 
 /**
+ * Schema for POST /api/bookings/:id/cancel request body.
+ * The workflowId is used to find the chat session so we can notify the user.
+ */
+export const cancelBookingSchema = z.object({
+  workflowId: z.string().min(1, 'Workflow ID is required'),
+});
+
+export type CancelBookingInput = z.infer<typeof cancelBookingSchema>;
+
+/**
  * Schema for GET /api/sessions/:id path parameters
  */
 export const sessionIdSchema = z.object({
