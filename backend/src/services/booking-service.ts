@@ -206,6 +206,35 @@ export async function getBookingById(id: string): Promise<Booking | null> {
 }
 
 /**
+ * Cancel a booking by setting its status to cancelled.
+ *
+ * Returns the updated booking, or null if no booking with the given ID exists.
+ */
+export async function cancelBooking(id: string): Promise<Booking | null> {
+  logger.debug('Cancelling booking', { id });
+
+  const booking = await getBookingById(id);
+  if (!booking) {
+    return null;
+  }
+
+  const now = new Date();
+
+  await db
+    .update(bookings)
+    .set({ status: 'cancelled', updatedAt: now })
+    .where(eq(bookings.id, id));
+
+  logger.info('Booking cancelled', { bookingId: id });
+
+  return {
+    ...booking,
+    status: 'cancelled',
+    updatedAt: now,
+  };
+}
+
+/**
  * Get all bookings for a user, ordered by scheduledAt descending
  */
 export async function getBookingsByUser(userId: string): Promise<Booking[]> {

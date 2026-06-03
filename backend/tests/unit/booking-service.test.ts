@@ -4,6 +4,7 @@ import {
   createBooking,
   getBookingById,
   getBookingsByUser,
+  cancelBooking,
   checkIdempotency,
   CreateBookingData,
 } from '../../src/services/booking-service';
@@ -297,6 +298,47 @@ describe('booking-service', () => {
       const bookings = await getBookingsByUser('');
 
       expect(bookings).toHaveLength(0);
+    });
+  });
+
+  describe('cancelBooking', () => {
+    it('should set status to cancelled', async () => {
+      const providerId = insertTestProvider();
+      const inserted = insertTestBooking({ providerId, status: 'confirmed' });
+
+      const result = await cancelBooking(inserted.id);
+
+      expect(result).not.toBeNull();
+      expect(result?.status).toBe('cancelled');
+
+      // Verify it persisted
+      const reloaded = await getBookingById(inserted.id);
+      expect(reloaded?.status).toBe('cancelled');
+    });
+
+    it('should return the cancelled booking with its original details', async () => {
+      const providerId = insertTestProvider();
+      const inserted = insertTestBooking({ providerId, serviceType: 'styling' });
+
+      const result = await cancelBooking(inserted.id);
+
+      expect(result?.id).toBe(inserted.id);
+      expect(result?.serviceType).toBe('styling');
+    });
+
+    it('should return null when booking does not exist', async () => {
+      const result = await cancelBooking(uuidv4());
+
+      expect(result).toBeNull();
+    });
+
+    it('should bump the updatedAt timestamp', async () => {
+      const providerId = insertTestProvider();
+      const inserted = insertTestBooking({ providerId });
+
+      const result = await cancelBooking(inserted.id);
+
+      expect(result?.updatedAt).toBeInstanceOf(Date);
     });
   });
 
