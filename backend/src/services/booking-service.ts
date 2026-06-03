@@ -5,7 +5,18 @@ import { getProviderById } from './provider-service';
 import { submitBookingToProvider } from './external-booking-service';
 import { isCalendarConnected, createEvent } from './calendar-service';
 import { ApiError } from '../middleware/error-handler';
+import { bookingsOverlap } from '../utils/slot-conflict-checker';
 import { logger } from '../utils/logger';
+
+/**
+ * Tracks providers that currently have an in-flight booking request.
+ *
+ * Booking a slot involves an external network round-trip, so we guard against
+ * a user double-submitting by holding a short-lived lock on the provider while
+ * that request is being processed. The lock is released as soon as the booking
+ * has been persisted (or the request fails).
+ */
+const providerBookingLocks = new Set<string>();
 
 /**
  * Data required to create a booking
@@ -55,6 +66,46 @@ export async function checkIdempotency(idempotencyKey: string): Promise<Booking 
 }
 
 /**
+ * Check whether a requested slot conflicts with an existing booking for the
+ * same provider.
+ *
+ * Returns the conflicting booking if one is found, otherwise null. We load the
+ * provider's existing bookings and compare each against the requested window
+ * using the shared overlap helper.
+ */
+export async function checkSlotConflict(
+  providerId: string,
+  scheduledAt: Date,
+  duration: number
+): Promise<Booking | null> {
+  logger.debug('Checking slot conflict', {
+    providerId,
+    scheduledAt: scheduledAt.toISOString(),
+    duration,
+  });
+
+  const existing = await db
+    .select()
+    .from(bookings)
+    .where(eq(bookings.providerId, providerId));
+
+  const conflict = existing.find((booking) =>
+    bookingsOverlap(scheduledAt, duration, booking.scheduledAt, booking.duration)
+  );
+
+  if (conflict) {
+    logger.warn('Slot conflict detected', {
+      providerId,
+      requestedAt: scheduledAt.toISOString(),
+      conflictingBookingId: conflict.id,
+    });
+    return conflict;
+  }
+
+  return null;
+}
+
+/**
  * Create a new booking with idempotency check
  *
  * If a booking with the same idempotencyKey exists, returns the existing booking
@@ -87,6 +138,10 @@ export async function createBooking(
     throw new ApiError(400, 'INVALID_PROVIDER', `Provider with ID '${data.providerId}' not found`);
   }
 
+  // Acquire a short-lived lock on this provider so a rapid double-submit
+  // doesn't slip through while we talk to the external service.
+  providerBookingLocks.add(data.providerId);
+
   // Step 3: Call external booking service (mock 100ms delay)
   const externalResult = await submitBookingToProvider(data.providerId, {
     serviceType: data.serviceType,
@@ -96,6 +151,7 @@ export async function createBooking(
   });
 
   if (!externalResult.success) {
+    providerBookingLocks.delete(data.providerId);
     logger.error('External booking service failed', {
       providerId: data.providerId,
       error: externalResult.error,
@@ -103,7 +159,23 @@ export async function createBooking(
     throw new ApiError(502, 'EXTERNAL_BOOKING_FAILED', 'Failed to book with provider');
   }
 
-  // Step 4: Create booking in database
+  // Step 4: Ensure the requested slot isn't already taken for this provider
+  const conflict = await checkSlotConflict(data.providerId, data.scheduledAt, data.duration);
+  if (conflict) {
+    providerBookingLocks.delete(data.providerId);
+    logger.warn('Booking rejected: slot already booked', {
+      providerId: data.providerId,
+      scheduledAt: data.scheduledAt.toISOString(),
+      conflictingBookingId: conflict.id,
+    });
+    throw new ApiError(
+      409,
+      'SLOT_UNAVAILABLE',
+      'That time is no longer available. Please choose another slot.'
+    );
+  }
+
+  // Step 5: Create booking in database
   const now = new Date();
   const newBooking: NewBooking = {
     id: uuidv4(),
@@ -120,9 +192,12 @@ export async function createBooking(
 
   await db.insert(bookings).values(newBooking);
 
+  // The slot is now persisted, so release the provider lock.
+  providerBookingLocks.delete(data.providerId);
+
   let calendarEventId: string | null = null;
 
-  // Step 5: Create calendar event if connected (non-blocking)
+  // Step 6: Create calendar event if connected (non-blocking)
   try {
     const calendarConnected = await isCalendarConnected();
     if (calendarConnected) {

@@ -1,9 +1,28 @@
 import { describe, it, expect } from 'vitest';
-import { annotateWithConflicts } from '../../src/utils/slot-conflict-checker';
+import { annotateWithConflicts, bookingsOverlap } from '../../src/utils/slot-conflict-checker';
 import type { TimeSlot } from '@asba/shared-types';
 import type { CalendarConflict } from '../../src/types/calendar.types';
 
 describe('slot-conflict-checker', () => {
+  describe('bookingsOverlap', () => {
+    it('should detect two bookings at the exact same time', () => {
+      const start = new Date('2025-12-20T10:00:00Z');
+      expect(bookingsOverlap(start, 60, start, 60)).toBe(true);
+    });
+
+    it('should detect a partially overlapping booking', () => {
+      const a = new Date('2025-12-20T10:00:00Z');
+      const b = new Date('2025-12-20T10:30:00Z');
+      expect(bookingsOverlap(a, 60, b, 60)).toBe(true);
+    });
+
+    it('should not flag two clearly separate bookings', () => {
+      const a = new Date('2025-12-20T10:00:00Z');
+      const b = new Date('2025-12-20T15:00:00Z');
+      expect(bookingsOverlap(a, 60, b, 60)).toBe(false);
+    });
+  });
+
   describe('annotateWithConflicts', () => {
     const createSlot = (start: string, end: string, available = true): TimeSlot => ({
       start,
