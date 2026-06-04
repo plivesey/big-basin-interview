@@ -30,9 +30,7 @@ export const ConversationListItem = memo(function ConversationListItem({
     <li
       onClick={onClick}
       className={`p-3 rounded-lg cursor-pointer transition-colors ${
-        isActive
-          ? 'bg-indigo-50 border-l-2 border-indigo-600'
-          : 'hover:bg-slate-50'
+        isActive ? 'bg-indigo-50 border-l-2 border-indigo-600' : 'hover:bg-slate-50'
       }`}
     >
       <div className="flex justify-between items-start">

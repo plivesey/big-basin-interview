@@ -48,10 +48,7 @@ export function ChatContainer({
   // Toggle button visibility: connected, panel closed, has providers, workflow not complete
   const isWorkflowComplete = workflowState === 'COMPLETE';
   const showToggleButton =
-    isConnected &&
-    !isProviderPanelOpen &&
-    displayedProviders.length > 0 &&
-    !isWorkflowComplete;
+    isConnected && !isProviderPanelOpen && displayedProviders.length > 0 && !isWorkflowComplete;
 
   return (
     <div className="flex flex-col h-full bg-white rounded-xl shadow-lg overflow-hidden">
@@ -67,10 +64,7 @@ export function ChatContainer({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <PanelToggleButton
-            onClick={reopenProviderPanel}
-            visible={showToggleButton}
-          />
+          <PanelToggleButton onClick={reopenProviderPanel} visible={showToggleButton} />
           <ConnectionStatus
             status={connectionStatus}
             hasConnectedOnce={hasConnectedOnce}

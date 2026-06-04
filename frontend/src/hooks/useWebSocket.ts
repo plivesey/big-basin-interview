@@ -2,11 +2,7 @@ import { useEffect, useRef, useCallback, useState } from 'react';
 import { io } from 'socket.io-client';
 import type { Socket } from 'socket.io-client';
 import { useChatStore, parseMessage } from '../store/chat-store';
-import type {
-  ChatMessage,
-  ServerToClientEvents,
-  ClientToServerEvents,
-} from '@asba/shared-types';
+import type { ChatMessage, ServerToClientEvents, ClientToServerEvents } from '@asba/shared-types';
 import { usePanelStore } from '../store/panel-store';
 import { useBookingStore } from '../store/booking-store';
 import { useMenuStore } from '../store/menu-store';
@@ -80,36 +76,47 @@ export function useWebSocket(): UseWebSocketReturn {
   }, []);
 
   // Helper to handle message failure (used by timeout, disconnect, and error handlers)
-  const handleMessageFailure = useCallback((errorMessage: string) => {
-    // Clear timeout if any
-    clearMessageTimeout();
+  const handleMessageFailure = useCallback(
+    (errorMessage: string) => {
+      // Clear timeout if any
+      clearMessageTimeout();
 
-    // Mark last user message as failed if we have one
-    const lastUserMsgId = lastUserMessageIdRef.current;
-    if (lastUserMsgId && pendingMessageRef.current) {
-      markMessageFailed(lastUserMsgId, errorMessage);
-    }
+      // Mark last user message as failed if we have one
+      const lastUserMsgId = lastUserMessageIdRef.current;
+      if (lastUserMsgId && pendingMessageRef.current) {
+        markMessageFailed(lastUserMsgId, errorMessage);
+      }
 
-    // Remove any incomplete streaming message
-    const streamingId = streamingIdRef.current;
-    if (streamingId && streamingMessageCreatedRef.current) {
-      const messages = useChatStore.getState().messages;
-      const filteredMessages = messages.filter((msg) => msg.id !== streamingId);
-      setMessages(filteredMessages);
-    }
+      // Remove any incomplete streaming message
+      const streamingId = streamingIdRef.current;
+      if (streamingId && streamingMessageCreatedRef.current) {
+        const messages = useChatStore.getState().messages;
+        const filteredMessages = messages.filter((msg) => msg.id !== streamingId);
+        setMessages(filteredMessages);
+      }
 
-    // Set the last error for display
-    setLastError(errorMessage);
+      // Set the last error for display
+      setLastError(errorMessage);
 
-    // Clear streaming state
-    streamingIdRef.current = null;
-    streamingMessageCreatedRef.current = false;
-    setStreamingMessageId(null);
-    setIsLoading(false);
-    setIsAiWorking(false);
-    pendingMessageRef.current = false;
-    setIsRetrying(false);
-  }, [clearMessageTimeout, markMessageFailed, setMessages, setLastError, setStreamingMessageId, setIsLoading, setIsAiWorking]);
+      // Clear streaming state
+      streamingIdRef.current = null;
+      streamingMessageCreatedRef.current = false;
+      setStreamingMessageId(null);
+      setIsLoading(false);
+      setIsAiWorking(false);
+      pendingMessageRef.current = false;
+      setIsRetrying(false);
+    },
+    [
+      clearMessageTimeout,
+      markMessageFailed,
+      setMessages,
+      setLastError,
+      setStreamingMessageId,
+      setIsLoading,
+      setIsAiWorking,
+    ]
+  );
 
   // Helper to clear initial connection timeout
   const clearInitialConnectionTimeout = useCallback(() => {
@@ -249,7 +256,10 @@ export function useWebSocket(): UseWebSocketReturn {
 
     // Session events
     socket.on('session_created', (data) => {
-      logger.info('Session created', { sessionId: data.sessionId, currentWorkflowId: data.currentWorkflowId });
+      logger.info('Session created', {
+        sessionId: data.sessionId,
+        currentWorkflowId: data.currentWorkflowId,
+      });
       setSessionId(data.sessionId);
       storeSessionId(data.sessionId);
       // Update current session ID in menu store for conversation list
@@ -356,7 +366,9 @@ export function useWebSocket(): UseWebSocketReturn {
         workflowId: data.workflowId,
         workflowState: data.workflowState,
       });
-      usePanelStore.getState().openProviderPanel(data.providers, data.workflowId, data.workflowState);
+      usePanelStore
+        .getState()
+        .openProviderPanel(data.providers, data.workflowId, data.workflowState);
     });
 
     // Open provider detail modal (from AI select_provider tool)
@@ -431,57 +443,69 @@ export function useWebSocket(): UseWebSocketReturn {
   }, [disconnect, connect]);
 
   // Send a message
-  const sendMessage = useCallback((message: string) => {
-    const socket = socketRef.current;
-    const sessionId = useChatStore.getState().sessionId;
+  const sendMessage = useCallback(
+    (message: string) => {
+      const socket = socketRef.current;
+      const sessionId = useChatStore.getState().sessionId;
 
-    if (!message.trim()) {
-      return;
-    }
-
-    const trimmedMessage = message.trim();
-
-    // Add user message to store immediately (optimistic update)
-    const messageId = `temp-${Date.now()}`;
-    const userMessage: ChatMessage = {
-      id: messageId,
-      sessionId: sessionId || '',
-      role: 'user',
-      content: [{ type: 'text', text: trimmedMessage }],
-      createdAt: new Date(),
-    };
-    addMessage(userMessage);
-    setIsLoading(true);
-
-    // Track the user message ID for error handling
-    lastUserMessageIdRef.current = messageId;
-    pendingMessageRef.current = true;
-
-    // If not connected, queue the message for later
-    if (!socket?.connected) {
-      logger.debug('Queueing message - not connected yet', { message: trimmedMessage.substring(0, 50) });
-      messageQueueRef.current.push(trimmedMessage);
-      queuedMessageIdsRef.current.push(messageId);
-      setLastAttemptedMessage(trimmedMessage);
-      return;
-    }
-
-    // Connected - send immediately
-    setLastAttemptedMessage(trimmedMessage);
-    setLastError(null);
-    clearMessageTimeout();
-
-    // Set a timeout for message acknowledgment (30 seconds)
-    messageTimeoutRef.current = setTimeout(() => {
-      if (pendingMessageRef.current) {
-        logger.warn('Message timeout - no response received');
-        handleMessageFailure(ERROR_MESSAGES.AI_TIMEOUT);
+      if (!message.trim()) {
+        return;
       }
-    }, 30000);
 
-    // Send to server
-    socket.emit('user_message', { message: trimmedMessage });
-  }, [addMessage, setIsLoading, setLastAttemptedMessage, setLastError, clearMessageTimeout, handleMessageFailure]);
+      const trimmedMessage = message.trim();
+
+      // Add user message to store immediately (optimistic update)
+      const messageId = `temp-${Date.now()}`;
+      const userMessage: ChatMessage = {
+        id: messageId,
+        sessionId: sessionId || '',
+        role: 'user',
+        content: [{ type: 'text', text: trimmedMessage }],
+        createdAt: new Date(),
+      };
+      addMessage(userMessage);
+      setIsLoading(true);
+
+      // Track the user message ID for error handling
+      lastUserMessageIdRef.current = messageId;
+      pendingMessageRef.current = true;
+
+      // If not connected, queue the message for later
+      if (!socket?.connected) {
+        logger.debug('Queueing message - not connected yet', {
+          message: trimmedMessage.substring(0, 50),
+        });
+        messageQueueRef.current.push(trimmedMessage);
+        queuedMessageIdsRef.current.push(messageId);
+        setLastAttemptedMessage(trimmedMessage);
+        return;
+      }
+
+      // Connected - send immediately
+      setLastAttemptedMessage(trimmedMessage);
+      setLastError(null);
+      clearMessageTimeout();
+
+      // Set a timeout for message acknowledgment (30 seconds)
+      messageTimeoutRef.current = setTimeout(() => {
+        if (pendingMessageRef.current) {
+          logger.warn('Message timeout - no response received');
+          handleMessageFailure(ERROR_MESSAGES.AI_TIMEOUT);
+        }
+      }, 30000);
+
+      // Send to server
+      socket.emit('user_message', { message: trimmedMessage });
+    },
+    [
+      addMessage,
+      setIsLoading,
+      setLastAttemptedMessage,
+      setLastError,
+      clearMessageTimeout,
+      handleMessageFailure,
+    ]
+  );
 
   // Retry the last failed message
   const retryLastMessage = useCallback(() => {
@@ -512,31 +536,34 @@ export function useWebSocket(): UseWebSocketReturn {
   }, [clearMessageError, setMessages, setLastError, sendMessage]);
 
   // Switch to a different session
-  const switchSession = useCallback((sessionId: string) => {
-    logger.info('Switching session', { sessionId });
+  const switchSession = useCallback(
+    (sessionId: string) => {
+      logger.info('Switching session', { sessionId });
 
-    // Disconnect current socket
-    disconnect();
+      // Disconnect current socket
+      disconnect();
 
-    // Update session storage with new session ID
-    try {
-      sessionStorage.setItem(SESSION_STORAGE_KEY, sessionId);
-    } catch {
-      // Ignore storage errors
-    }
+      // Update session storage with new session ID
+      try {
+        sessionStorage.setItem(SESSION_STORAGE_KEY, sessionId);
+      } catch {
+        // Ignore storage errors
+      }
 
-    // Reset all stores
-    useChatStore.getState().reset();
-    usePanelStore.getState().reset();
-    useBookingStore.getState().reset();
+      // Reset all stores
+      useChatStore.getState().reset();
+      usePanelStore.getState().reset();
+      useBookingStore.getState().reset();
 
-    // Update current session ID in menu store
-    useMenuStore.getState().setCurrentSessionId(sessionId);
+      // Update current session ID in menu store
+      useMenuStore.getState().setCurrentSessionId(sessionId);
 
-    // Reconnect with the new session ID
-    reconnectAttempts.current = 0;
-    connect();
-  }, [disconnect, connect]);
+      // Reconnect with the new session ID
+      reconnectAttempts.current = 0;
+      connect();
+    },
+    [disconnect, connect]
+  );
 
   // Create a new session
   const createNewSession = useCallback(() => {

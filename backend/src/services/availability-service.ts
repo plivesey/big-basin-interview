@@ -1,14 +1,17 @@
 /**
  * Availability Service
  *
- * Generates time slots based on provider working hours and applies
- * mock availability patterns to simulate realistic booking availability.
+ * Generates time slots based on provider working hours and reconciles
+ * them with provider availability to produce bookable time slots.
  */
 
 import type { TimeSlot } from '@asba/shared-types';
 import { getProviderById } from './provider-service';
 import { checkConflicts } from './calendar-service';
-import { getBusyLevel, applyMockPattern } from '../utils/mock-availability';
+import {
+  fetchProviderAvailability,
+  reconcileAvailability,
+} from '../utils/provider-availability';
 import { annotateWithConflicts } from '../utils/slot-conflict-checker';
 import {
   getLocalDateString,
@@ -87,7 +90,7 @@ function generateTimeSlots(
     slots.push({
       start: toLocalISOString(date, startTime),
       end: toLocalISOString(date, endTime),
-      available: true, // Will be modified by mock pattern
+      available: true, // Will be reconciled against provider availability
     });
   }
 
@@ -110,24 +113,23 @@ function filterPastSlots(slots: TimeSlot[], now: Date = new Date()): TimeSlot[] 
 }
 
 /**
- * Apply mock availability patterns to slots.
- * This simulates realistic booking availability for demo purposes.
+ * Reconcile slots against the provider's availability.
  *
- * NOTE: This is mock functionality. In production, this would be replaced
- * with real availability data from provider calendars/booking systems.
+ * Fetches the provider's availability for the date and reconciles the
+ * generated slot grid against it, marking slots available or unavailable.
  *
- * @param slots - Time slots to apply mock pattern to
- * @param providerId - Provider ID (used for deterministic randomness)
- * @param date - Date string (used for deterministic randomness)
- * @returns Slots with availability modified by mock pattern
+ * @param slots - Time slots to reconcile
+ * @param providerId - Provider ID (used for deterministic lookup)
+ * @param date - Date string (used for deterministic lookup)
+ * @returns Slots with availability reconciled against the provider
  */
-function applyMockAvailability(
+function applyAvailability(
   slots: TimeSlot[],
   providerId: string,
   date: string
 ): TimeSlot[] {
-  const busyLevel = getBusyLevel(providerId, date);
-  return applyMockPattern(slots, busyLevel, providerId, date);
+  const providerAvailability = fetchProviderAvailability(providerId, date);
+  return reconcileAvailability(slots, providerAvailability, providerId, date);
 }
 
 /**
@@ -162,8 +164,8 @@ export async function getAvailableSlots(
     slots = filterPastSlots(slots);
   }
 
-  // Apply mock availability (in production, replace with real availability data)
-  slots = applyMockAvailability(slots, providerId, date);
+  // Reconcile slots against the provider's availability
+  slots = applyAvailability(slots, providerId, date);
 
   // Check for calendar conflicts if slots exist
   // Note: checkConflicts handles errors gracefully and returns [] if calendar not connected

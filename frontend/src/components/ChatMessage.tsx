@@ -36,9 +36,7 @@ export const ChatMessage = memo(function ChatMessage({
           )}
           {showTypingIndicator && <TypingIndicator />}
         </div>
-        {timestamp && (
-          <div className="mt-1 text-xs opacity-70 text-right">{timestamp}</div>
-        )}
+        {timestamp && <div className="mt-1 text-xs opacity-70 text-right">{timestamp}</div>}
       </div>
     </div>
   );

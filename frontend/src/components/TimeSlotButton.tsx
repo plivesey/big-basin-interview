@@ -58,9 +58,7 @@ export const TimeSlotButton = memo(function TimeSlotButton({
   const ariaLabel = `${timeDisplay}${isSelected ? ' - selected' : ''}${hasConflict ? ' - has calendar conflict' : ''}`;
 
   // Build tooltip text for conflicts (used as data attribute for CSS tooltip)
-  const tooltipText = hasConflict
-    ? `Conflicts with: ${slot.conflict!.eventTitle}`
-    : undefined;
+  const tooltipText = hasConflict ? `Conflicts with: ${slot.conflict!.eventTitle}` : undefined;
 
   return (
     <button

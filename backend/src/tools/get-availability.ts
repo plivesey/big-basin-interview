@@ -19,6 +19,10 @@ import { getAvailableSlots, TimeSlot } from '../services/availability-service';
 import { getLocalDateString } from '../utils/date-utils';
 import { ProviderNotFoundError } from '../middleware/error-handler';
 import { logger } from '../utils/logger';
+import {
+  providerNotFoundForAvailability,
+  AVAILABILITY_FETCH_FAILED,
+} from '../prompts';
 
 // Input schema (Zod for validation)
 export const getAvailabilityInputSchema = z.object({
@@ -28,12 +32,6 @@ export const getAvailabilityInputSchema = z.object({
     .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format')
     .optional()
     .describe('Date to check availability (YYYY-MM-DD format, defaults to today)'),
-  duration: z
-    .number()
-    .min(15)
-    .max(480)
-    .optional()
-    .describe('Appointment duration in minutes (defaults to 30)'),
 });
 
 export type GetAvailabilityInput = z.infer<typeof getAvailabilityInputSchema>;
@@ -54,10 +52,6 @@ export const getAvailabilityDefinition: ToolDefinition = {
         type: 'string',
         description:
           'Date to check availability in YYYY-MM-DD format. Defaults to today if not specified.',
-      },
-      duration: {
-        type: 'number',
-        description: 'Appointment duration in minutes. Defaults to 30.',
       },
     },
     required: ['providerId'],
@@ -83,20 +77,21 @@ async function handler(
   logger.info('get_availability executing', {
     providerId: input.providerId,
     date: input.date,
-    duration: input.duration,
     sessionId: context.sessionId,
   });
+
+  // Always use 30 minute slots
+  const SLOT_DURATION_MINUTES = 30;
 
   try {
     // Default to today's date if not provided
     const date = input.date || getLocalDateString();
-    const duration = input.duration || 30;
 
     // Get availability from service
     const result = await getAvailableSlots(
       input.providerId,
       date,
-      duration
+      SLOT_DURATION_MINUTES
     );
 
     // Filter to only available slots for the response
@@ -134,7 +129,7 @@ async function handler(
         date: defaultDate,
         availableSlots: [],
         totalSlots: 0,
-        error: `Provider ID '${input.providerId}' does not exist. Use the search_providers tool first to find valid provider IDs, then use one of those IDs with this tool.`,
+        error: providerNotFoundForAvailability(input.providerId),
       };
     }
 
@@ -145,7 +140,7 @@ async function handler(
       date: defaultDate,
       availableSlots: [],
       totalSlots: 0,
-      error: 'Failed to retrieve availability.',
+      error: AVAILABILITY_FETCH_FAILED,
     };
   }
 }

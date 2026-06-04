@@ -172,8 +172,12 @@ describe('chat-store', () => {
         content: [{ type: 'text', text: 'Modified' }],
       });
 
-      expect(useChatStore.getState().messages[0].content).toEqual([{ type: 'text', text: 'First' }]);
-      expect(useChatStore.getState().messages[1].content).toEqual([{ type: 'text', text: 'Modified' }]);
+      expect(useChatStore.getState().messages[0].content).toEqual([
+        { type: 'text', text: 'First' },
+      ]);
+      expect(useChatStore.getState().messages[1].content).toEqual([
+        { type: 'text', text: 'Modified' },
+      ]);
     });
   });
 

@@ -25,13 +25,7 @@ import { Button } from './Button';
 /**
  * Modal overlay with escape key handling
  */
-function ModalOverlay({
-  children,
-  onClose,
-}: {
-  children: React.ReactNode;
-  onClose: () => void;
-}) {
+function ModalOverlay({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
   // Handle escape key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -307,9 +301,7 @@ function SuccessView() {
           Your appointment at {bookingResult.providerName} is confirmed.
         </p>
         {bookingResult.calendarEventAdded && (
-          <p className="body-small mt-2 text-slate-600">
-            I've added it to your Google Calendar.
-          </p>
+          <p className="body-small mt-2 text-slate-600">I've added it to your Google Calendar.</p>
         )}
       </div>
 
@@ -405,8 +397,5 @@ export const ProviderDetailModal = memo(function ProviderDetailModal() {
       break;
   }
 
-  return createPortal(
-    <ModalOverlay onClose={handleClose}>{content}</ModalOverlay>,
-    document.body
-  );
+  return createPortal(<ModalOverlay onClose={handleClose}>{content}</ModalOverlay>, document.body);
 });

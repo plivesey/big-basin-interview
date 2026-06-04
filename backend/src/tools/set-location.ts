@@ -7,6 +7,7 @@ import { RegisteredTool, ToolName, ToolExecutionContext, ToolDefinition } from '
 import { setLocationMemory } from '../services/memory-service';
 import { matchProviderGeo, PROVIDER_GEO_NAMES } from '../constants/supported-locations';
 import { logger } from '../utils/logger';
+import { locationNotSupported } from '../prompts';
 
 // Input schema (Zod for validation)
 export const setLocationInputSchema = z.object({
@@ -64,7 +65,7 @@ async function handler(
 
     return {
       success: false,
-      error: `"${input.location}" is not a supported location. Supported locations: ${supportedList.join(', ')}.`,
+      error: locationNotSupported(input.location, supportedList),
       supportedLocations: supportedList,
     };
   }

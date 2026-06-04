@@ -50,8 +50,12 @@ cp frontend/.env.example frontend/.env
 
 ```bash
 cd backend
-npm run db:push    # Create tables
-npm run db:seed    # Add sample providers
+
+# Create tables
+npm run db:push
+
+# Add sample providers
+npm run db:seed
 ```
 
 4. **Start development servers:**
@@ -127,7 +131,6 @@ npm run test         # Run tests
 npm run lint         # Run ESLint
 npm run lint:fix     # Fix ESLint issues
 npm run format       # Format with Prettier
-npm run preview      # Preview production build
 ```
 
 ## Environment Variables
@@ -142,6 +145,10 @@ npm run preview      # Preview production build
 | `CLAUDE_MODEL` | No | claude-sonnet-4-5 | Claude model to use |
 | `FRONTEND_URL` | No | http://localhost:5173 | Frontend URL for CORS |
 | `LOG_LEVEL` | No | info | Logging level |
+| `GOOGLE_CLIENT_ID` | Yes* | (see .env.example) | Google OAuth client ID (*required if using Calendar) |
+| `GOOGLE_CLIENT_SECRET` | Yes* | - | Google OAuth client secret (*required if using Calendar) |
+| `GOOGLE_REDIRECT_URI` | No | http://localhost:3001/auth/google/callback | OAuth callback URL |
+| `GOOGLE_CALENDAR_ID` | No | primary | Google Calendar ID to use |
 
 See `backend/.env.example` for all options.
 
@@ -151,60 +158,20 @@ See `backend/.env.example` for all options.
 |----------|----------|---------|-------------|
 | `VITE_BACKEND_URL` | No | http://localhost:3001 | Backend API URL |
 
-## API Endpoints
+## Prompt Design Choices
 
-### Providers
+For my prompt design, I started by writing (with Claude) a brand strategy document (which you can see in documentation). Included in this are the voice and tone guidelines for the application. I turned this into an agent, which wrote the copy based off these brand strategy guidelines. This was also the basis for the prompts as I wanted the agent to have a similar voice and tone to the copy used in the application. As well as this, I made sure to include in the prompt concise instructions on how to use all tools, including examples.
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/providers` | List providers. Query params: `serviceType`, `geo` |
-| GET | `/api/providers/:id` | Get provider details |
-| GET | `/api/providers/:id/availability?date=YYYY-MM-DD` | Get available time slots |
+The biggest breakthrough I had in improving how the agent worked was actually in the error responses for the tools. So I noticed that sometimes it would try searching for providers before a location had been set (which isn't helpful as we don't know which geo to search yet). And in this case, the agent would just respond with something like, "Oops! Something went wrong. Sorry about that." So, to fix this, in the error response from the tool, I now return specific instructions on what to do differently. So the error reads something like: "Please ask the user for their location and call the set location tool first." You can actually see an unintentional example of this in the video where it tries to set Saratoga as a location but then automatically corrects itself to set the South Bay instead.
 
-**Example: Search providers**
-```bash
-curl "http://localhost:3001/api/providers?serviceType=haircut"
-```
+Another simple improvement was simply to give it the date. I realized that when I was asking it to find availability for a provider on Monday, it would just return incorrect results. I realized this is because it thought the date was January 9th 2025. The simple fix is just to tell it exactly what the date is.
 
-**Example: Get availability**
-```bash
-curl "http://localhost:3001/api/providers/provider-1/availability?date=2025-01-15"
-```
+## Future Improvements
 
-### Bookings
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/bookings` | List all bookings |
-| POST | `/api/bookings` | Create a booking |
-| GET | `/api/bookings/:id` | Get booking details |
-
-**Example: Create booking**
-```bash
-curl -X POST "http://localhost:3001/api/bookings" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "providerId": "provider-1",
-    "serviceType": "haircut",
-    "scheduledAt": "2025-01-15T10:00:00Z",
-    "duration": 30,
-    "idempotencyKey": "unique-key-123"
-  }'
-```
-
-### Sessions
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/sessions/:id` | Get session details and message history |
-
-### Google Calendar (Optional)
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/auth/google` | Start OAuth flow |
-| GET | `/api/auth/google/callback` | OAuth callback |
-| GET | `/api/auth/status` | Check auth status |
+- When the agent calls a tool incorrectly, it often tells the user this and says sorry, something went wrong there, let me try again. But I wish it wouldn't do this, and I think I could improve the prompts to tell it to not admit mistakes unless it's completely blocked. This would just improve the user experience, as there's nothing the user can do in this circumstance.
+- I would like to expand on memories. I added a table for memories to the application to store location data, since this is something I want to persist across sessions. But I think one of the big benefits and powers of applications like this is when it can remember things across sessions. So I would love to add things like asking the user after their booking is complete: "How was your haircut?" And based off this, it could know whether to recommend that provider again. So, I'd love to expand the memories feature of this application.
+- There is some time zone support in the application, but it's not as robust as I'd like it to be. For instance, if I'm in Seattle and I tell it I'm going to New York to make a trip, then it will give me time slots in local New York time, which is correct. However, when it adds it to my calendar, it adds it in Seattle time, which is incorrect. So there are a few rough edges around time zone support where it sort of assumes that you are in the local time zone, which I would like to fix.
+- My database has addresses for each provider, and really, I want to book a haircut that's close to me. The geos are large areas and doing geocoding to understand the distances between providers and home addresses would be a great enhancement.
 
 ## Testing
 
@@ -218,29 +185,17 @@ cd backend && npm test
 
 # Frontend unit tests
 cd frontend && npm test
-
-# Run with coverage
-npm run test:coverage
 ```
 
-### Integration Tests
+### Automated QA Testing with Claude
 
-Integration tests verify components work together correctly:
+For automated browser-based testing, install the [Playwright MCP server](https://github.com/anthropics/claude-code/tree/main/mcp-servers/playwright). This enables Claude to perform manual QA testing through browser automation.
 
 ```bash
-# Run integration tests
-cd backend && npm run test:integration
+claude mcp add playwright -- npx @playwright/mcp@latest
 ```
 
-### Manual Testing
-
-For manual QA, use the following checklist:
-
-1. **Chat Flow**: Send messages and verify AI responses stream correctly
-2. **Provider Search**: Ask for services and verify provider panel opens
-3. **Booking Flow**: Complete a booking through the modal
-4. **Error Handling**: Stop the backend and verify error messages display
-5. **Reconnection**: Disconnect and verify reconnection works
+Once installed, Claude can use the [QA Testing Agent](.claude/agents/qa-tester.md) to test features, identify bugs, and generate detailed test reports with screenshots. You can also use the [Playwright Testing Skill](.claude/skills/playwright-testing.md) via `/playwright-testing` for quick browser-based tests.
 
 ## Troubleshooting
 

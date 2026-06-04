@@ -21,7 +21,12 @@ export function Button({
 }: ButtonProps) {
   const getButtonClass = () => {
     const baseClasses: Record<ButtonVariant, string> = {
-      primary: size === 'large' ? 'btn-primary-large' : size === 'small' ? 'btn-primary-small' : 'btn-primary',
+      primary:
+        size === 'large'
+          ? 'btn-primary-large'
+          : size === 'small'
+            ? 'btn-primary-small'
+            : 'btn-primary',
       secondary: 'btn-secondary',
       text: 'btn-text',
       icon: 'btn-icon',
@@ -35,14 +40,8 @@ export function Button({
   };
 
   return (
-    <button
-      className={getButtonClass()}
-      disabled={disabled || loading}
-      {...props}
-    >
-      {loading && (
-        <div className="spinner-small mr-2" />
-      )}
+    <button className={getButtonClass()} disabled={disabled || loading} {...props}>
+      {loading && <div className="spinner-small mr-2" />}
       {children}
     </button>
   );

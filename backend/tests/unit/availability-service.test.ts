@@ -7,10 +7,10 @@ vi.mock('../../src/services/provider-service', () => ({
   getProviderById: vi.fn(),
 }));
 
-// Mock the mock-availability module
-vi.mock('../../src/utils/mock-availability', () => ({
-  getBusyLevel: vi.fn().mockReturnValue(0), // Default to fully available
-  applyMockPattern: vi.fn((slots) => slots), // Pass through unchanged by default
+// Mock the provider-availability module
+vi.mock('../../src/utils/provider-availability', () => ({
+  fetchProviderAvailability: vi.fn().mockReturnValue(0), // Default to fully available
+  reconcileAvailability: vi.fn((slots) => slots), // Pass through unchanged by default
 }));
 
 // Mock logger to avoid console output during tests
@@ -25,11 +25,14 @@ vi.mock('../../src/utils/logger', () => ({
 
 // Import after mocking
 import { getProviderById } from '../../src/services/provider-service';
-import { getBusyLevel, applyMockPattern } from '../../src/utils/mock-availability';
+import {
+  fetchProviderAvailability,
+  reconcileAvailability,
+} from '../../src/utils/provider-availability';
 
 const mockGetProviderById = vi.mocked(getProviderById);
-const mockGetBusyLevel = vi.mocked(getBusyLevel);
-const mockApplyMockPattern = vi.mocked(applyMockPattern);
+const mockFetchProviderAvailability = vi.mocked(fetchProviderAvailability);
+const mockReconcileAvailability = vi.mocked(reconcileAvailability);
 
 describe('Availability Service', () => {
   // Test provider with standard working hours (9am-5pm Monday-Friday)
@@ -59,8 +62,8 @@ describe('Availability Service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Reset mock implementations
-    mockGetBusyLevel.mockReturnValue(0);
-    mockApplyMockPattern.mockImplementation((slots) => slots);
+    mockFetchProviderAvailability.mockReturnValue(0);
+    mockReconcileAvailability.mockImplementation((slots) => slots);
   });
 
   afterEach(() => {
@@ -205,22 +208,22 @@ describe('Availability Service', () => {
     });
   });
 
-  describe('applyMockAvailability (via getAvailableSlots)', () => {
-    it('should call getBusyLevel with provider ID and date', async () => {
+  describe('applyAvailability (via getAvailableSlots)', () => {
+    it('should call fetchProviderAvailability with provider ID and date', async () => {
       mockGetProviderById.mockResolvedValue(testProvider);
 
       await getAvailableSlots('test-provider-uuid', '2025-06-16', 30);
 
-      expect(mockGetBusyLevel).toHaveBeenCalledWith('test-provider-uuid', '2025-06-16');
+      expect(mockFetchProviderAvailability).toHaveBeenCalledWith('test-provider-uuid', '2025-06-16');
     });
 
-    it('should call applyMockPattern with slots, busy level, provider ID, and date', async () => {
+    it('should call reconcileAvailability with slots, busy level, provider ID, and date', async () => {
       mockGetProviderById.mockResolvedValue(testProvider);
-      mockGetBusyLevel.mockReturnValue(2);
+      mockFetchProviderAvailability.mockReturnValue(2);
 
       await getAvailableSlots('test-provider-uuid', '2025-06-16', 30);
 
-      expect(mockApplyMockPattern).toHaveBeenCalledWith(
+      expect(mockReconcileAvailability).toHaveBeenCalledWith(
         expect.any(Array),
         2,
         'test-provider-uuid',

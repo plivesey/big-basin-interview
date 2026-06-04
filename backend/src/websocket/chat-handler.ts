@@ -6,6 +6,7 @@ import { getWorkflow, WorkflowState } from '../services/workflow-service';
 import { getProvidersByIds } from '../services/provider-service';
 import { sendMessage as sendAIMessage, AIError } from '../services/ai-conversation-service';
 import { logger, requestContext } from '../utils/logger';
+import { initializeEventHandlers } from './event-handlers';
 import type { ServerToClientEvents, ClientToServerEvents, ChatMessage, RawChatMessage, DisplayProvider, WorkflowState as SharedWorkflowState } from '@asba/shared-types';
 
 // Re-export WebSocket event types for consumers
@@ -45,6 +46,10 @@ export type ChatServer = Server<ClientToServerEvents, ServerToClientEvents, Inte
  * Initialize WebSocket chat handlers
  */
 export function initializeChatHandler(io: ChatServer): void {
+  // Initialize event bus handlers for domain events (booking confirmations, etc.)
+  // This centralizes all socket emission triggered by external services
+  initializeEventHandlers(io);
+
   io.on('connection', async (socket: ChatSocket) => {
     logger.info('Client connected', { socketId: socket.id });
 

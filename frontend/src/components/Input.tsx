@@ -22,22 +22,10 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 
     return (
       <div className="w-full">
-        {label && (
-          <label className="label-text">
-            {label}
-          </label>
-        )}
-        <input
-          ref={ref}
-          className={`${variantClasses[inputVariant]} ${className}`}
-          {...props}
-        />
-        {error && (
-          <p className="mt-2 text-sm text-red-600">{error}</p>
-        )}
-        {helperText && !error && (
-          <p className="mt-2 text-sm text-slate-600">{helperText}</p>
-        )}
+        {label && <label className="label-text">{label}</label>}
+        <input ref={ref} className={`${variantClasses[inputVariant]} ${className}`} {...props} />
+        {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+        {helperText && !error && <p className="mt-2 text-sm text-slate-600">{helperText}</p>}
       </div>
     );
   }

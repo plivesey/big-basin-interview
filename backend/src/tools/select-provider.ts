@@ -20,6 +20,11 @@ import {
   WorkflowState,
 } from '../services/workflow-service';
 import { logger } from '../utils/logger';
+import {
+  NO_ACTIVE_WORKFLOW,
+  providerNotFound,
+  WORKFLOW_TRANSITION_FAILED,
+} from '../prompts';
 
 // Input schema (Zod for validation)
 export const selectProviderInputSchema = z.object({
@@ -75,7 +80,7 @@ async function handler(
       success: false,
       providerId: input.providerId,
       providerName: '',
-      error: 'No active booking workflow. Please search for providers first.',
+      error: NO_ACTIVE_WORKFLOW,
     };
   }
 
@@ -104,7 +109,7 @@ async function handler(
       success: false,
       providerId: input.providerId,
       providerName: '',
-      error: `Provider ID '${input.providerId}' does not exist.${validProvidersList}\nUse one of these exact IDs with select_provider.`,
+      error: providerNotFound(input.providerId, validProvidersList || undefined),
     };
   }
 
@@ -126,7 +131,7 @@ async function handler(
       success: false,
       providerId: input.providerId,
       providerName: provider.name,
-      error: 'Failed to update booking workflow.',
+      error: WORKFLOW_TRANSITION_FAILED,
     };
   }
 

@@ -17,12 +17,7 @@ export const NewConversationButton = memo(function NewConversationButton({
       className="p-2 rounded-lg hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500"
       aria-label="New conversation"
     >
-      <svg
-        className="w-5 h-5 text-slate-600"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
+      <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         {/* Document with plus icon */}
         <path
           strokeLinecap="round"
