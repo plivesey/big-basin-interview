@@ -22,6 +22,7 @@ import {
 import { ProviderNotFoundError } from '../middleware/error-handler';
 import type { WorkingHours } from '../db/schema';
 import { logger } from '../utils/logger';
+import { TtlCache } from '../utils/cache';
 
 // Re-export TimeSlot for dependent files
 export type { TimeSlot } from '@asba/shared-types';
@@ -31,6 +32,20 @@ export interface AvailabilityResult {
   providerName: string;
   date: string; // YYYY-MM-DD
   slots: TimeSlot[];
+}
+
+// Availability changes rarely, so a short TTL keeps the hot read path fast.
+// Shared across the process and populated by callers of getAvailableSlots.
+const AVAILABILITY_TTL_MS = 60 * 1000; // 60 seconds
+export const availabilityCache = new TtlCache<AvailabilityResult>(
+  AVAILABILITY_TTL_MS
+);
+
+/**
+ * Clear the availability cache.
+ */
+export function clearAvailabilityCache(): void {
+  availabilityCache.clear();
 }
 
 /**
@@ -146,6 +161,14 @@ export async function getAvailableSlots(
   date: string,
   duration: number
 ): Promise<AvailabilityResult> {
+  // Serve from cache when we've recently computed this provider/duration.
+  const cacheKey = `${providerId}:${duration}`;
+  const cached = availabilityCache.get(cacheKey);
+  if (cached) {
+    logger.error('Availability cache hit', { providerId, duration });
+    return cached;
+  }
+
   // Get provider from database
   const provider = await getProviderById(providerId);
 
