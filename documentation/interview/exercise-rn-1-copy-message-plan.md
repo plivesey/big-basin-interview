@@ -56,7 +56,7 @@ The toast is short-lived and the chat screen stays mounted for the life of the a
 
 ### Clearing up afterwards
 
-A copied phone number shouldn't sit on the pasteboard indefinitely. An `AppState` listener clears it when the app goes to the background, which keeps the window where that data is exposed down to the session it was copied in.
+A copied phone number shouldn't sit on the pasteboard indefinitely. An `AppState` listener clears it when the app goes to the background.
 
 ### Why a toast rather than an action sheet
 
