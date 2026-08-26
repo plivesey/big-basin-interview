@@ -28,7 +28,7 @@ Three pieces: the clipboard call, the gesture, and the confirmation.
 
 I'll set `delayLongPress={200}`. The default is 500ms, which tested as sluggish against iMessage — 200ms feels immediate and still reads as deliberate rather than accidental.
 
-The transcript is a scrolling surface, so the long-press has to win cleanly or the user will start a copy and end up with a scroll. On press-in we disable scrolling on the list, and re-enable it on press-out. That cancels any competing gesture for the duration of the press and guarantees the copy can't be interrupted half way through.
+On press-in we disable all other gestures, and re-enable them on press-out. That means nothing can compete with the press for its duration, and the copy can't be interrupted half way through.
 
 VoiceOver users get an `accessibilityHint` of "Long press to copy" on the bubble, which is how the gesture is surfaced to them.
 
@@ -68,7 +68,7 @@ The alternative is a long-press menu — `ActionSheetIOS`, or a popover with Cop
 
 - `mobile/src/components/chat/CopyToast.tsx` — new; the fading confirmation.
 - `mobile/src/components/chat/MessageBubble.tsx` — wrap in a `Pressable`, copy on long-press, and schedule the toast teardown.
-- `mobile/src/components/chat/MessageList.tsx` — own the toast state and the list's `scrollEnabled` flag, and clear the pasteboard on background.
+- `mobile/src/components/chat/MessageList.tsx` — own the toast state and the gesture lock, and clear the pasteboard on background.
 - `mobile/package.json` — add `expo-clipboard`.
 
 ## Verification
