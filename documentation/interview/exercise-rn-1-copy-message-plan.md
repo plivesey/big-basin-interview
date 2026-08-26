@@ -58,10 +58,6 @@ The toast is short-lived and the chat screen stays mounted for the life of the a
 
 A copied phone number shouldn't sit on the pasteboard indefinitely. An `AppState` listener clears it when the app goes to the background.
 
-### Why a toast rather than an action sheet
-
-The alternative is a long-press menu — `ActionSheetIOS`, or a popover with Copy / Share / Report. That's the right shape once there's more than one action, but with a single item it's two taps instead of one, it needs a platform-specific implementation on Android, and it puts a modal in front of the thing the user is trying to read. A toast is one gesture, no chrome, and easy to replace with a menu the day we add a second action.
-
 ## Files to change
 
 - `mobile/src/components/chat/CopyToast.tsx` — new; the fading confirmation.
