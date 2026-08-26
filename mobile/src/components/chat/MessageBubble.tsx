@@ -1,5 +1,6 @@
 import { memo } from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { MarkdownText } from './MarkdownText';
 import { TypingDots } from './TypingDots';
 import { message as messageClasses } from '../../theme/classes';
@@ -10,6 +11,8 @@ interface MessageBubbleProps {
   timestamp?: string;
   showTypingIndicator?: boolean;
   failed?: boolean;
+  /** Told when this bubble's text has been put on the clipboard. */
+  onCopied?: () => void;
 }
 
 /**
@@ -23,6 +26,7 @@ export const MessageBubble = memo(function MessageBubble({
   timestamp,
   showTypingIndicator = false,
   failed = false,
+  onCopied,
 }: MessageBubbleProps) {
   const palette = failed
     ? messageClasses.failed
@@ -30,9 +34,23 @@ export const MessageBubble = memo(function MessageBubble({
       ? messageClasses.user
       : messageClasses.assistant;
 
+  const handleLongPress = () => {
+    // setStringAsync resolves once the pasteboard write is enqueued, so
+    // awaiting it just costs a frame before we can show the confirmation.
+    Clipboard.setStringAsync(text);
+    onCopied?.();
+  };
+
   return (
     <View className={`w-full mb-3 ${role === 'user' ? 'items-end' : 'items-start'}`}>
-      <View className={palette.container}>
+      <Pressable
+        onLongPress={handleLongPress}
+        // 500ms is the default and tested as sluggish next to iMessage.
+        delayLongPress={200}
+        accessibilityLabel={`${role === 'user' ? 'Your message' : 'Scout'}: ${text}`}
+        accessibilityHint="Long press to copy"
+        className={palette.container}
+      >
         {role === 'assistant' ? (
           <MarkdownText content={text} textClassName={palette.text} />
         ) : (
@@ -48,7 +66,7 @@ export const MessageBubble = memo(function MessageBubble({
             {timestamp}
           </Text>
         ) : null}
-      </View>
+      </Pressable>
     </View>
   );
 });

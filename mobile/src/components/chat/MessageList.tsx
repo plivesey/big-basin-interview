@@ -1,7 +1,8 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { ScrollView, View, Text, type NativeSyntheticEvent, type NativeScrollEvent } from 'react-native';
 import { MessageBubble } from './MessageBubble';
 import { ChatErrorMessage } from './ChatErrorMessage';
+import { CopyToast } from './CopyToast';
 import {
   useChatStore,
   getMessageText,
@@ -40,6 +41,7 @@ export function MessageList({
 }: MessageListProps) {
   const scrollRef = useRef<ScrollView>(null);
   const stuckToBottom = useRef(true);
+  const [copied, setCopied] = useState(false);
   const streamingMessageId = useChatStore(selectStreamingMessageId);
   const isAiWorking = useChatStore(selectIsAiWorking);
   const lastError = useChatStore(selectLastError);
@@ -49,6 +51,13 @@ export function MessageList({
     const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
     const distanceFromEnd = contentSize.height - contentOffset.y - layoutMeasurement.height;
     stuckToBottom.current = distanceFromEnd < STICK_THRESHOLD;
+  }, []);
+
+  const handleCopied = useCallback(() => {
+    setCopied(true);
+    // The toast is short-lived and the chat screen is mounted for the life of
+    // the app, so there is nothing to tear down here.
+    setTimeout(() => setCopied(false), 2000);
   }, []);
 
   const handleContentSizeChange = useCallback(() => {
@@ -93,11 +102,14 @@ export function MessageList({
           text={getMessageText(message)}
           timestamp={formatMessageTime(message.createdAt)}
           failed={failedMessageIds.has(message.id)}
+          onCopied={() => handleCopied()}
           showTypingIndicator={
             message.role === 'assistant' && message.id === streamingMessageId && isAiWorking
           }
         />
       ))}
+
+      <CopyToast visible={copied} />
 
       {lastError ? (
         <ChatErrorMessage message={lastError} onRetry={onRetryMessage} isRetrying={isRetrying} />
