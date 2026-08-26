@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { ChatMessage, ConnectionStatus } from '@asba/shared-types';
+import type { PersistedChat } from '../storage/chat-persistence';
 
 // Re-export types and utilities from shared package for backward compatibility
 export type { ChatMessage, MessageContent, ConnectionStatus } from '@asba/shared-types';
@@ -33,6 +34,7 @@ export interface ChatState {
   appendTextToMessage: (messageId: string, text: string) => void;
   setStreamingMessageId: (messageId: string | null) => void;
   clearMessages: () => void;
+  hydrate: (persisted: PersistedChat) => void;
   setIsLoading: (isLoading: boolean) => void;
   setIsAiWorking: (isAiWorking: boolean) => void;
   reset: () => void;
@@ -105,6 +107,14 @@ export const useChatStore = create<ChatState>((set) => ({
   setStreamingMessageId: (messageId: string | null) => set({ streamingMessageId: messageId }),
 
   clearMessages: () => set({ messages: [] }),
+
+  // Restore a conversation read back from disk.
+  hydrate: (persisted: PersistedChat) =>
+    set({
+      sessionId: persisted.sessionId,
+      messages: persisted.messages,
+      failedMessageIds: persisted.failedMessageIds,
+    }),
 
   setIsLoading: (isLoading: boolean) => set({ isLoading }),
 

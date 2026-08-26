@@ -16,6 +16,7 @@ import {
   setSessionIdSync,
   clearSessionIdSync,
 } from '../socket/session-storage';
+import { enqueue, flushQueue, getQueue } from '../storage/offline-queue';
 
 /**
  * Port of frontend/src/hooks/useWebSocket.ts.
@@ -205,6 +206,15 @@ export function useWebSocket(): UseWebSocketReturn {
       reconnectAttempts.current = 0;
       clearInitialConnectionTimeout();
       flushMessageQueue();
+
+      // Ask for anything that landed while we were away. The server takes our
+      // newest message id and replies with just the delta, so this stays cheap
+      // even on a long conversation.
+      const known = useChatStore.getState().messages;
+      socket.emit('sync', { lastMessageId: known[known.length - 1]?.id });
+
+      // Drain anything typed while we were offline.
+      flushQueue(socket);
     });
 
     socket.on('disconnect', (reason) => {
@@ -242,17 +252,11 @@ export function useWebSocket(): UseWebSocketReturn {
       logger.debug('Received message history', { count: data.messages.length });
       const parsedMessages = data.messages.map((msg) => parseMessage(msg));
 
-      // Preserve optimistic messages queued before the connection landed.
-      // These have IDs starting with 'temp-'.
+      // We hydrate optimistic messages from disk now, so the old temp- merge
+      // branch is redundant. This is only ever the delta since lastMessageId,
+      // so appending is correct and cheaper than reconciling by id.
       const currentMessages = useChatStore.getState().messages;
-      const optimisticMessages = currentMessages.filter((msg) => msg.id.startsWith('temp-'));
-
-      if (optimisticMessages.length > 0) {
-        logger.debug('Preserving optimistic messages', { count: optimisticMessages.length });
-        useChatStore.getState().setMessages([...parsedMessages, ...optimisticMessages]);
-      } else {
-        useChatStore.getState().setMessages(parsedMessages);
-      }
+      useChatStore.getState().setMessages([...currentMessages, ...parsedMessages]);
     });
 
     socket.on('message_start', (data) => {
@@ -405,9 +409,8 @@ export function useWebSocket(): UseWebSocketReturn {
       pendingMessageRef.current = true;
 
       if (!socket?.connected) {
-        logger.debug('Queueing message - not connected yet');
-        messageQueueRef.current.push(trimmedMessage);
-        queuedMessageIdsRef.current.push(messageId);
+        logger.debug('Queueing message - offline', { depth: getQueue().length });
+        enqueue({ id: messageId, text: trimmedMessage, queuedAt: Date.now() });
         store.setLastAttemptedMessage(trimmedMessage);
         return;
       }

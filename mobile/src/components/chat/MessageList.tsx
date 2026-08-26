@@ -15,6 +15,8 @@ import { formatMessageTime } from '../../utils/datetime';
 interface MessageListProps {
   messages: ChatMessage[];
   isLoading: boolean;
+  /** Marks where restored history ends and this session begins. */
+  showRestoredDivider?: boolean;
   onRetryMessage?: () => void;
   isRetrying?: boolean;
 }
@@ -23,18 +25,14 @@ interface MessageListProps {
 const STICK_THRESHOLD = 80;
 
 /**
- * A ScrollView, not a FlatList.
- *
- * Streaming mutates the *last* item many times a second, an `inverted` FlatList
- * uses a scale transform that fights KeyboardAvoidingView and the provider
- * sheet, and a session is small enough that virtualization buys nothing. This
- * is the direct analogue of the web's scrollIntoView. If sessions ever get long
- * (a few hundred messages), revisit with FlatList +
- * maintainVisibleContentPosition.
+ * Still a plain ScrollView plus map, same as the web MessageList. RN renders
+ * Text cheaply and the auto-scroll ref trick doesn't work with FlatList's
+ * windowing, so this stays simple.
  */
 export function MessageList({
   messages,
   isLoading,
+  showRestoredDivider = false,
   onRetryMessage,
   isRetrying = false,
 }: MessageListProps) {
@@ -86,6 +84,12 @@ export function MessageList({
       // only dismisses the keyboard, and the user has to tap twice.
       keyboardShouldPersistTaps="handled"
     >
+      {showRestoredDivider && messages.length > 0 ? (
+        <View className="items-center py-2">
+          <Text className="text-xs text-slate-400">Earlier in this conversation</Text>
+        </View>
+      ) : null}
+
       {messages.map((message) => (
         <MessageBubble
           key={message.id}

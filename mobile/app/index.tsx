@@ -7,6 +7,7 @@ import { ProviderSheet } from '../src/components/providers/ProviderSheet';
 import { SideMenu } from '../src/components/menu/SideMenu';
 import { BookingRouteHost } from '../src/components/booking/BookingRouteHost';
 import { useWebSocket } from '../src/hooks/useWebSocket';
+import { useChatPersistence } from '../src/hooks/useChatPersistence';
 import {
   useChatStore,
   selectMessages,
@@ -19,6 +20,7 @@ import { useMenuStore } from '../src/store/menu-store';
 
 export default function ChatScreen() {
   const insets = useSafeAreaInsets();
+  const { isHydrated } = useChatPersistence();
   const { sendMessage, reconnect, retryLastMessage, isRetrying, createNewSession, switchSession } =
     useWebSocket();
 
@@ -52,6 +54,7 @@ export default function ChatScreen() {
         <MessageList
           messages={messages}
           isLoading={isLoading}
+          showRestoredDivider={isHydrated}
           onRetryMessage={retryLastMessage}
           isRetrying={isRetrying}
         />
