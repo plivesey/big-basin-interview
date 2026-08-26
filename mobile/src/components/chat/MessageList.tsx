@@ -1,7 +1,16 @@
-import { useCallback, useRef } from 'react';
-import { ScrollView, View, Text, type NativeSyntheticEvent, type NativeScrollEvent } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  AppState,
+  ScrollView,
+  View,
+  Text,
+  type NativeSyntheticEvent,
+  type NativeScrollEvent,
+} from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { MessageBubble } from './MessageBubble';
 import { ChatErrorMessage } from './ChatErrorMessage';
+import { CopyToast } from './CopyToast';
 import {
   useChatStore,
   getMessageText,
@@ -40,10 +49,23 @@ export function MessageList({
 }: MessageListProps) {
   const scrollRef = useRef<ScrollView>(null);
   const stuckToBottom = useRef(true);
+  const [copied, setCopied] = useState(false);
+  const [scrollEnabled, setScrollEnabled] = useState(true);
   const streamingMessageId = useChatStore(selectStreamingMessageId);
   const isAiWorking = useChatStore(selectIsAiWorking);
   const lastError = useChatStore(selectLastError);
   const failedMessageIds = useChatStore((state) => state.failedMessageIds);
+
+  // A copied phone number shouldn't sit on the pasteboard indefinitely, so it
+  // is cleared once the user has moved on.
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (next) => {
+      if (next === 'background') {
+        void Clipboard.setStringAsync('');
+      }
+    });
+    return () => subscription.remove();
+  }, []);
 
   const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
@@ -79,6 +101,7 @@ export function MessageList({
       ref={scrollRef}
       className="flex-1"
       contentContainerClassName="p-4"
+      scrollEnabled={scrollEnabled}
       onScroll={handleScroll}
       scrollEventThrottle={16}
       onContentSizeChange={handleContentSizeChange}
@@ -93,11 +116,17 @@ export function MessageList({
           text={getMessageText(message)}
           timestamp={formatMessageTime(message.createdAt)}
           failed={failedMessageIds.has(message.id)}
+          onCopied={() => setCopied(true)}
+          onDismissToasts={() => setCopied(false)}
+          onGestureStart={() => setScrollEnabled(false)}
+          onGestureEnd={() => setScrollEnabled(true)}
           showTypingIndicator={
             message.role === 'assistant' && message.id === streamingMessageId && isAiWorking
           }
         />
       ))}
+
+      <CopyToast visible={copied} />
 
       {lastError ? (
         <ChatErrorMessage message={lastError} onRetry={onRetryMessage} isRetrying={isRetrying} />

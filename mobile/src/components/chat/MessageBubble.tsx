@@ -1,5 +1,7 @@
 import { memo } from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
+import { logger } from '../../utils/logger';
 import { MarkdownText } from './MarkdownText';
 import { TypingDots } from './TypingDots';
 import { message as messageClasses } from '../../theme/classes';
@@ -10,7 +12,17 @@ interface MessageBubbleProps {
   timestamp?: string;
   showTypingIndicator?: boolean;
   failed?: boolean;
+  /** Told when this bubble's text has been put on the clipboard. */
+  onCopied: () => void;
+  /** Dismisses whatever confirmation is on screen. */
+  onDismissToasts: () => void;
+  /** Told when a press begins and ends, so the list can yield the gesture. */
+  onGestureStart: () => void;
+  onGestureEnd: () => void;
 }
+
+/** How long a copy confirmation stays up. */
+const TOAST_DURATION_MS = 2000;
 
 /**
  * Memoized on (role, text, timestamp, showTypingIndicator, failed): streaming
@@ -23,6 +35,10 @@ export const MessageBubble = memo(function MessageBubble({
   timestamp,
   showTypingIndicator = false,
   failed = false,
+  onCopied,
+  onDismissToasts,
+  onGestureStart,
+  onGestureEnd,
 }: MessageBubbleProps) {
   const palette = failed
     ? messageClasses.failed
@@ -30,9 +46,34 @@ export const MessageBubble = memo(function MessageBubble({
       ? messageClasses.user
       : messageClasses.assistant;
 
+  const handleLongPress = () => {
+    // setStringAsync resolves once the pasteboard write is enqueued, so
+    // awaiting it just costs a frame before we can show the confirmation.
+    Clipboard.setStringAsync(text);
+
+    logger.info('Message copied', { role, text });
+
+    onCopied();
+
+    // Keeping the teardown next to the gesture that caused it means the list
+    // never has to know how long a confirmation lives.
+    setTimeout(() => onDismissToasts(), TOAST_DURATION_MS);
+  };
+
   return (
     <View className={`w-full mb-3 ${role === 'user' ? 'items-end' : 'items-start'}`}>
-      <View className={palette.container}>
+      <Pressable
+        onLongPress={handleLongPress}
+        // 500ms is the default and tested as sluggish next to iMessage.
+        delayLongPress={200}
+        // Hand the gesture to us for the duration of the press so a scroll
+        // can't interrupt the copy half way through.
+        onPressIn={onGestureStart}
+        onPressOut={onGestureEnd}
+        accessibilityLabel={text}
+        accessibilityHint="Long press to copy"
+        className={palette.container}
+      >
         {role === 'assistant' ? (
           <MarkdownText content={text} textClassName={palette.text} />
         ) : (
@@ -48,7 +89,7 @@ export const MessageBubble = memo(function MessageBubble({
             {timestamp}
           </Text>
         ) : null}
-      </View>
+      </Pressable>
     </View>
   );
 });
