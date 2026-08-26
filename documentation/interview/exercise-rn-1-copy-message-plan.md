@@ -2,7 +2,7 @@
 
 ## Context
 
-Scout hands people real details — a salon's address, a phone number, a booking reference — and right now there is no way to get any of it out of the app. You can read a message, but you can't paste it into Maps or a text to a friend. Support has had three people ask.
+The app hands people real details — a salon's address, a phone number, a booking reference — and right now there is no way to get any of it back out. You can read a message, but you can't paste it into Maps or into a text to a friend. Support has had three people ask.
 
 The obvious gesture on a phone is long-press on the bubble. That's what iMessage, WhatsApp and Slack all do, so it needs no discovery and no chrome. Copy the message, confirm it happened, get out of the way.
 
@@ -12,7 +12,6 @@ This is mobile-only and self-contained: one gesture, one clipboard call, one con
 
 - Long-press any chat message to copy its text.
 - Confirm the copy visually so the user knows it landed.
-- Keep the chat scrolling exactly as it does today.
 
 ## Non-goals
 
