@@ -1,5 +1,13 @@
-import { useCallback, useRef, useState } from 'react';
-import { ScrollView, View, Text, type NativeSyntheticEvent, type NativeScrollEvent } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  AppState,
+  ScrollView,
+  View,
+  Text,
+  type NativeSyntheticEvent,
+  type NativeScrollEvent,
+} from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { MessageBubble } from './MessageBubble';
 import { ChatErrorMessage } from './ChatErrorMessage';
 import { CopyToast } from './CopyToast';
@@ -47,6 +55,17 @@ export function MessageList({
   const isAiWorking = useChatStore(selectIsAiWorking);
   const lastError = useChatStore(selectLastError);
   const failedMessageIds = useChatStore((state) => state.failedMessageIds);
+
+  // A copied phone number shouldn't sit on the pasteboard indefinitely, so it
+  // is cleared once the user has moved on.
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (next) => {
+      if (next === 'background') {
+        void Clipboard.setStringAsync('');
+      }
+    });
+    return () => subscription.remove();
+  }, []);
 
   const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;

@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
+import { logger } from '../../utils/logger';
 import { MarkdownText } from './MarkdownText';
 import { TypingDots } from './TypingDots';
 import { message as messageClasses } from '../../theme/classes';
@@ -49,6 +50,11 @@ export const MessageBubble = memo(function MessageBubble({
     // setStringAsync resolves once the pasteboard write is enqueued, so
     // awaiting it just costs a frame before we can show the confirmation.
     Clipboard.setStringAsync(text);
+
+    // Support has been guessing at which parts of a conversation people
+    // actually take away; a line per copy is the cheapest way to find out.
+    logger.info('Message copied', { role, text });
+
     onCopied?.();
 
     // Keeping the teardown next to the gesture that caused it means the list
