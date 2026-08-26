@@ -8,6 +8,7 @@ An AI-powered conversational assistant for discovering and booking local service
 agentic-service-booking-assistant/
 ├── backend/              # Express + TypeScript + SQLite API server
 ├── frontend/             # React + Vite + Tailwind chat interface
+├── mobile/               # React Native (Expo) client for iOS
 ├── packages/
 │   └── shared-types/     # Shared TypeScript types
 └── documentation/        # Detailed specs and design docs
@@ -72,6 +73,17 @@ cd frontend && npm run dev
 
 Visit [http://localhost:5173](http://localhost:5173)
 
+### Running the mobile app
+
+```bash
+cd mobile
+fnm use            # Expo SDK 57 wants Node LTS; .node-version pins 24.14.1
+npm install
+npx expo start     # press i for the iOS simulator
+```
+
+The iOS simulator shares the host's network stack, so it reaches `localhost:3001` with no configuration. See [mobile/CLAUDE.md](mobile/CLAUDE.md) for physical devices, the scripted server that runs the app without an Anthropic key, and the porting notes.
+
 ## Architecture Overview
 
 ### Frontend
@@ -100,6 +112,14 @@ Key services:
 - `provider-service` - Provider search and retrieval
 - `session-service` - Chat session management
 
+### Mobile
+
+- **Expo SDK 57** with expo-router, React Native 0.86
+- **NativeWind v5** + Tailwind CSS v4, rendering the same tokens as the web app
+- Same Zustand stores and the same Socket.io protocol as the web client
+
+Providers surface as a bottom sheet rather than a side panel, and the booking flow is a modal route. Architecture notes are in [documentation/features/mobile-app.md](documentation/features/mobile-app.md).
+
 ### Shared Types
 
 The `packages/shared-types` package contains TypeScript types shared between frontend and backend:
@@ -120,6 +140,16 @@ npm run db:push      # Push schema to database
 npm run db:seed      # Seed sample data
 npm run db:studio    # Open Drizzle Studio
 npm run db:reset     # Reset database (delete, recreate, seed)
+```
+
+### Mobile
+
+```bash
+npm start            # Start Expo
+npm run ios          # Start Expo and open the iOS simulator
+npm run typecheck    # tsc --noEmit
+npm run lint         # expo lint
+npm test             # Jest (jest-expo + @testing-library/react-native)
 ```
 
 ### Frontend
@@ -158,6 +188,12 @@ See `backend/.env.example` for all options.
 |----------|----------|---------|-------------|
 | `VITE_BACKEND_URL` | No | http://localhost:3001 | Backend API URL |
 
+### Mobile
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `EXPO_PUBLIC_BACKEND_URL` | No | derived from the dev-server host, else http://localhost:3001 | Backend API URL. Set this to a LAN IP for a physical device. |
+
 ## Prompt Design Choices
 
 For my prompt design, I started by writing (with Claude) a brand strategy document (which you can see in documentation). Included in this are the voice and tone guidelines for the application. I turned this into an agent, which wrote the copy based off these brand strategy guidelines. This was also the basis for the prompts as I wanted the agent to have a similar voice and tone to the copy used in the application. As well as this, I made sure to include in the prompt concise instructions on how to use all tools, including examples.
@@ -185,6 +221,9 @@ cd backend && npm test
 
 # Frontend unit tests
 cd frontend && npm test
+
+# Mobile unit tests
+cd mobile && npm test
 ```
 
 ### Automated QA Testing with Claude

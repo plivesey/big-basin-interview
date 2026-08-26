@@ -1,0 +1,31 @@
+{
+  "expo": {
+    "name": "Scout",
+    "slug": "scout-mobile",
+    "scheme": "scout",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#F1F5F9"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.bigbasinlabs.scout",
+      "infoPlist": {
+        "NSAppTransportSecurity": { "NSAllowsLocalNetworking": true },
+        "NSLocalNetworkUsageDescription": "Scout connects to the development server on your local network."
+      }
+    },
+    "android": {
+      "package": "com.bigbasinlabs.scout",
+      "predictiveBackGestureEnabled": false
+    },
+    "plugins": ["expo-router", "expo-splash-screen"],
+    "experiments": { "typedRoutes": true }
+  }
+}

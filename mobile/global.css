@@ -1,0 +1,76 @@
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/preflight.css" layer(base);
+@import "tailwindcss/utilities.css";
+
+@import "nativewind/theme";
+
+/* src/theme/classes.ts holds className strings as plain literals, so the
+   scanner has to be pointed at .ts as well as .tsx. */
+@source "./app";
+@source "./src";
+
+/* Brand tokens from frontend/tailwind.config.js. Tailwind v4 moves theme
+   configuration into CSS, so this replaces that file's `theme.extend` block.
+   Note the web app never actually applies these -- its v4 setup has no
+   @config directive, so frontend/tailwind.config.js is dead code and every
+   component uses the stock palette. */
+@theme {
+  --color-brand-indigo-pale: #e0e7ff;
+  --color-brand-indigo-light: #6366f1;
+  --color-brand-indigo: #4f46e5;
+  --color-brand-indigo-dark: #4338ca;
+  --color-brand-amber-pale: #fef3c7;
+  --color-brand-amber-light: #fcd34d;
+  --color-brand-amber: #f59e0b;
+  --color-brand-amber-dark: #d97706;
+
+  --radius-message: 16px;
+  --radius-card: 12px;
+}
+
+/* Tailwind v4 ships an OKLCH default palette, so `indigo-600` is not the
+   #4F46E5 the web app renders. Pin the scales the web actually uses back to
+   their v3 hexes so the two clients match exactly. */
+@theme {
+  --color-indigo-50: #eef2ff;
+  --color-indigo-100: #e0e7ff;
+  --color-indigo-200: #c7d2fe;
+  --color-indigo-600: #4f46e5;
+  --color-indigo-700: #4338ca;
+  --color-indigo-800: #3730a3;
+
+  --color-slate-50: #f8fafc;
+  --color-slate-100: #f1f5f9;
+  --color-slate-200: #e2e8f0;
+  --color-slate-300: #cbd5e1;
+  --color-slate-400: #94a3b8;
+  --color-slate-500: #64748b;
+  --color-slate-600: #475569;
+  --color-slate-700: #334155;
+
+  --color-gray-800: #1f2937;
+
+  --color-amber-50: #fffbeb;
+  --color-amber-100: #fef3c7;
+  --color-amber-200: #fde68a;
+  --color-amber-400: #fbbf24;
+  --color-amber-500: #f59e0b;
+  --color-amber-600: #d97706;
+  --color-amber-700: #b45309;
+
+  --color-green-50: #f0fdf4;
+  --color-green-100: #dcfce7;
+  --color-green-600: #16a34a;
+  --color-green-700: #15803d;
+
+  --color-red-50: #fef2f2;
+  --color-red-100: #fee2e2;
+  --color-red-200: #fecaca;
+  --color-red-500: #ef4444;
+  --color-red-600: #dc2626;
+  --color-red-700: #b91c1c;
+
+  --color-blue-50: #eff6ff;
+  --color-blue-200: #bfdbfe;
+  --color-blue-700: #1d4ed8;
+}

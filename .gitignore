@@ -34,3 +34,6 @@ coverage/
 
 # Playwright MCP screenshots
 .playwright-mcp/
+
+# MCP tool caches
+.serena/

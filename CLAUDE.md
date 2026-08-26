@@ -7,14 +7,16 @@ AI-powered conversational assistant for discovering and booking local services (
 ## Project Structure
 
 ```
-├── backend/                     # Node.js/Express API server
-│   └── src/index.ts            # Heartbeat API endpoint
-├── frontend/                    # React + TypeScript + Tailwind
-│   ├── src/
-│   │   ├── components/         # Reusable UI components (Button, Card, Input, etc.)
-│   │   ├── App.tsx            # Main app with heartbeat status check
-│   │   └── index.css          # Tailwind + custom component classes
-│   └── tailwind.config.js     # Brand colors (indigo/amber), custom utilities
+├── backend/                     # Express + TypeScript + SQLite + Socket.io
+│   └── src/                    # routes, services, tools, websocket, db
+├── frontend/                    # React + TypeScript + Tailwind (web client)
+│   └── src/
+│       ├── components/         # Reusable UI components
+│       ├── store/              # Zustand stores
+│       ├── hooks/useWebSocket.ts
+│       └── index.css           # Tailwind + custom component classes
+├── mobile/                      # React Native (Expo) client for iOS
+├── packages/shared-types/       # Types shared by every client
 └── documentation/              # Full specs and design docs
 ```
 
@@ -69,10 +71,14 @@ AI-powered conversational assistant for discovering and booking local services (
 
 ## Architecture Overview
 
-**Frontend**: React 18+ with Tailwind CSS v4
+**Frontend**: React 19 with Tailwind CSS v4
 - WebSocket (Socket.io): Real-time chat interface
-- REST API: Provider browsing, booking history
-- State: Zustand (UI state) + React Query (server data)
+- REST API: Provider details, availability, bookings, sessions
+- State: Zustand only. There is no React Query and no server-cache library; the stores call `fetch` directly.
+
+**Mobile**: Expo SDK 57 + expo-router + NativeWind, in `mobile/`
+- Same backend, same socket protocol, same Zustand stores as the web client
+- See [mobile/CLAUDE.md](mobile/CLAUDE.md) and [documentation/features/mobile-app.md](documentation/features/mobile-app.md)
 
 **Backend**: Express + TypeScript + SQLite
 - REST endpoints for CRUD operations
@@ -82,9 +88,11 @@ AI-powered conversational assistant for discovering and booking local services (
 
 **Key Patterns**:
 - Conversation Orchestrator manages message history + tool execution
-- Tool-based UI commands (`display_providers`, `display_time_slots`)
-- Hybrid progress updates (Extended Thinking + tool events)
+- Tool-based UI commands. The server emits `display_providers` and `open_provider_detail`; time slots are fetched over REST from `GET /api/providers/:id/availability`, not pushed by a tool
+- Streaming text plus `tool_start` / `tool_complete` events
 - One workflow ID per booking (supports multiple bookings per session)
+
+**Worth knowing**: the seeded database holds 742 providers across 20 categories and 7 regions, not a handful of mocks. `assistant_message` and `booking_success` are declared in the shared socket types but never emitted by the server.
 
 ---
 
@@ -92,6 +100,7 @@ AI-powered conversational assistant for discovering and booking local services (
 
 **Start Backend**: `cd backend && npm run dev` (port 3001)
 **Start Frontend**: `cd frontend && npm run dev` (port 5173)
+**Start Mobile**: `cd mobile && npx expo start` (press `i` for the iOS simulator)
 
 **Component Classes**: See `frontend/src/index.css` for pre-built Tailwind classes (`.btn-primary`, `.card-hover`, `.message-user`, etc.)
 
