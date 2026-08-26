@@ -13,12 +13,12 @@ interface MessageBubbleProps {
   showTypingIndicator?: boolean;
   failed?: boolean;
   /** Told when this bubble's text has been put on the clipboard. */
-  onCopied?: () => void;
+  onCopied: () => void;
   /** Dismisses whatever confirmation is on screen. */
-  onDismissToasts?: () => void;
+  onDismissToasts: () => void;
   /** Told when a press begins and ends, so the list can yield the gesture. */
-  onGestureStart?: () => void;
-  onGestureEnd?: () => void;
+  onGestureStart: () => void;
+  onGestureEnd: () => void;
 }
 
 /** How long a copy confirmation stays up. */
@@ -53,11 +53,11 @@ export const MessageBubble = memo(function MessageBubble({
 
     logger.info('Message copied', { role, text });
 
-    onCopied?.();
+    onCopied();
 
     // Keeping the teardown next to the gesture that caused it means the list
     // never has to know how long a confirmation lives.
-    setTimeout(() => onDismissToasts?.(), TOAST_DURATION_MS);
+    setTimeout(() => onDismissToasts(), TOAST_DURATION_MS);
   };
 
   return (
@@ -70,7 +70,7 @@ export const MessageBubble = memo(function MessageBubble({
         // can't interrupt the copy half way through.
         onPressIn={onGestureStart}
         onPressOut={onGestureEnd}
-        accessibilityLabel={`${role === 'user' ? 'Your message' : 'Scout'}: ${text}`}
+        accessibilityLabel={text}
         accessibilityHint="Long press to copy"
         className={palette.container}
       >
