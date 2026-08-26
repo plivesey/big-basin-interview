@@ -42,6 +42,7 @@ export function MessageList({
   const scrollRef = useRef<ScrollView>(null);
   const stuckToBottom = useRef(true);
   const [copied, setCopied] = useState(false);
+  const [scrollEnabled, setScrollEnabled] = useState(true);
   const streamingMessageId = useChatStore(selectStreamingMessageId);
   const isAiWorking = useChatStore(selectIsAiWorking);
   const lastError = useChatStore(selectLastError);
@@ -51,13 +52,6 @@ export function MessageList({
     const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
     const distanceFromEnd = contentSize.height - contentOffset.y - layoutMeasurement.height;
     stuckToBottom.current = distanceFromEnd < STICK_THRESHOLD;
-  }, []);
-
-  const handleCopied = useCallback(() => {
-    setCopied(true);
-    // The toast is short-lived and the chat screen is mounted for the life of
-    // the app, so there is nothing to tear down here.
-    setTimeout(() => setCopied(false), 2000);
   }, []);
 
   const handleContentSizeChange = useCallback(() => {
@@ -88,6 +82,7 @@ export function MessageList({
       ref={scrollRef}
       className="flex-1"
       contentContainerClassName="p-4"
+      scrollEnabled={scrollEnabled}
       onScroll={handleScroll}
       scrollEventThrottle={16}
       onContentSizeChange={handleContentSizeChange}
@@ -102,7 +97,10 @@ export function MessageList({
           text={getMessageText(message)}
           timestamp={formatMessageTime(message.createdAt)}
           failed={failedMessageIds.has(message.id)}
-          onCopied={() => handleCopied()}
+          onCopied={() => setCopied(true)}
+          onDismissToasts={() => setCopied(false)}
+          onGestureStart={() => setScrollEnabled(false)}
+          onGestureEnd={() => setScrollEnabled(true)}
           showTypingIndicator={
             message.role === 'assistant' && message.id === streamingMessageId && isAiWorking
           }

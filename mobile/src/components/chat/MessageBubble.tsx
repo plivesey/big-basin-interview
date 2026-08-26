@@ -13,7 +13,15 @@ interface MessageBubbleProps {
   failed?: boolean;
   /** Told when this bubble's text has been put on the clipboard. */
   onCopied?: () => void;
+  /** Dismisses whatever confirmation is on screen. */
+  onDismissToasts?: () => void;
+  /** Told when a press begins and ends, so the list can yield the gesture. */
+  onGestureStart?: () => void;
+  onGestureEnd?: () => void;
 }
+
+/** How long a copy confirmation stays up. */
+const TOAST_DURATION_MS = 2000;
 
 /**
  * Memoized on (role, text, timestamp, showTypingIndicator, failed): streaming
@@ -27,6 +35,9 @@ export const MessageBubble = memo(function MessageBubble({
   showTypingIndicator = false,
   failed = false,
   onCopied,
+  onDismissToasts,
+  onGestureStart,
+  onGestureEnd,
 }: MessageBubbleProps) {
   const palette = failed
     ? messageClasses.failed
@@ -39,6 +50,10 @@ export const MessageBubble = memo(function MessageBubble({
     // awaiting it just costs a frame before we can show the confirmation.
     Clipboard.setStringAsync(text);
     onCopied?.();
+
+    // Keeping the teardown next to the gesture that caused it means the list
+    // never has to know how long a confirmation lives.
+    setTimeout(() => onDismissToasts?.(), TOAST_DURATION_MS);
   };
 
   return (
@@ -47,6 +62,10 @@ export const MessageBubble = memo(function MessageBubble({
         onLongPress={handleLongPress}
         // 500ms is the default and tested as sluggish next to iMessage.
         delayLongPress={200}
+        // Hand the gesture to us for the duration of the press so a scroll
+        // can't interrupt the copy half way through.
+        onPressIn={onGestureStart}
+        onPressOut={onGestureEnd}
         accessibilityLabel={`${role === 'user' ? 'Your message' : 'Scout'}: ${text}`}
         accessibilityHint="Long press to copy"
         className={palette.container}
