@@ -31,6 +31,8 @@ I'll set `delayLongPress={200}`. The default is 500ms, which tested as sluggish 
 
 The transcript is a scrolling surface, so the long-press has to win cleanly or the user will start a copy and end up with a scroll. On press-in we disable scrolling on the list, and re-enable it on press-out. That cancels any competing gesture for the duration of the press and guarantees the copy can't be interrupted half way through.
 
+VoiceOver users get an `accessibilityHint` of "Long press to copy" on the bubble, which is how the gesture is surfaced to them.
+
 ### Copying the text
 
 `expo-clipboard` is the maintained Expo module for this and needs no config plugin, so it works in Expo Go. One call:
@@ -43,6 +45,8 @@ Clipboard.setStringAsync(text);
 
 `setStringAsync` returns a promise, but it resolves as soon as the pasteboard write is enqueued, so awaiting it just costs a frame before we can show the confirmation. Fire it and move on.
 
+Each copy gets logged at `info` with the message text. Support has been guessing at which parts of a conversation people actually want to take away, and a line per copy is the cheapest way to find out.
+
 ### Confirming it worked
 
 A small toast: "Copied", centred near the bottom of the transcript, fading out after two seconds.
@@ -53,6 +57,10 @@ The bubble that was copied is what schedules the teardown. After it calls `onCop
 
 The toast is short-lived and the chat screen stays mounted for the life of the app, so there's nothing to tear down beyond that.
 
+### Clearing up afterwards
+
+A copied phone number shouldn't sit on the pasteboard indefinitely. An `AppState` listener clears it when the app goes to the background, which keeps the window where that data is exposed down to the session it was copied in.
+
 ### Why a toast rather than an action sheet
 
 The alternative is a long-press menu — `ActionSheetIOS`, or a popover with Copy / Share / Report. That's the right shape once there's more than one action, but with a single item it's two taps instead of one, it needs a platform-specific implementation on Android, and it puts a modal in front of the thing the user is trying to read. A toast is one gesture, no chrome, and easy to replace with a menu the day we add a second action.
@@ -61,7 +69,7 @@ The alternative is a long-press menu — `ActionSheetIOS`, or a popover with Cop
 
 - `mobile/src/components/chat/CopyToast.tsx` — new; the fading confirmation.
 - `mobile/src/components/chat/MessageBubble.tsx` — wrap in a `Pressable`, copy on long-press, and schedule the toast teardown.
-- `mobile/src/components/chat/MessageList.tsx` — own the toast state and the list's `scrollEnabled` flag.
+- `mobile/src/components/chat/MessageList.tsx` — own the toast state and the list's `scrollEnabled` flag, and clear the pasteboard on background.
 - `mobile/package.json` — add `expo-clipboard`.
 
 ## Verification
