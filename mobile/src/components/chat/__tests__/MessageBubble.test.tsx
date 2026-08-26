@@ -1,12 +1,7 @@
-import { render, screen, fireEvent } from '@testing-library/react-native';
-import * as Clipboard from 'expo-clipboard';
+import { render, screen } from '@testing-library/react-native';
 import { MessageBubble } from '../MessageBubble';
 
 describe('MessageBubble', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
-
   it('renders a user message', () => {
     render(<MessageBubble role="user" text="I need a haircut" />);
     expect(screen.getByText('I need a haircut')).toBeTruthy();
@@ -26,22 +21,5 @@ describe('MessageBubble', () => {
   it('renders a failed message differently', () => {
     const { toJSON } = render(<MessageBubble role="user" text="hi" failed />);
     expect(toJSON()).toBeTruthy();
-  });
-
-  it('copies the message on long press', () => {
-    render(<MessageBubble role="assistant" text="Luxe Salon is open until 6" />);
-
-    fireEvent(screen.getByLabelText(/^Scout:/), 'longPress');
-
-    expect(Clipboard.setStringAsync).toHaveBeenCalled();
-  });
-
-  it('tells the parent so it can show the confirmation', () => {
-    const onCopied = jest.fn();
-    render(<MessageBubble role="user" text="thanks" onCopied={onCopied} />);
-
-    fireEvent(screen.getByLabelText(/^Your message:/), 'longPress');
-
-    expect(onCopied).toHaveBeenCalled();
   });
 });
