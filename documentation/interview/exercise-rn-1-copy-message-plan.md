@@ -40,11 +40,9 @@ VoiceOver users get an `accessibilityHint` of "Long press to copy" on the bubble
 Clipboard.setStringAsync(text);
 ```
 
-`MessageBubble` already receives the rendered message text as its `text` prop, so there's nothing to convert — what we copy is exactly what the user is looking at.
-
 `setStringAsync` returns a promise, but it resolves as soon as the pasteboard write is enqueued, so awaiting it just costs a frame before we can show the confirmation. Fire it and move on.
 
-Each copy gets logged at `info` with the message text. Support has been guessing at which parts of a conversation people actually want to take away, and a line per copy is the cheapest way to find out.
+Each copy gets logged at `info` with the message text.
 
 ### Confirming it worked
 
