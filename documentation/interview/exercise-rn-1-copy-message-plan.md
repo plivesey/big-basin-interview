@@ -15,7 +15,6 @@ This is mobile-only and self-contained: one gesture, one clipboard call, one con
 
 ## Non-goals
 
-- Copying a selection within a message. Whole message only.
 - A share sheet. Copy is the ask; share is a separate feature.
 - Copying provider cards or booking details — different surfaces, later.
 
