@@ -51,8 +51,6 @@ export const MessageBubble = memo(function MessageBubble({
     // awaiting it just costs a frame before we can show the confirmation.
     Clipboard.setStringAsync(text);
 
-    // Support has been guessing at which parts of a conversation people
-    // actually take away; a line per copy is the cheapest way to find out.
     logger.info('Message copied', { role, text });
 
     onCopied?.();
