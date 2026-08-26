@@ -29,6 +29,8 @@ Three pieces: the clipboard call, the gesture, and the confirmation.
 
 I'll set `delayLongPress={200}`. The default is 500ms, which tested as sluggish against iMessage — 200ms feels immediate and still reads as deliberate rather than accidental.
 
+The transcript is a scrolling surface, so the long-press has to win cleanly or the user will start a copy and end up with a scroll. On press-in we disable scrolling on the list, and re-enable it on press-out. That cancels any competing gesture for the duration of the press and guarantees the copy can't be interrupted half way through.
+
 ### Copying the text
 
 `expo-clipboard` is the maintained Expo module for this and needs no config plugin, so it works in Expo Go. One call:
@@ -47,7 +49,9 @@ A small toast: "Copied", centred near the bottom of the transcript, fading out a
 
 `MessageList` owns the toast, since it already owns the transcript and there should only ever be one on screen. It holds a `copied` flag, passes an `onCopied` callback down to each bubble, and renders `<CopyToast visible={copied} />`.
 
-The timeout that hides it is set inside the callback. The toast is short-lived and the chat screen is mounted for the life of the app, so there's nothing to tear down.
+The bubble that was copied is what schedules the teardown. After it calls `onCopied()`, it sets a two-second timer that dismisses any toast currently on screen. Keeping the teardown next to the gesture that caused it means the list never has to know how long a confirmation lives, and there is only ever one toast to dismiss.
+
+The toast is short-lived and the chat screen stays mounted for the life of the app, so there's nothing to tear down beyond that.
 
 ### Why a toast rather than an action sheet
 
@@ -56,8 +60,8 @@ The alternative is a long-press menu — `ActionSheetIOS`, or a popover with Cop
 ## Files to change
 
 - `mobile/src/components/chat/CopyToast.tsx` — new; the fading confirmation.
-- `mobile/src/components/chat/MessageBubble.tsx` — wrap in a `Pressable`, copy on long-press.
-- `mobile/src/components/chat/MessageList.tsx` — own the toast state, pass `onCopied` down.
+- `mobile/src/components/chat/MessageBubble.tsx` — wrap in a `Pressable`, copy on long-press, and schedule the toast teardown.
+- `mobile/src/components/chat/MessageList.tsx` — own the toast state and the list's `scrollEnabled` flag.
 - `mobile/package.json` — add `expo-clipboard`.
 
 ## Verification
